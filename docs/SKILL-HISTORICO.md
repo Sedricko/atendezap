@@ -5,7 +5,7 @@
 
 
 ## v1.47.1 (25/10/2026) — preparação para a Chrome Web Store
-Sem mudança de função. Manifesto: nome "para WhatsApp Web" (menos risco de marca), Chrome mínimo 111 (scripts `world: MAIN` não funcionam antes). Novos: `tools/loja/empacotar.sh`, `tools/loja/imagens.py`, `docs/loja/` (5 capturas + bloco 440×280), `docs/LOJA-CHROME.md`, `docs/privacidade.html`. Conferido: zip da loja carrega no Chromium (service worker sobe, versão 1.47.1); testes rápidos passam. Smoke completo rodado na v1.47.0 (338 chaves, sem erros nem regressões).
+Sem mudança de função. Manifesto: nome "para WhatsApp Web" (menos risco de marca), Chrome mínimo 111 (scripts `world: MAIN` não funcionam antes). Novos: `tools/loja/empacotar.sh`, `tools/loja/imagens.py`, `docs/loja/` (5 capturas + bloco 440×280), `docs/LOJA-CHROME.md`, `docs/privacidade.html`. Conferido: zip da loja carrega no Chromium (service worker sobe, versão 1.47.1); testes rápidos passam. Smoke completo na v1.47.1: 338 chaves, `errors: []`, `_regressoes: []`, `FIM saída=0` (o smoke agora espera `minChrome` 111).
 
 # AtendeZap — extensão Chrome para WhatsApp Web (estado na v1.46.0)
 
