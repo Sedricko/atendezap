@@ -1,0 +1,728 @@
+HISTÓRICO DO ATENDEZAP, versão por versão (texto antigo do LEIAME, guardado inteiro)
+ATENÇÃO: isto é um DIÁRIO. Telas, abas e nomes citados aqui podem ter MUDADO DE LUGAR depois (a barra foi reorganizada por assunto na v1.39/v1.40).
+Para o estado ATUAL leia o LEIAME.txt e docs/FUNCOES.md.
+=====================================================================================================================
+
+AtendeZap — extensão para WhatsApp Web (Chrome/Edge)
+
+INSTALAR
+1. Descompacte esta pasta em um lugar fixo (não apague depois).
+2. Abra chrome://extensions (no Edge: edge://extensions).
+3. Ative "Modo do desenvolvedor" (canto superior direito).
+4. Clique em "Carregar sem compactação" e escolha a pasta "atendezap".
+5. Abra/recarregue https://web.whatsapp.com — a barra com ⚡ ✍️ 💬 🗂️ 💾 aparece na lateral direita.
+   A bolinha no topo fica verde quando a extensão se conecta ao WhatsApp.
+
+FUNÇÕES
+Painel lateral — fica à direita; o botão › recolhe e a aba ⚡ na borda reabre. O WhatsApp encolhe para caber.
+⚡ Respostas rápidas — grupos por categoria (cores), filtros Tudo / Por Tipo / Sem Categoria / Por Categoria / Mais Usadas.
+   ••• editar/duplicar/excluir · 👁 visualizar · ➤ enviar. Na conversa: digite /atalho + Enter, ou use o ⚡ no topo da conversa.
+   "Adicionar Ação": Enviar Mensagem (texto, imagem, vídeo, áudio de voz, documento, contato), Etiquetas (Business),
+   Temporizadores (aguardar, digitando, gravando), Utilitários (arquivar, desarquivar, fixar, desfixar, não lido, bloquear,
+   outra resposta). Cada envio tem "digitando por X s" antes e "aguardar X s" depois; imagem/vídeo com visualização única.
+   Limite de 50 mídias. Variáveis: {saudacao} {nome} {primeiro_nome} {atendente} {data} {hora}
+✍️ Assinatura — "John: mensagem" na mesma linha ou na linha de cima, com 13 estilos de letra
+   (negrito, itálico, tachado, monoespaçado, código, letras especiais: cursiva, serifado, contorno…).
+💬 Iniciar conversa — número não salvo; links wa.me clicados no WhatsApp abrem direto.
+📤 Enviar para vários — escolha vários arquivos (fotos, vídeos, áudios, documentos) e uma mensagem opcional,
+   marque grupos/contatos e envie tudo de uma vez, com intervalo entre envios, barra de progresso e Cancelar.
+   Os destinos marcados ficam salvos para as próximas vezes (filtro "Marcados") e entram no backup.
+   "📢 Meu status" também é um destino: a mensagem vira legenda da 1ª foto/vídeo (ou status de texto, com cor de fundo).
+   Aba "Meus status": veja seus status das últimas 24h, marque os que quiser (ou todos) e apague de uma vez.
+   "não publicado" em vermelho = envio que nunca chegou ao WhatsApp (ninguém vê): apagar só tira da lista.
+📌 Fixar — botão no cabeçalho da conversa. Sem limite de 3: a conversa sobe para o topo da lista (vale neste computador).
+🌙 Tema — o botão de lua/sol no topo do painel troca o WhatsApp entre escuro e claro (a página recarrega).
+💾 Backup — automático (diário/semanal/mensal) para a pasta Downloads; exporte só o que quiser e restaure
+   escolhendo os itens, mesclando com os atuais ou substituindo.
+🩺 Diagnóstico — "Saúde das funções" (✔/⚠/✖ por função), testes ao vivo e verificações detalhadas.
+   Autodiagnóstico: roda sozinho ao abrir o WhatsApp, na 1ª conversa aberta, a cada 30 min, quando o WhatsApp
+   muda de versão e depois de erros seguidos. Se algo quebrar aparece um aviso com "Baixar relatório".
+   "Baixar relatório" salva uma página .html fácil de ler (e com os dados técnicos dentro): envie ao Claude.
+   "Gerar mapa do WhatsApp" salva um arquivo técnico (módulos internos, funções, marcadores da tela; sem contatos
+   nem mensagens) para o Claude ajustar a extensão quando o WhatsApp mudar.
+🧪 Laboratório (aba dentro do Diagnóstico) — liga/desliga recursos escondidos do WhatsApp (chaves A/B), só neste
+   navegador. "Sugeridos" traz os mais úteis com explicação; "Todas as chaves" tem busca. "Voltar ao normal" desfaz
+   tudo. Se o WhatsApp não abrir depois de ligar algo, a extensão pausa o Laboratório sozinha (modo seguro).
+   Cada recurso sugerido mostra "📍 Onde testar" e "✔ Funcionou se". Depois de recarregar e olhar, marque
+   ✔ Apareceu ou ✖ Não apareceu: a marcação entra no relatório. Recursos que o WhatsApp já liga sozinho não aparecem na lista.
+   Muitos recursos dependem do servidor do WhatsApp: o botão pode aparecer e não funcionar.
+
+ATUALIZAR: substitua os arquivos da pasta e clique em ↻ na extensão em chrome://extensions.
+
+🙈 Conversas ocultas — botão direito (ou ⌄) na conversa da lista › Ocultar conversa, ou o 🙈 no topo da conversa: ela é arquivada,
+   silenciada "Sempre" (também no celular) e some até da lista de Arquivadas. Não notifica. Na aba Ocultas: clique
+   no nome para abrir sem restaurar, ou "Restaurar" para voltar à lista normal (desarquiva e tira o silêncio).
+   A faixa "Arquivadas" também some quando todas as arquivadas são ocultas (se tiver outras arquivadas, ela fica).
+   Obs.: a linha é escondida pelo nome exibido; dois contatos com o mesmo nome somem juntos da lista.
+
+⌨️ Atalhos — Alt+Z abre/fecha o painel · Alt+1…8 seguem a ordem da coluna (Respostas, Aguardando, Assinatura, Iniciar,
+   Enviar para vários, Grupos, Organizar conversas, Configurações). NOVO v1.11: a coluna ficou mais enxuta (7 ícones). Dentro de
+   "Organizar conversas" ficam as abas Fixadas | Ocultas; dentro de "Configurações", as abas Geral | Backup | Diagnóstico
+   (o Laboratório continua dentro do Diagnóstico). O ponto vermelho no ícone ⚙ avisa quando o WhatsApp mudou algo.
+🎨 Visual novo (v1.11.1) — cada tela abre com um cabeçalho em cartão (ícone + título + explicação). Em Configurações, cada
+   parte do painel tem seu ícone e uma chave liga/desliga. No Laboratório, as etapas viraram blocos e o nome técnico da
+   chave ficou recolhido em "detalhes técnicos".
+
+⏰ Aguardando resposta — lista os clientes cuja última mensagem é deles e ainda não foi respondida, há mais de X minutos
+   (1 min a 2 h; padrão 15). Os que esperam há mais tempo ficam em cima: verde até 1 h, laranja até 2 h, vermelho acima.
+   Clique para abrir a conversa; ✕ dispensa até o cliente mandar outra mensagem. Grupos só se marcar "grupos".
+   Arquivadas e ocultas não entram. O número no ícone da coluna mostra quantos estão esperando (atualiza a cada minuto).
+   NOVO v1.10: o botão do relógio ⏰ ADIA o cliente por 30 min (ele volta sozinho à fila). "Só no expediente" pausa a fila
+   fora do horário que você escolher (ex.: 08:00 a 18:00) e ela volta sozinha quando abrir.
+
+📐 Posição do painel — em ⚙ Configurações: à direita, à esquerda ou em cima. Em cima, os ícones
+   viram uma barra no alto e o conteúdo abre num quadro suspenso (clique de novo no ícone da seção para fechar o quadro).
+   O painel sempre começa recolhido ao abrir o WhatsApp: use Alt+Z ou a aba na borda.
+
+⚙ Configurações — último ícone da coluna. Escolha a posição do painel e ligue/desligue cada parte (Respostas,
+   Aguardando, Assinatura, Iniciar conversa, Enviar para vários, Fixadas, Ocultas, Backup, Laboratório). Desligada,
+   a parte some do painel e para de funcionar; seus dados ficam guardados para quando religar.
+🧪 Laboratório › Todas as chaves — mostra só o que pode ter uso, com "🔎 Pelo nome" (tradução das palavras do nome).
+   Chaves internas, de IA da Meta e as que só servem de par para outra ficam escondidas ("Mostrar internas" mostra).
+
+🚚 Lista de frete da planilha — botão 🚚 no topo da conversa coloca no campo a mesma lista do "Copiar Lista" do seu
+   Gerador de Anúncios (você confere e aperta Enter). Em Enviar para vários: "🚚 Puxar lista de frete".
+   Shift+clique no 🚚 (ou "🔎 Anúncio por ID" no Enviar para vários) pede o ID e traz o anúncio daquela carga.
+   Configurar uma vez: cole o arquivo planilha/AtendeZap.gs como script novo na planilha do Gerador de Anúncios
+   (instruções no topo do arquivo), publique como App da Web e cole o link /exec em ⚙ Configurações › Lista de frete.
+
+
+👥 Grupos (v1.12) — ícone novo na coluna, com duas abas:
+   • Pedidos — "Procurar em todos os meus grupos" acha os grupos em que você é admin e que têm pedidos para entrar
+     (ou "Só o grupo aberto"). Marque os grupos, veja a PRÉVIA (quem entra e quem é duplicado) e só então clique em
+     "Aprovar". Aprova de 20 em 20, com pausa. Duplicados ficam pendentes (ou são recusados, se você marcar a opção).
+   • Sem duplicar — crie conjuntos com os grupos de MESMO conteúdo (ex.: vários grupos de cargas). Ao aprovar, quem já
+     está em outro grupo do conjunto, ou acabou de ser aprovado em um, não entra no segundo.
+   Dica: teste primeiro com "Só o grupo aberto" em um grupo pequeno.
+   NOVO v1.12.1 — em "Sem duplicar", a lupa 🔍 do conjunto mostra quem JÁ está em mais de um grupo dele. Escolha o grupo
+   padrão onde a pessoa FICA (ou troque pessoa por pessoa) e clique em "Remover": ela sai dos outros grupos. Só age onde você
+   é admin, pede confirmação e vai de 10 em 10 com pausa. O painel não desfaz a remoção.
+   🛡 ADMINISTRADOR NUNCA É REMOVIDO (v1.12.2): quem é admin em QUALQUER grupo do conjunto fica protegido em todos eles,
+   mesmo estando em vários grupos duplicados. Eles aparecem numa lista à parte ("protegidos"). Além disso, na hora de
+   remover o painel confere de novo os admins de todos os grupos do conjunto; se não conseguir conferir, não remove ninguém.
+
+📌 Fixadas por aba (v1.12) — cada conversa fixada tem a aba onde fica no topo: Em todas as abas · Só na aba Grupos ·
+   Só em Favoritas · Só em Não lidas. Grupo fixado novo (📌 no cabeçalho) vai para "Só na aba Grupos": NÃO aparece no
+   topo de Todas. Em Fixadas, troque a aba de cada uma no seletor, ou use "Mover … para só a aba Grupos" nas que você
+   já tinha fixado. Se o painel não achar as abas do WhatsApp, as fixadas valem em todas (o Diagnóstico avisa).
+
+📥 Importar do waTidy (v1.13) — Configurações › Backup › "Importar do waTidy". Escolha um ou mais backups .json do
+   waTidy (pode marcar vários de uma vez: vale o mais novo). O painel mostra uma PRÉVIA e só grava quando você clicar em
+   "Importar agora". Traz: respostas rápidas (textos, fotos, vídeos, contatos, etiquetas e combos), categorias (com a cor)
+   e as conversas fixadas (grupos ficam só na aba Grupos). Como fica:
+   • "composing" vira "mostrar digitando" e "aguarde" vira "aguardar depois"; #nome, #primeiroNome e #saudação viram
+     {nome}, {primeiro_nome} e {saudacao}.
+   • Prévia de link vira texto (título, descrição e link): o cartão de prévia personalizado não existe no AtendeZap.
+   • "Script" (combo) vira uma resposta que chama as outras, com as esperas entre elas.
+   • NOVO v1.14: depois de ler o arquivo você ESCOLHE o que trazer — respostas (por categoria, uma a uma), tipos de mídia
+     (fotos, vídeos…) e conversas fixadas. Se escolher um combo, as respostas que ele chama vêm junto.
+   • Os atalhos /… são criados a partir do título (dá para editar). Importar de novo NÃO duplica; para atualizar o que já
+     veio, marque "Atualizar as respostas que já importei antes". Tudo roda no seu computador.
+
+🔢 Vagas nos grupos (v1.14) — ao lado do nome de cada grupo na lista de conversas aparece quantas vagas faltam para
+   encher (limite do WhatsApp menos os membros). v1.14.4: é só um NÚMERO num anel fino, pequeno e discreto (como o
+   contador de não lidas): verde = tem folga · laranja = restam 10 ou menos · vermelho = lotado ("0"). Passe o mouse para
+   ler "4 vagas · 1.020 de 1.024 membros". Dentro do grupo aberto aparece o mesmo número, no mesmo estilo, junto dos
+   botões do AtendeZap (sem alargar o cabeçalho). Em Configurações › Geral você escolhe mostrar em todos os grupos ou só quando restarem até
+   100/50/20/10 vagas, e dá para desligar em "Partes do painel". Se o contador não aparecer, abra Configurações ›
+   Diagnóstico, baixe o relatório e me envie (a linha "Vagas nos grupos" diz quantas linhas consegui identificar).
+
+⏳ Progresso do envio (v1.14.3) — ao enviar uma resposta rápida, o botão ⚡ do cabeçalho vira um ANEL de progresso com o
+   contador no centro ("2/3"; durante uma espera mostra os segundos que faltam) e uma linha fina aparece na base do
+   cabeçalho. Nada novo ocupa espaço. Passe o mouse no anel para ver o que está sendo enviado e para quem; CLIQUE nele
+   para PARAR o envio. Termina com ✔ (ou ■ se parou). Vale para /atalho, painel e ⚡.
+
+🧹 Status (v1.14.1) — Meus status agora lê a miniatura do modelo completo e marca: "não publicado", "sem arquivo" (o
+   WhatsApp não tem a mídia) e "↩ voltou" (você apagou e o WhatsApp recriou). Ao apagar, o painel confere de novo 3 s
+   depois e, 6 s depois, avisa se algum voltou. Antes de ENVIAR status, avisa se alguma foto/vídeo passa do limite do
+   WhatsApp (hoje 10 MB e 30 s de vídeo): enviar assim costuma falhar e deixar status "fantasma". Cancelar = pula esses.
+   Se algum status insistir em voltar, baixe o relatório em Configurações › Diagnóstico e me envie.
+
+📏 Limites do WhatsApp (v1.14.1) — Configurações › Geral mostra, só para leitura, os limites que o próprio WhatsApp usa
+   (membros por grupo, tamanho de status/arquivo/vídeo, duração do vídeo de status, mensagens fixadas, etc.).
+
+🧪 Laboratório (v1.14.1) — 9 sugestões novas: perguntas/formulário para entrar no grupo, faixa fixa de pedidos pendentes,
+   central do admin, denunciar ao admin, Pix em grupos, copiar código/chave Pix, gerenciador de clientes (campos
+   personalizados e exportar), miniatura de vídeo na lista e selecionar só um trecho da mensagem.
+
+🔖 Abas da lista — o painel agora reconhece a aba "Tudo" (e usa o botão de aba do WhatsApp). Isso faz o "fixar só na aba
+   Grupos" funcionar de verdade.
+
+🧯 Sem "vazamentos" na tela (v1.14.2)
+   • Ao digitar "/" o WhatsApp Business abre a lista DELE de respostas rápidas. Agora, enquanto a lista do AtendeZap estiver
+     aberta, a nativa fica escondida (e volta se a nossa não tiver resposta para o que você digitou, ou se você apertar Esc).
+     Se alguma vez as duas aparecerem juntas, baixe o relatório em Configurações › Diagnóstico: a linha "Lista nativa do /"
+     descreve o que apareceu para eu ajustar.
+   • Conversas ocultas agora são escondidas pelo ID da conversa e só na lista de conversas. Antes era pelo nome, na tela
+     toda: grupos de nome igual sumiam juntos (ex.: os vários "Cargas Geral…") e a conversa também sumia das janelas de
+     "Encaminhar" e das listas de membros.
+
+🛠 Correção v1.14.4 — a v1.14.3 podia mostrar a palavra "null" ao lado dos botões do cabeçalho da conversa. Corrigido, e o
+   teste automático agora falha se aparecer qualquer texto solto ali.
+
+🛠 Correções v1.14.5 (vistas no WhatsApp real)
+   • A linha fina de progresso aparecia deslocada/pela metade: o cabeçalho do WhatsApp cria um "quadro de referência" que
+     soma o deslocamento. Agora o painel mede onde a linha caiu e compensa, então ela cobre o cabeçalho todo.
+   • O anel do botão ⚡ ficava fora do centro ao passar o mouse: agora é desenhado em SVG, com geometria exata.
+   • A dica do anel ficou curta ("Nome · 2/5 · Texto — clique para parar").
+   • O "null" ao lado dos botões (v1.14.3) já estava corrigido na v1.14.4: confira a versão em Configurações › Diagnóstico.
+
+🧹 Enviar para vários — lista de arquivos limpa sozinha (v1.14.6) — quando o envio termina, os arquivos enviados saem da lista
+   e o formulário já volta pronto para o próximo envio (antes era preciso remover um a um). Os destinos marcados continuam
+   salvos e a mensagem de texto continua no campo (o botão "Novo envio" na tela de resultado limpa o texto também).
+   Os arquivos NÃO são limpos se você cancelou o envio ou se nenhum envio deu certo, para você tentar de novo.
+
+🙈 Ocultas sem "piscar" (v1.14.7) — a faixa "Arquivadas 2" do WhatsApp aparecia por um instante ao trocar de aba ou ao abrir o
+   WhatsApp, o que entregava que as conversas ocultas estão arquivadas. Causas: (1) o painel só escondia a faixa numa checagem
+   de 1 em 1 segundo; (2) a decisão dependia de uma contagem calculada só 20 s depois de abrir. Agora (1) qualquer mudança na
+   lista pede a passada para o próximo quadro, ANTES de pintar; (2) a contagem é feita assim que o WhatsApp fica pronto e
+   fica guardada para a próxima abertura. Na primeira abertura depois de atualizar ainda pode piscar uma vez, até a
+   contagem ser guardada. Observação: se você tiver conversas arquivadas DE VERDADE, a faixa continua aparecendo (senão você
+   não alcançaria o seu arquivo) e o número dela inclui as ocultas.
+
+🩺 Diagnóstico mais eficiente (v1.15) — em ⚙ Configurações › Diagnóstico:
+   • COPIAR RESUMO — texto curto (≈10 linhas) para colar na conversa com o Claude: versões, o que está ruim, o que PIOROU ou
+     MELHOROU desde o relatório anterior, tempo do diagnóstico e custo do AtendeZap. Costuma bastar, sem anexar arquivos.
+   • CAPTURAR ESTRUTURA DA TELA — foto da estrutura (tags, posições, tamanhos, abas, camadas por cima do campo), SEM mensagens
+     nem contatos. Use junto com um print quando o problema for visual (algo por cima, fora do lugar, piscando).
+   • O relatório agora mostra o tempo de cada checagem e quanto o próprio AtendeZap consome do navegador (rotinas e %).
+   • O mapa do WhatsApp ficou ~35% menor: sem o índice repetido, sem refazer o diagnóstico inteiro e sem indentação.
+   • "Copiar" virou "Copiar tudo" (o relatório completo em JSON).
+
+🔭 Enxergar mais do WhatsApp (v1.16)
+   • NOVIDADES DO WHATSAPP (Configurações › Diagnóstico, cartão abaixo da "Saúde das funções") — a cada autoteste (ao abrir e
+     de 30 em 30 min) o painel compara os MÓDULOS e as CHAVES do WhatsApp com a leitura anterior, mesmo sem o WhatsApp mudar
+     de versão (o servidor liga funções para a sua conta sozinho). Mostra: chaves que VIRARAM liga/desliga (um beta chegando),
+     chaves novas, módulos novos e o que sumiu. A primeira leitura só guarda a base; as novidades aparecem a partir da segunda.
+     O "Copiar resumo" passa a trazer uma linha com isso.
+   • O QUE CADA CHAVE CONTROLA (Diagnóstico › Laboratório › "🧩 Descobrir o que cada chave controla") — lê o texto dos módulos do
+     WhatsApp (leva alguns segundos; só quando você clica ou gera o mapa) e mostra em cada chave "🧩 Usada em: <módulos>", uma
+     pista direta do que ela liga. Fica guardado até você reler.
+   • O MAPA agora leva o cruzamento chave→módulo ("referencias") e as últimas novidades. Limite: só enxerga o que o servidor
+     mandou para a SUA conta e os módulos já carregados; telas que ainda não foram abertas podem ter módulos fora do mapa
+     (gere o mapa de novo depois de abrir a tela que quer investigar).
+
+🔧 Ajustes pelos dados reais (v1.17)
+   • "Descobrir o que cada chave controla" refeito: o WhatsApp usa o carregador da Meta (não o webpack), e o método da v1.16 não
+     achou nenhuma chave. Agora o painel carrega os ~330 módulos "portão" (Gating/Gate/Experiment…), lê o NOME das funções
+     (ex.: isStatusLikesSendEnabled), o texto delas (onde aparece o nome da chave) e o valor ATUAL de cada recurso (ligado ou
+     desligado para a sua conta). O mapa leva esse catálogo em "referencias.portoes". Gere o mapa de novo para eu analisar.
+   • Novidades do WhatsApp sem ruído: módulos que aparecem/somem na MESMA versão são só telas carregadas sob demanda, então
+     não contam mais; módulo só é novidade quando a versão muda e o nome nunca tinha aparecido. Chaves contam sempre.
+   • A faixa "Arquivadas" agora é escondida pelo CSS (identificador do próprio WhatsApp) com o valor guardado: não aparece nem
+     no primeiro desenho da página.
+   • Capturar estrutura da tela agora espera 5 s, para você deixar a tela no estado do problema (ex.: digitar "/" no campo).
+     As mensagens saíram da lista de "camadas por cima do campo".
+   • Diagnóstico sem alarme falso: campo vazio (botão enviar não existe) e recursos ligados por você no Laboratório deixam de
+     contar como aviso. O painel também para de desenhar vagas quando a aba do WhatsApp está em segundo plano.
+   • Laboratório mostra "Você já testou N: X apareceram, Y não".
+
+🧹 Faxina do Laboratório (v1.18) — de 79 sugestões para 23 entradas (uma por recurso; as chaves "irmãs" ligam junto).
+   • PACOTE QUE FUNCIONA (13 entradas, 30 chaves): tudo o que já apareceu na sua conta fica na aba "✔ Funcionando" com UM
+     interruptor que liga/desliga o pacote inteiro (antes eram 30 interruptores a ligar à mão).
+   • EM TESTE (10 entradas): as que você ligou e ainda não marcou ✔/✖ e as sem teste (Admin de grupo: pedidos e perguntas, Pix,
+     Status: repostar, Texto: trecho/menção/spoiler, Enquetes: adicionar opções, Gerenciador de clientes…).
+   • SAÍRAM: as 27 que você testou e NÃO aparecem (dependem do servidor), as 2 que já vêm ligadas no WhatsApp (enquete com prazo
+     e votos ocultos) e as redundantes (a do "/" nativo, que o AtendeZap já cobre). Não voltam a ser sugeridas; ficam só em
+     "Avançado: todas as chaves". Se o WhatsApp um dia ligar uma delas, o cartão "Novidades do WhatsApp" avisa.
+   • A aba "Não funcionou" deixou de existir. No Diagnóstico, só "Copiar resumo" e "Analisar de novo" ficam à vista; baixar
+     relatório, copiar tudo, capturar estrutura e gerar mapa foram para "Mais opções".
+
+👥 Conjuntos de grupos e excedente (v1.19)
+   • A aba "Sem duplicar" virou "CONJUNTOS" (Grupos › Conjuntos). Ao criar/editar um conjunto, a lista mostra SÓ os grupos em que
+     você é admin, com membros/limite e o final do código (para distinguir grupos de nome igual). A escolha fica GRAVADA no conjunto,
+     como nos destinos do envio em lote, e vale para tudo abaixo.
+   • PAINEL DO CONJUNTO (abra o "Painel" no cartão): membros, vagas e pedidos pendentes de cada grupo; botão 📊 com os votos da
+     última enquete do grupo; "Convite do próximo com vaga" (link + cartão de convite no chat aberto); e "Padronizar" (mesma
+     descrição, nome, ícone, "só admins enviam" e "só admins editam" em todos os grupos, com confirmação).
+   • PEDIDOS: agora aprova só até CABER (o WhatsApp recusa o que passa do limite). Com "Se o grupo encher, adicionar o excedente
+     direto em outro grupo do conjunto" marcado, quem sobra é ADICIONADO no grupo do conjunto com mais vagas (e sai da fila do grupo
+     cheio). Quem a privacidade não deixa adicionar fica com um convite exclusivo pronto: o botão "Enviar convite" manda o cartão
+     (20 por vez, 4 s entre cada). No máximo 40 adições por execução; o resto continua pendente.
+   • NOVA AÇÃO "ITEM ESPECIAL" nas respostas rápidas (✨, em Mensagens): chave Pix, localização, enquete ou convite de grupo.
+   • Cuidado: adicionar pessoas em grupo que não pediram aquele grupo, e mandar convite a quem não é contato, em quantidade, pode
+     levar o WhatsApp a restringir o número. Comece com poucas pessoas e confira o resultado.
+
+🗂️ Grupos só na aba Grupos + conserto (v1.20)
+   • NOVO: todo grupo aparece SOMENTE na aba "Grupos", fixado ou não. Nas abas Tudo, Não lidas e Favoritas ele some. Não age: na
+     própria aba Grupos, na BUSCA (digitou, mostra o grupo), nas listas que você criou, na tela de Arquivadas e com janela aberta
+     (Encaminhar…). Funciona pelo próprio filtro do WhatsApp (por isso não deixa buracos na lista). Liga/desliga em Configurações ›
+     Partes do painel › "Grupos só na aba Grupos" (já vem ligado). O Diagnóstico tem um check dizendo se a regra pegou.
+     Observação: ao carregar a página os grupos podem aparecer por alguns segundos, até o painel assumir; e, com a regra ligada,
+     grupo com mensagem nova NÃO aparece em "Não lidas" (só dentro da aba Grupos).
+   • CONSERTO: a v1.19 tinha perdido, na ponte com o WhatsApp, os métodos das VAGAS nos grupos, da identificação das linhas
+     (Ocultas de grupos de mesmo nome), das Novidades do WhatsApp e do cruzamento do mapa. Restaurados. Quem instalou a v1.19 viu
+     "Vagas nos grupos" quebrado e o aviso "O WhatsApp mudou algo".
+   • Trava nova: os testes agora falham se a ponte deixar de ter qualquer método que o painel chama, e o teste completo compara os
+     resultados antigos que não podem piorar (vagas, linhas, novidades, cruzamento).
+
+✨ Assistente de IA (v1.21) — Gemini
+   • CONFIGURAR (Configurações › Geral › Assistente de IA): cole a chave do Google AI Studio (aistudio.google.com/apikey) e clique em
+     "Testar a chave e listar os modelos". O painel mostra os modelos que a SUA chave enxerga (os nomes mudam: nada fixo no código) e
+     já escolhe o flash estável mais novo; dá para trocar. Há um limite de pedidos por dia e o contador de uso. A chave fica só neste
+     navegador: não entra no backup (nem no completo) nem no relatório do Diagnóstico, e só o service worker da extensão a lê.
+   • CRIAR E MELHORAR RESPOSTAS (editor de Respostas rápidas › "✨ Assistente de IA"): converse ("quando pedirem o Pix, mande a chave e
+     depois a localização") ou use os botões (Melhorar a redação, Deixar mais curto, Tom mais amigável, Corrigir o português). A IA
+     monta o fluxo com as ações que o AtendeZap já tem, vê o que está no editor e mostra uma PROPOSTA; nada muda até você clicar em
+     "Aplicar ao editor" (e dá para "Desfazer"). Título e atalho só são preenchidos se estiverem vazios. Ela não inventa dados (Pix,
+     telefone, endereço: pede no aviso), não bloqueia contatos, não cria anexos (mantém os que já existem) e só usa as etiquetas,
+     respostas e grupos que você realmente tem. Tudo o que ela devolve passa por uma validação antes de chegar ao editor.
+   • DIAGNÓSTICO EXPLICADO (Configurações › Diagnóstico › "✨ Explicar com IA"): a IA lê o resumo técnico e explica, em português, o que
+     está errado, o que você pode fazer e o que enviar ao Claude. Ela vê só o resumo (nenhuma conversa) e com telefones, e-mails e
+     CPF/CNPJ mascarados. Ela NÃO conserta o código da extensão.
+   • Privacidade: mensagens de clientes nunca são enviadas. No plano gratuito do Google o conteúdo enviado pode ser usado para melhorar
+     os produtos; nos planos pagos normalmente não. Confira os termos atuais da sua conta.
+
+🤖 Atendente IA + assistente que cria a opção inteira (v1.22)
+   • ASSISTENTE DE RESPOSTAS (editor › "✨ Assistente de IA"): agora a IA monta a resposta INTEIRA (título, atalho e todas as ações) e
+     JÁ COLOCA no editor; é só revisar e salvar. "↶ Desfazer" volta ao que estava. (Antes ela só mostrava uma proposta e o botão
+     ficava escondido na caixa de rolagem.) Dá para desligar em "Colocar a proposta no editor sozinha".
+   • ATENDENTE IA (Respostas rápidas › aba "Atendente IA"): um robô que atende os contatos. Vem DESLIGADO. Três modos:
+       – Só sugerir: lê as mensagens novas, prepara a resposta e você aprova ("Enviar", "Colocar no campo" ou "Descartar").
+       – Automático: responde sozinho. Comece pelo "Só sugerir" e passe ao automático quando confiar.
+     Só atende conversas INDIVIDUAIS; nunca grupos. Se VOCÊ responder numa conversa, o robô se cala nela (12 h, ajustável).
+     Chama você (e para) quando o cliente pede um atendente (palavras que você define), reclama, ou quando a IA não tem certeza/informação.
+     Na 1ª resposta do dia se identifica como "🤖 Assistente virtual". Respostas com "digitando…" e pausa, e com limites (por contato/dia,
+     por hora, intervalo mínimo). Pode atuar sempre, só fora ou só dentro do seu horário.
+   • TREINAR: em "Sobre a empresa", "Serviços, preços e regras", "Regras extras", Perguntas frequentes e Exemplos de bom atendimento você
+     ensina a IA (não é treino do modelo: são as suas instruções e exemplos, lidos a cada conversa). O "Testar a IA" mostra o que ela faria
+     com uma mensagem de cliente, sem enviar; "Salvar como exemplo" guarda a resposta certa para as próximas vezes.
+   • RESPOSTAS RÁPIDAS NO ROBÔ: você marca quais ele pode executar (Pix, documentos, localização…); só aparecem as sem ação destrutiva.
+   • SEGURANÇA: a IA nunca inventa links (só os que estão no seu texto), não pede senha/cartão e, na dúvida, chama você. Cada decisão é
+     validada antes de enviar. Registro das ações em "Registro do robô". Para ligar é preciso aceitar o aviso de privacidade: com o robô
+     ligado, as mensagens dos clientes nas conversas atendidas são enviadas à API do Google (Gemini). Avise seus clientes quando necessário.
+   • CUIDADO: respostas automáticas em volume por uma extensão podem levar o WhatsApp a restringir o número. Comece devagar.
+
+📦 A IA vê as cargas e aprende com o dia a dia (v1.23)
+   • CARGAS NA IA (Atendente IA › "Cargas da planilha"): a IA consulta a MESMA lista de cargas que vai para os grupos (pelo link da lista de
+     frete) e responde "tem carga saindo de Goiânia?" só com o que está na lista. Ela entende origem, destino, perfil do veículo (toco,
+     truck, carreta, bitrem…), carroceria e carga; se faltar algo pergunta UMA coisa por vez; se nada combina, diz com franqueza e pergunta
+     o perfil para avisar depois. "Ver o que a IA enxerga" mostra a lista que ela está lendo. Nunca inventa carga, valor ou contato.
+   • MEMÓRIA IA (Respostas rápidas › aba "Memória IA"):
+       – O que as pessoas procuram: rotas, veículos, carrocerias e cargas mais pedidas (hoje/7/30 dias) e o que ficou SEM carga.
+       – Para você decidir: quando a IA passa um caso para você e VOCÊ responde, a pergunta (sem telefone) + a sua resposta viram uma
+         sugestão de aprendizado. "🧠 Aprender com o dia" pede à IA para propor vocabulário (apelidos de cidade/veículo), regras e perguntas
+         que você deve responder. Você Aprova, Edita ou Rejeita. SÓ o aprovado vale nas respostas; o que um cliente escreve nunca ensina a IA.
+       – Memória aprovada: lista com pausar/apagar. Perfis de motoristas (opcional): veículo/carroceria/regiões lembrados só neste navegador.
+   • PLANILHA (Memória IA › "Gravar na planilha"): o aprendizado também pode ficar na sua planilha, nas abas "IA - Demanda", "IA - Aprendizado" e
+     "IA - Memória" (a equipe vê e edita; "Não" na coluna Ativo faz a IA esquecer). PARA ATIVAR: 1) abra o Apps Script da planilha, apague o
+     conteúdo do arquivo AtendeZap e cole o arquivo AtendeZap.gs desta pasta (planilha/); 2) troque 'troque-esta-senha' por uma senha sua;
+     3) Implantar › Gerenciar implantações › ✏️ › Nova versão (o link não muda); 4) no AtendeZap cole a mesma senha, clique em "Testar conexão".
+     O que grava é seguro: nada vira fórmula e a pergunta vai sem telefone/e-mail. Sem a atualização do script, tudo funciona, só não grava na planilha.
+
+
+🩺 Por que o robô parava de responder + como ele se mantém vivo (v1.24)
+   • O que os dados mostraram: o relatório de 18/10 não tinha nenhum erro (51 ✔ / 0 ✖), mas o autoteste de 30 em 30 min ficou 3 horas sem rodar
+     (03:37 → 06:36): o COMPUTADOR ou a ABA estavam suspensos. Nessa hora o robô não existe. Além disso o WhatsApp Web se atualiza e
+     recarrega a página várias vezes por dia (5 vezes na madrugada de 18/10); a extensão reinicia sozinha a cada vez.
+   • AGORA, com o robô ligado, a extensão pede ao Chrome para NÃO suspender o computador e NÃO descartar a aba (opção "Manter o computador
+     acordado"; nova permissão "power"; a tela pode apagar). Para o Windows não suspender mesmo assim, deixe "Suspender: nunca" na tomada.
+     No Chrome: Configurações › Desempenho › "Manter estes sites sempre ativos" › web.whatsapp.com.
+   • Mesmo assim, se houver parada, o robô percebe (batimento de 1 min), registra "ficou parado das X às Y" e, ao voltar, RESPONDE o que ficou
+     sem resposta (conversas individuais com mensagem não lida das últimas 3 horas, uma de cada vez; ajustável; botão "Responder pendentes agora").
+   • DEFEITOS MEUS CORRIGIDOS: (1) se o cliente respondia em até 15 s depois da resposta do robô, a mensagem dele era ignorada para sempre; agora
+     o robô tenta de novo em 16 s. (2) Se o WhatsApp parasse de responder à extensão, a conversa ficava presa e o robô nunca mais atendia aquele
+     contato; agora as chamadas têm tempo limite e há um destravamento automático (2 min). (3) Quando a IA falhava (cota do Google, modelo, rede)
+     o robô passava tudo para você em silêncio; agora avisa na tela e explica.
+   • ESTADO DO ROBÔ (Atendente IA, no topo): mostra se está ligado, há quanto tempo chegou a última mensagem, uso da IA hoje, o que o está
+     impedindo de responder, e as conversas PAUSADAS (com "Retomar" e "Retomar todas"). "Zerar limites de hoje" libera o limite por contato.
+     O Diagnóstico ganhou o check "Funcionamento do robô" e o relatório passou a trazer o estado do robô (sem dados de clientes), para eu poder
+     apontar a causa quando algo parar.
+
+
+⚡ Robô mais fluido e ativo (v1.25)
+   • O QUE OS DADOS MOSTRARAM (relatório de 18/10 ~07:50): 2 vezes "IA indisponível: a IA demorou demais para responder (60 s)" e cada uma virou
+     "passou para humano"; 1 resposta perdida por "o WhatsApp não respondeu a tempo (composing)"; e os "retomando" repetidos eram VOCÊ apertando
+     "Responder pendentes". Causas: (1) os modelos Gemini 3.x vêm com o "raciocínio" ligado no máximo, o que leva dezenas de segundos numa resposta
+     simples; (2) uma falha técnica da IA era tratada como decisão de chamar humano (pausa + silêncio); (3) pausas longas e limites baixos.
+   • AGORA: FALHA DA IA ≠ "CHAMAR HUMANO". Se a IA demorar ou falhar, o robô NÃO pausa a conversa nem escreve ao cliente: tenta de novo (20 s, 1 min,
+     3 min, 10 min). Só depois de várias tentativas avisa você (sem silenciar o contato).
+   • IA MAIS RÁPIDA: o robô pede à IA o raciocínio mínimo (com recuo automático se o modelo não aceitar), usa tempo limite de 30 s, mantém a lista de
+     cargas pronta (atualizada em segundo plano) e deixa escolher um MODELO SÓ PARA O ROBÔ (ex.: um "flash-lite", mais rápido). O "Estado do robô"
+     mostra o tempo médio da IA e avisa se estiver lenta.
+   • MENOS PAUSAS: quando falta uma informação (como o valor), o robô RESPONDE o que sabe, diz que um atendente confirma o resto e AVISA você, sem se
+     calar. Ele só fica em silêncio quando é para ficar (cliente irritado, assunto jurídico, pediu uma pessoa), e por 20 min (antes eram 12 h).
+     Quando VOCÊ responde numa conversa, ele se cala por 2 h (ajustável). Há "Retomar" e "Retomar todas".
+   • MAIS ATIVO: novos padrões (30 respostas/contato/dia, 80/hora) e "Ritmo do robô": ⚡ Rápido (começa em 1–3 s), Normal (2–5 s), 🐢 Calmo (6–14 s).
+     Quem já tinha o robô configurado é atualizado uma vez (os seus textos e respostas liberadas ficam). O "digitando…" nunca mais derruba uma resposta.
+   • Mensagens automáticas em volume ainda podem levar o WhatsApp a restringir o número: se quiser mais prudência, use o ritmo Calmo e limites menores.
+
+
+⏱️ Tempos de resposta (v1.26)
+   • O QUE É MEDIDO (a cada atendimento do robô):
+       1) TEMPO DA IA: quanto o Gemini levou para decidir (e cada FALHA da IA, com o tempo gasto) — para acompanhar a velocidade e a confiabilidade.
+       2) CLIENTE ESPEROU: do primeiro recado dele, ainda sem resposta, até ele receber a nossa (é o tempo que ele sente). No modo "Só sugerir",
+          até a sugestão ficar pronta.
+       3) CLIENTE DEMOROU A RESPONDER: quanto a pessoa levou para responder a nossa última mensagem.
+       4) ATENDENTE: depois que o robô passa o caso para você, em quanto tempo VOCÊ respondeu na conversa.
+   • ONDE VER: Respostas rápidas › "Memória IA" › cartão "Tempos de resposta" (hoje / 7 dias / 30 dias): mostra a MEDIANA (o valor do meio, que um
+     caso extremo — como um cliente que voltou no dia seguinte — não distorce) e o "pior 1 em cada 10". O relatório do Diagnóstico traz o resumo das últimas 24 h.
+   • NA PLANILHA: a aba "IA - Demanda" ganha 3 colunas (Tempo da IA em ms, Cliente esperou em s, Cliente demorou a responder em s) e nasce a aba
+     "IA - Tempos" (falhas da IA e o tempo do atendente após o repasse). PARA ATIVAR: cole de novo o AtendeZap.gs (Apps Script), mantendo a sua senha
+     na linha var TOKEN_IA, e faça "Nova versão" da implantação. A aba antiga NÃO é refeita: o script só completa os títulos das colunas novas e
+     não mexe nos seus dados. O "Testar conexão" avisa se o script ainda está antigo; com o script antigo tudo funciona, só os tempos não vão para a planilha.
+
+
+💬 Treinar a IA conversando + limites do que ela pode pedir/falar (v1.27)
+   • TREINAR CONVERSANDO: Respostas rápidas › Atendente IA › "💬 Treinar conversando". Abre uma conversa de teste: VOCÊ é o cliente e a IA responde com o
+     seu treino de verdade (empresa, perguntas, exemplos, cargas, memória e limites), mas NADA é enviado ao WhatsApp. Cada mensagem usa 1 pedido da IA.
+     Embaixo de cada resposta da IA:
+       👍 Está bom           → guarda a resposta como exemplo de bom atendimento.
+       ✏️ Corrigir           → você escreve como deveria ter respondido; vira exemplo de treino.
+       🚫 Nunca fazer isso   → vira uma "regra de ouro" que a IA obedece sempre.
+       🙅 Fora do atendimento → a IA passa a não conversar sobre esse assunto.
+     Também há "Ensinar uma regra" (escreva com as suas palavras) e "Mensagens prontas para testar". A resposta mostra o que a IA faria (responder,
+     executar uma resposta rápida, chamar você ou ficar quieta), a confiança, o tempo e o que ela entendeu (origem, destino, veículo, carga).
+   • TESTES DE SEGURANÇA: "Rodar os testes" faz 10 situações delicadas de uma vez (cliente que manda o CPF, tenta ver as instruções, está irritado,
+     pergunta se é robô, puxa assunto de política, pede um atendente, pergunta o que precisa para o cadastro…) e marca ✔ ok / ⚠ revisar / ✖ falha.
+   • O QUE A IA NÃO PODE PEDIR NEM TRATAR (na aba Atendente IA):
+       - DADOS QUE ELA NUNCA DEVE PEDIR: CPF, CNPJ, RG, CNH, senha, cartão/CVV, dados bancários, data de nascimento, endereço residencial, foto de
+         documento/selfie, código de verificação — e qualquer outro que você escrever (ex.: placa do veículo). Já vêm marcados: senha, cartão, código e
+         dados bancários. Vale no robô e na conversa de treino.
+       - ASSUNTOS FORA DO ATENDIMENTO: política, religião, assuntos pessoais, jurídico, médico, conteúdo adulto, concorrentes, futebol… + os seus. Você
+         define o que o atendimento cobre e o que fazer quando o cliente puxar o assunto: responder uma frase educada e voltar ao atendimento | não
+         responder | chamar você.
+       - REGRAS DE OURO: as aprendidas no treino, com botão para apagar.
+   • É BLOQUEIO DE VERDADE, NÃO SÓ PEDIDO: se a IA tentar PEDIR um dado proibido, a mensagem não é enviada. O painel avisa a IA do erro e ela refaz a resposta
+     UMA vez; se insistir, o caso passa para você com o motivo ("a IA ia pedir um dado proibido: CPF"). Só conta como pedido quando a frase cita o dado e
+     pede (ex.: "me passe seu CPF", "qual a placa?"); "Nosso CNPJ é…" e "não precisamos do seu CPF" não são bloqueados.
+   • O que o CLIENTE escreve nunca ensina a IA sozinho (continua valendo): o treino é só o que VOCÊ faz aqui.
+
+   • v1.27.1 (acertos): o aviso de falha da IA agora diz que o robô tenta de novo sozinho (antes dizia que estava passando as conversas para você, o
+     que deixou de ser verdade na v1.25); a tela de treino mostra quantos pedidos à IA já foram usados hoje (treino e robô dividem o mesmo limite) e
+     a bateria de testes avisa que pode gastar de N a 2N pedidos (um cenário refeito pelo bloqueio de dado proibido usa 2).
+
+
+🛡️ Quem o robô atende, robô único e privacidade (v1.28)
+   • QUEM O ROBÔ ATENDE (Atendente IA › Regras). Antes ele respondia QUALQUER conversa individual, até a família (apareceu "Alice (filha)" recebendo
+     resposta do robô). Agora você escolhe: "Só números que NÃO estão nos meus contatos" (padrão para quem instala agora) | "Todos os contatos
+     (menos a lista)" | "Só quem tem as etiquetas escolhidas". Vale em qualquer modo: "Nunca atender nomes com estas palavras" (já vem com filha, filho,
+     esposa, marido, mãe, pai, irmão, irmã, avó, avô, neta, neto, sogra, sogro, namorada, namorado, amor; a palavra precisa aparecer INTEIRA no nome:
+     "Paiva" não vale como "pai") e "Nunca atender estes contatos" (botão no cartão "Precisam de você" e no cartão Regras, para a conversa aberta).
+     QUEM JÁ USAVA O ROBÔ continua com "Todos os contatos" (senão os motoristas que você já salvou, como "(Terceiro)", parariam de ser atendidos sem aviso),
+     mas com os nomes de família ignorados. No modo restrito, se não der para ler o contato, o robô NÃO responde (na dúvida, fica quieto). O Painel mostra
+     quantas conversas foram ignoradas pela regra e oferece "Atender também contatos salvos".
+   • ROBÔ ÚNICO (Ajustes › Robô único): só UM computador responde por vez (o WhatsApp Web em dois computadores faria dois robôs responderem ao mesmo
+     cliente). A planilha faz de árbitro: quem liga primeiro fica com o robô e renova a cada minuto; o outro fica em espera e assume sozinho se o primeiro
+     parar por 2,5 min. Desligar o robô libera na hora. Precisa do link da planilha, da senha e do script novo (versão 3); com script antigo o painel avisa
+     "trava inativa" e segue sem trava.
+   • RESTAURAR UM BACKUP NUNCA LIGA O ROBÔ e exige aceitar de novo o aviso de privacidade (num segundo computador, dois robôs responderiam).
+   • PONTE MAIS SEGURA: pedidos que ENVIAM, BLOQUEIAM ou REMOVEM só são executados com a chave do painel; um script solto na página não consegue. Limite
+     honesto: um script que ESCUTE as mensagens da página ainda pode ver a chave (isto barra pedidos soltos, não é um cofre). O relatório do Diagnóstico
+     mostra quantos pedidos vieram de fora e quantos foram recusados.
+   • PRIVACIDADE (Ajustes): guardar registro, demanda e tempos por N dias (padrão 90; apaga sozinho); "Apagar dados de um contato", "Apagar tudo do robô neste
+     navegador" e "Limpar a planilha (dados antigos)". Confira se a chave do Gemini é de um projeto com faturamento ativo (nível pago): nos termos do nível
+     gratuito o Google pode usar o conteúdo enviado para melhorar seus produtos. Salvar nunca falha em silêncio: se o navegador não gravar, o painel avisa.
+   • PARA ATIVAR NA PLANILHA: cole de novo o AtendeZap.gs (mantendo a sua senha na linha var TOKEN_IA) e faça Nova versão da implantação (versão do script: 3).
+
+🧭 Menus, diálogos, acessibilidade e áudio (v1.29)
+   • O ATENDENTE IA AGORA TEM 4 SUB-ABAS: Painel (modo, estado do robô, "Precisam de você", registro) | Treino ("Treinar conversando" no topo, o que a IA
+     precisa saber, perguntas e exemplos, respostas rápidas, cargas) | Regras (quem atende, dados e assuntos proibidos, regras de ouro, quando chamar você) |
+     Ajustes (horários, ritmo e limites, robô único, áudios, privacidade). Antes era uma rolagem única com 10 cartões.
+   • DIÁLOGOS DENTRO DO PAINEL: no lugar das janelas do navegador (que travam a página), confirmações e perguntas aparecem no painel, com Esc para cancelar,
+     Enter para confirmar e botão vermelho nas ações que apagam.
+   • LARGURA DO PAINEL AJUSTÁVEL (Configurações › Posição do painel, 320 a 640 px) para os textos não ficarem espremidos.
+   • ACESSIBILIDADE: foco visível ao navegar pelo teclado, botões de ícone com nome para leitor de tela, abas com papel e estado, e menos movimento para quem
+     prefere (prefers-reduced-motion).
+   • ÁUDIOS (experimental, desligado por padrão; Ajustes › Áudios dos clientes): a IA transcreve o áudio do cliente (até 3 min) para o robô entender o
+     pedido; sem isso o robô pede que a pessoa escreva. O ÁUDIO vai ao Google (Gemini) e cada áudio usa 1 pedido da IA. Há o botão "Testar com o último
+     áudio desta conversa" para você conferir no seu WhatsApp antes de confiar. NÃO FOI VALIDADO NO WHATSAPP REAL (só no simulador).
+   • A permissão "tabs" do Chrome foi retirada (não era necessária); um teste confirma que achar a aba do WhatsApp e mantê-la acordada continuam funcionando.
+
+
+🔌 Quando o Google falha: modelo reserva e erros explicados (v1.30)
+   • O QUE OS SEUS PRINTS MOSTRARAM: no treino apareceram "O serviço do Google está instável (503)" e "Limite de uso da API do Google atingido (cota)". Os dois vêm
+     do GOOGLE (503 = serviço sobrecarregado; 429 = cota ou limite por minuto), não do AtendeZap. O contador "Hoje: 0 pedido(s)" não conta pedidos que
+     falharam, por isso parecia que o limite local (100/dia) nem tinha sido usado. Mas o AtendeZap lidava mal com isso, e foi corrigido:
+   • ERROS CLASSIFICADOS (chave, modelo, cota do dia, limite por minuto, serviço instável, tempo esgotado, sem rede) com a mensagem certa em português; no limite
+     por minuto o painel mostra "tente de novo em ~N s" (o tempo que o próprio Google informa).
+   • MODELO RESERVA (Configurações › Assistente de IA › "Modelo reserva"): se o principal falhar por instabilidade, tempo esgotado ou cota, o AtendeZap tenta o
+     reserva NA HORA, sem o cliente esperar 20 s, 1 min, 3 min. Um modelo "flash-lite" costuma ter limites maiores. Vale para o robô, o treino e o assistente.
+   • O ROBÔ NÃO INSISTE ONDE NÃO ADIANTA: cota do dia, chave inválida ou modelo inexistente não melhoram com o tempo, então ele avisa você na hora (pendência +
+     aviso) em vez de tentar 4 vezes; no limite por minuto ele espera o tempo que o Google pediu (de 5 a 90 s); em instabilidade segue a escada de antes.
+   • FALHAS DO DIA aparecem no cartão da IA ("Falhas de hoje: serviço instável ×2, cota do dia ×1 · modelo reserva usado 3×") e no relatório (iaFalhasHoje).
+   • TREINO: uma falha técnica agora aparece COMO FALHA ("A IA não respondeu (erro técnico, não é uma decisão dela)"), com o botão "Tentar de novo" e sem os botões
+     de ensinar (antes aparecia "Chamaria um humano · confiança 0%" e dava para "ensinar" a IA em cima de um erro). A bateria de testes PARA na primeira falha técnica
+     (antes gastava os 10 pedidos para devolver 10 avisos sem sentido). As linhas pequenas da resposta não ficam mais coladas ("20 sChamaria você").
+   • A barra de largura do painel agora usa a cor verde do tema.
+   • O QUE FAZER AGORA: abra aistudio.google.com e veja os limites e o uso do modelo que você escolheu (o plano gratuito tem limites baixos por minuto e por dia,
+     sobretudo em modelos novos). Escolha um modelo reserva diferente do principal, ou ative o faturamento no projeto da chave.
+
+
+🔑 Várias chaves do Gemini com troca automática (v1.31)
+   • Configurações › Assistente de IA: o campo "Chave da API" agora tem um botão "+ Adicionar outra chave" (até 6). Cada novo campo é uma chave reserva; o ✕ remove.
+     O botão de teste vira "Testar as chaves e listar os modelos" e mostra, chave por chave, qual funciona ("✔ funciona") e qual não ("✖ …").
+   • QUANDO TROCA DE CHAVE: só quando o problema é DA CHAVE: inválida, cota do dia esgotada ou limite por minuto. Aí o AtendeZap usa a próxima na hora, sem o cliente
+     esperar. Se o problema for o serviço do Google instável ou tempo esgotado, outra chave não ajuda: nesses casos vale o MODELO RESERVA (v1.30) e a repetição do robô.
+   • A CHAVE QUE FALHOU "DESCANSA": vai para o fim da fila e a tela mostra "Descansando até HH:MM" (1 h se inválida; até ~05:00 de Brasília se a cota do DIA acabou, que é
+     quando o Google renova; pelo tempo que o Google pedir se for limite por minuto). Assim os pedidos seguintes não perdem tempo numa chave esgotada. Se TODAS falharem,
+     ele tenta de novo mesmo assim e a mensagem diz "Nenhuma das N chaves funcionou…". O robô não insiste quando é erro que não passa com o tempo (cota do dia, chave inválida).
+   • A tela mostra por chave os pedidos e as falhas de hoje; o treino mostra "· chave 2" quando a primeira falhou e outra respondeu; o relatório traz quantas chaves existem e
+     quais estão descansando (só o final e o tamanho da chave, nunca o segredo). As chaves ficam só neste navegador: não entram no backup nem no relatório.
+   • ATENÇÃO (a troca só adianta assim): no Google, a COTA é por PROJETO, não por chave. Duas chaves do MESMO projeto dividem a mesma cota; para a troca ajudar, crie as
+     chaves em projetos diferentes no AI Studio. E confira os termos do Google: usar várias chaves só para driblar o limite gratuito pode não ser permitido; o uso legítimo é
+     redundância (uma chave cair não derrubar o atendimento). Para volume de verdade, o caminho certo é ativar o faturamento do projeto.
+   • Quem já tinha uma chave continua como estava (vira a "Chave da API" da lista); nada precisa ser refeito. Também funciona com o modelo reserva: cada chave tenta o principal
+     e, se falhar por instabilidade ou cota, o reserva, antes de passar para a próxima.
+
+
+🩺 Diagnóstico mais fiel e mais limpo (v1.32)
+   • "NÃO TESTADO" NÃO É AVISO. O seu relatório de 18/10 mostrou que 4 de 15 leituras (26%) tinham "6 avisos", todos porque não havia conversa aberta (5 testes da tela + o
+     "Conversa aberta" viravam ⚠). Agora viram o quarto estado, ○ "não testado": cinza, fora da contagem de avisos, fora de "Atenção" e fora da comparação "desde o relatório
+     anterior" (✔ → ○ não é piora, ○ → ✔ não é melhora). O resumo diz "Saúde: ✔ 46 · ⚠ 0 · ✖ 0 · ○ 6 não testados (sem conversa aberta)". Uma função só fica ○ se TODAS as
+     checagens dela estiverem sem teste; basta uma ✔ para ela contar como funcionando.
+   • COM "SÓ AVISOS E PROBLEMAS" LIGADO E TUDO BEM, a grade de 13 quadradinhos iguais vira uma linha: "✔ 13 função(ões) funcionando — nada a corrigir" (e "○ N sem teste (abra uma
+     conversa)" quando for o caso). Só aparecem quadradinhos para o que está ⚠ ou ✖.
+   • SELO DO CABEÇALHO COM CHECAGEM PRÓPRIA: "Selo do cabeçalho (largura)" mede o selo do AtendeZap na conversa (hoje 228 px, 4 ícones) e avisa se passar de 240 px, para a regra
+     "nenhum elemento novo pode alargar o selo" ser conferida sozinha a cada autoteste. O relatório também traz `selo: {largura, botoes}`.
+   • O RELATÓRIO DO ROBÔ AGORA MOSTRA a quantidade de palavras de nome que o robô não atende (`nuncaPalavras`), os dias de retenção de dados (`retencaoDias`) e se a trava de robô
+     único está ligada (`travaUnico`), para você conferir a regra de escopo sem abrir a tela.
+   • O botão "Mais opções (arquivos para enviar ao Claude)" virou "Avançado: arquivos para suporte (enviar ao Claude)".
+
+
+🔭 Novidades do WhatsApp com o que mexe no que você usa (v1.33)
+   • No Diagnóstico › "Novidades do WhatsApp", cada atualização agora mostra etiquetas pequenas com quantos módulos novos tocam em GRUPOS, BUSINESS e ORGANIZAÇÕES (ex.: "Grupos 57",
+     "Business 9"), uma linha de destaque somando as últimas leituras, e cada módulo relevante da lista traz a que se refere ("… · Grupos", "… · Business", "… · Grupos/Organizações").
+   • É SÓ PELO NOME dos módulos (palavras inteiras: "Border" não vira "order"; "participantes" sozinho é de chamada, não de grupo). Serve para você saber onde olhar; NÃO quer dizer
+     que o recurso já esteja ligado para você (as chaves liga/desliga continuam sendo mostradas à parte).
+   • A contagem é feita sobre a lista COMPLETA de módulos novos (antes só ficavam guardados 60 nomes), e dos 60 nomes guardados os relevantes vêm primeiro. O resumo do relatório ganhou
+     "mexem com o que você usa: Grupos N, Business N". Leituras antigas, sem a contagem guardada, usam os nomes que sobraram (podem mostrar menos do que houve).
+   • Para o seu caso: nas 5 últimas atualizações o Google trouxe 57 módulos de "participantes de grupos vinculados" (comunidades), 9 de conexão direta do Business e 18 de "Org".
+
+
+🧷 Grupos aparecendo e sumindo na aba Tudo (v1.33.1)
+   • O QUE VOCÊ VIU: os grupos ("Cargas Geral - Transportes Poloni") apareciam na aba Tudo e sumiam de novo. O filtro "Grupos só na aba Grupos" dependia de 3 coisas lidas da tela e qualquer
+     oscilação delas fazia os grupos voltarem por um instante. As causas encontradas no código:
+       1) QUALQUER elemento com role="dialog" na página (o WhatsApp usa isso em avisos e dicas que duram segundos) era tratado como "janela aberta" e DESLIGAVA o filtro. Agora só conta
+          janela DE VERDADE (visível e modal ou grande, como o "Encaminhar para…") aberta há mais de 0,7 s; dica ou aviso pequeno, ou janela que abre e fecha rápido, não mexem no filtro.
+       2) Quando o WhatsApp redesenha a barra de abas, a aba ativa ficava "ilegível" por um instante e o filtro também desligava. Agora segura a última aba por até 3 s SE a barra
+          sumiu (se a barra está lá e nenhuma aba conhecida está marcada, você abriu outra lista: vale na hora).
+       3) Cada mensagem nova num GRUPO (as suas fotos de carga) faz o WhatsApp reinserir o grupo na lista, e o filtro só reagia no próximo tique de 1 s. Agora a ponte reaplica o filtro
+          80 ms depois de cada mensagem de grupo.
+     Além disso há uma REDE DE SEGURANÇA: se com a regra ativa ainda sobrar linha de grupo na lista, o painel manda reaplicar (até 3 vezes seguidas; depois pausa 30 s para nunca virar laço).
+     O Diagnóstico mostra quantas vezes reaplicou ("reaplicada N×") quando um grupo teima em ficar.
+   • LIMITE HONESTO: eu não consigo ver o seu WhatsApp real. As 3 causas são as que o código permite apontar e cada uma foi reproduzida e corrigida no simulador; se os grupos ainda aparecerem,
+     abra Configurações › Diagnóstico logo depois e me envie o relatório (a linha "Grupos só na aba Grupos" mostra a aba, se há busca/janela e quantas reaplicações houve).
+   • Este pacote (1.33.1) também inclui a v1.33 (novidades do WhatsApp que mexem com grupos/Business/Organizações), que ainda não tinha sido entregue.
+
+
+🪟 Grupos aparecendo ao clicar num contato na conversa (v1.33.2)
+   • O QUE VOCÊ VIU: ao clicar no cartão de um contato dentro da conversa abre o painel "Mostrar contato" e, junto, os grupos apareciam na aba Tudo. Causa: o filtro "Grupos só na aba
+     Grupos" faz uma PAUSA quando há uma janela aberta, porque o seletor de "Encaminhar para…" usa a mesma lista e precisa mostrar os grupos. Mas ele tratava QUALQUER janela grande como
+     se fosse um seletor, inclusive as de informação como "Mostrar contato".
+   • AGORA SÓ PAUSA JANELA DE ESCOLHER CONVERSA: a que tem caixas de seleção, lista de opções, uma lista de conversas (3 ou mais linhas) ou um título como "Encaminhar…", "Nova conversa",
+     "Adicionar à lista", "Compartilhar…", "Selecionar contatos". Janelas de informação (Mostrar contato, dados do grupo) não pausam mais.
+   • OPÇÃO (Configurações › Grupos só na aba Grupos › "Quando uma janela abrir"): "Pausar só em janelas de escolher conversa" (recomendado) | "Nunca pausar" (os grupos ficam escondidos até no
+     Encaminhar; você ainda acha um grupo pela busca) | "Pausar em qualquer janela grande" (o comportamento antigo). A escolha vai no backup junto das outras configurações do painel.
+   • SE AINDA ESCAPAR ALGUM CASO: o Diagnóstico agora mostra a última janela vista e se ela pausou ("última janela: "Mostrar contato" → pausa: não (janela de informação)"), e o relatório traz
+     o bloco gruposSo (modo, aba, busca, reaplicações, última janela). Com isso eu ajusto a regra para o seu WhatsApp. Eu não consigo ver o seu WhatsApp real: a regra por estrutura (caixas,
+     lista, título) é a melhor leitura possível da tela, e a opção "Nunca pausar" existe justamente para o caso de uma janela de escolher conversa não ser reconhecida.
+
+
+👥 ACESSO DA EQUIPE: a planilha como painel de controle (v1.34)
+   • PARA QUE SERVE: você (administrador) decide, numa planilha do Google só sua, o que cada pessoa da equipe pode usar no AtendeZap, e recebe de volta um resumo técnico de saúde.
+     (Desde a v1.34.1 a extensão exige o convite para funcionar; veja "LOGIN OBRIGATÓRIO" abaixo. Desde a v1.35 NADA vem liberado de fábrica: veja "NADA VEM LIBERADO".)
+   • O QUE VOCÊ CONTROLA, POR PERFIL (Básico, Com robô, Administrador… você cria os que quiser) E POR PESSOA (exceções):
+       - cada parte do painel (as 14 "Partes do painel" + transcrição de áudio + diagnóstico avançado) em um destes estados:
+           bloqueado = some da tela e não funciona | desligado = vem desligado (a pessoa pode ligar) | ligado = vem ligado (a pessoa pode desligar) | obrigatório = sempre ligado, travado.
+           "ligado" e "desligado" são só o PADRÃO: valem uma vez por mudança; depois a pessoa decide. Célula vazia = BLOQUEADO (desde a v1.35: nada vem liberado de fábrica).
+       - limites do robô: modo máximo (desligado | sugerir | automático), respostas por contato por dia, respostas por hora; quantas chaves do Gemini; por quantos dias guardar dados.
+         O limite VALE sobre o que a pessoa salvou, sem alterar o que ela salvou: se você tirar o limite, ela volta ao que tinha.
+       - global: INTERRUPTOR DE EMERGÊNCIA (pausa o robô de todos, com a mensagem que você escrever), versão mínima, recado do dia, quando a extensão consulta (padrão 10 min), por quantos
+         dias a última configuração vale se a internet ou a planilha falhar (padrão 7; depois o robô desliga e a tela avisa), e se pede o resumo de saúde.
+       - desativar uma pessoa (Ativo = não) ou dar uma validade: tudo some para ela, menos Configurações (para desconectar).
+   • MUDANÇA NA PLANILHA VALE EM ATÉ "consultaMin" MINUTOS (padrão 10) e na hora ao clicar em "Atualizar agora" em Configurações › Acesso da equipe. Em emergência a consulta fica mais frequente (2 min).
+   • PASSO A PASSO (uma vez, uns 10 minutos):
+       ⚠ PLANILHA NOVA, PROJETO PRÓPRIO. Nunca cole o AdminControle.gs num projeto que já tem outro script (o Gerador de Anúncios, o AtendeZap.gs da lista de cargas…): no Apps Script todos
+         os arquivos de um projeto dividem os mesmos nomes de função (um sobrescreve o outro: foi assim que o menu "Gerador de Anúncios" sumiu) e o doGet/doPost só pode existir uma vez.
+         Também por segurança: quem tem acesso à planilha vê os códigos de todos e pode mudar permissões. Todos os nomes do arquivo começam com "adm", e o script avisa se a planilha já tem outros dados.
+       1) Crie uma planilha NOVA no Google Sheets só sua ("AtendeZap - Controle da equipe"). 2) Extensões > Apps Script: cole o arquivo planilha/AdminControle.gs inteiro e salve.
+       3) No editor escolha a função admPrepararPlanilha (barra de cima) e clique em Executar; autorize quando o Google pedir. Cria as abas Usuarios, Perfis, Excecoes, Global e Saude (com perfis de exemplo)
+          e instala o menu "AtendeZap Admin" (recarregue a planilha para vê-lo).
+       4) Implantar > Nova implantação > App da Web: executar como "Eu", acesso "Qualquer pessoa". Copie o endereço que termina em /exec.
+       5) Apps Script > Configurações do projeto > Propriedades do script > Adicionar: nome URL_EXEC, valor o endereço /exec.
+       6) Na aba Usuarios escreva Nome e Perfil de cada pessoa. Menu "2. Gerar códigos e convites": o código e o CONVITE (texto que começa com AZ1.) aparecem nas colunas.
+       7) Mande a cada pessoa o convite dela (só dela). Ela cola em Configurações › Acesso da equipe › Conectar.
+       8) (Opcional) Menu "4. Ligar o vigia do robô" e preencha emailAlerta na aba Global: você recebe um e-mail se o robô LIGADO de alguém ficar mais de 15 min sem sinal, e outro quando voltar.
+   • O QUE A EXTENSÃO ENVIA DE VOLTA (só se o administrador pedir E a pessoa aceitar; ela vê o texto exato antes, em "Ver o que é enviado"): versão da extensão e do WhatsApp, resultado do autoteste
+     (números e nomes das funções com problema), contadores do robô nas últimas 24 h (respostas, repasses, ignoradas, falhas da IA, pendências), tempos medianos, uso e falhas da IA.
+     NUNCA: texto de conversas, nomes, telefones, fotos ou as chaves do Gemini. Cada pessoa continua usando a PRÓPRIA chave do Gemini (ela fica só no navegador dela).
+   • SEGURANÇA, SEM ILUSÃO: o convite só funciona com endereço do Google Apps Script (o código nunca vai a outro servidor); código errado recebe sempre a mesma recusa; cada pessoa recebe só o seu perfil.
+     Mas isto serve a uma EQUIPE DE CONFIANÇA: a extensão roda no computador de cada um, e quem tiver conhecimento técnico consegue contornar (ou simplesmente clicar em "Desconectar"). Para impedir
+     de verdade seria preciso um servidor, e a planilha pode ser trocada por um depois sem mexer na extensão. Não compartilhe a planilha administrativa com ninguém.
+   • AVISOS HONESTOS: avise a equipe do que é enviado (LGPD) e que o robô responde a clientes (risco de restrição do número no WhatsApp). O Apps Script tem limites de uso do Google; para algumas
+     dezenas de pessoas funciona bem, e acima disso vale conferir os limites atuais.
+   • NO RELATÓRIO DO DIAGNÓSTICO: bloco "acesso" (perfil, bloqueados, obrigatórios, limites, se está confirmado) e a linha "Acesso da equipe" no resumo. Nunca o código nem o endereço.
+   • CORREÇÃO JUNTO (importação de backup do waTidy): ao abrir um backup com a senha errada, uma vez em ~250 o código recebia lixo e mostrava um erro técnico do JSON; agora mostra sempre
+     "Não consegui abrir este backup (…a senha não confere…)".
+
+   • LOGIN OBRIGATÓRIO (v1.34.1): uma instalação nova mostra SÓ o cartão "Acesso da equipe" (o painel já abre nele) até a pessoa colar o convite. Antes disso nada funciona: nem as partes do painel, nem o robô,
+     e as abas Backup e Diagnóstico não aparecem (o autoteste continua rodando por baixo). Ao conectar, o resto aparece conforme o perfil. Ao desconectar (ou se o administrador desativar a pessoa)
+     volta a tela de login. Quem já estava conectado não percebe nada.
+       - PARA O SEU USO PESSOAL SEM CONVITE: troque `const EXIGIR_CONVITE = true;` por `false` no começo de lib/acesso.js (e recarregue a extensão). Você, como Administrador, não precisa: use o seu convite.
+       - SE O SERVIDOR (a planilha) ESTIVER FORA NA PRIMEIRA ENTRADA: a pessoa não consegue entrar (o convite só vale depois de o servidor confirmar). Confira se a implantação do Apps Script está ativa.
+
+   • NADA VEM LIBERADO DE FÁBRICA (v1.35): quem entra com o convite vê SÓ o cartão "Acesso da equipe". Tudo o mais só aparece depois que você marcar na aba Perfis (célula vazia = bloqueado).
+     Perfil em branco, ou com um nome que não existe na aba Perfis, também significa "só o acesso" (a tela avisa: "O administrador ainda não liberou nenhuma parte para o seu perfil").
+       - A tela de Configurações agora é controlada por partes: cfgPosicao ("Posição do painel"), cfgIA ("Assistente de IA", onde a pessoa coloca a PRÓPRIA chave do Gemini), cfgPartes ("Partes do painel"),
+         cfgLimites ("Limites do WhatsApp") e diag (a aba Diagnóstico). Com o Diagnóstico escondido, o autoteste continua rodando e, se a pessoa aceitou, o resumo de saúde continua sendo enviado.
+         O cartão "Acesso da equipe" nunca some (é por ele que a pessoa entra, vê o que é enviado e desconecta).
+       - Quem usa o robô precisa receber, no mínimo: atendente (ligado) + cfgIA (ligado, para a chave do Gemini). Sem "roboModoMax" preenchido o robô só SUGERE (nunca automático por omissão);
+         para liberar o automático escreva roboModoMax = automatico no perfil. A transcrição de áudio (iaAudio) também vem bloqueada.
+       - O perfil de exemplo "Novo" fica em branco de propósito; "Básico", "Com robô" e "Administrador" têm valores sugeridos para você ajustar.
+   • PLANILHA QUE VOCÊ JÁ TEM (colou uma versão anterior do AdminControle.gs): cole o AdminControle.gs novo por cima, salve, vá em Implantar > Gerenciar implantações > lápis > Versão: Nova versão (a URL não muda),
+     recarregue a planilha e use o menu AtendeZap Admin > "6. Atualizar lista de recursos": ele ACRESCENTA na aba Perfis as linhas novas (diag, cfgPosicao, cfgIA, cfgPartes, cfgLimites) sem mexer no que já
+     está preenchido. Nas colunas dos perfis de exemplo já entra o valor sugerido (Administrador = ligado); na coluna da SUA equipe fica em branco (= bloqueado): preencha o que quiser liberar.
+     ATENÇÃO: como agora vazio = bloqueado, confira a coluna de cada perfil: o que estava em branco antes (a pessoa decidia) passa a ficar bloqueado.
+
+   • DEPENDÊNCIAS ENTRE OS ITENS DA PLANILHA (v1.35.1): alguns recursos moram dentro de outros, então só adianta liberar o item se o "dono" também estiver liberado:
+       - "lab" (Laboratório) e "diagAvancado" ficam DENTRO da aba Diagnóstico: libere também "diag".
+       - "atendente" (robô) precisa de "cfgIA", que é onde a pessoa coloca a PRÓPRIA chave do Gemini. "iaAudio" (transcrever áudios) é do robô: precisa de "atendente".
+       - Sem "limite:roboModoMax" o robô só SUGERE. Escreva automatico no perfil para liberar o modo automático.
+     Isso aparece escrito na coluna "O que é" de cada linha, e o menu AtendeZap Admin > "7. Conferir perfis" lista as combinações que não funcionam (por perfil).
+   • A PLANILHA SE COMPLETA SOZINHA: ao reabrir a planilha depois de colar um AdminControle.gs novo, o script acrescenta na aba Perfis as linhas de recursos que faltam (e renova a coluna "O que é").
+     Os valores que você preencheu nunca são tocados; nas colunas dos seus perfis as linhas novas entram em branco (= bloqueado), então confira e libere o que fizer sentido.
+   • ESCREVEU "NÃO" NUMA CÉLULA? Vale como BLOQUEADO (na dúvida, o mais restritivo). "desligado" continua sendo "liberado, mas vem desligado". "sim"/"on"/"liberado" = ligado; "off"/"negado" = bloqueado.
+   • COMO SE CONFERE QUE TUDO ESTÁ LIGADO: os testes comparam a lista da planilha com a da extensão (o mesmo conjunto de 21 recursos), confirmam que a extensão aplica cada um e que os limites do robô chegam
+     até o campo que o robô realmente lê. Existe também um teste com o perfil Administrador com os 21 recursos ligados que confere cada cartão, aba, Laboratório, áudio e modo automático na tela.
+
+   • LIMITE DE COMPUTADORES POR CONVITE (v1.36): cada convite vale para 1 COMPUTADOR por padrão. Quem tenta usar o mesmo convite num 2º computador é recusado ao colar ("este convite já está em uso em outro
+     computador"), e nada é gravado. O primeiro continua funcionando normalmente.
+       - CONFIGURAR POR PESSOA: coluna "Máx. computadores (vazio = 1)" da aba Usuarios (a última coluna, N). Escreva 2 para quem usa casa e escritório. O limite vale por pessoa (convite), de 1 a 20.
+       - ABA "Computadores" (criada sozinha): quem se conectou de qual computador (sistema e versão do Chrome, primeira conexão, última consulta, versão da extensão, situação). Para tirar UM computador, escreva
+         Revogado na coluna Situação dele; para tirar todos os de uma pessoa use o menu AtendeZap Admin > "8. Liberar computadores de uma pessoa" (digite o nome como está na coluna Nome, ou o código).
+       - TROCOU DE COMPUTADOR / REINSTALOU / LIMPOU OS DADOS DO NAVEGADOR: conta como computador novo. Use o menu 8 para desconectar os antigos; a pessoa cola o convite de novo no novo. O computador antigo, ao
+         consultar, vê "este computador foi desconectado pelo administrador" e fica só com o "Acesso da equipe" (e só volta se houver vaga, ao colar o convite).
+       - QUEM JÁ ESTAVA CONECTADO antes desta versão: no primeiro contato cada computador é registrado, na ordem em que consultarem. Se dois computadores já usavam o mesmo convite, o 2º a consultar será recusado:
+         aumente "Máx. computadores" dessa pessoa ou use o menu 8.
+       - O QUE A EXTENSÃO MANDA PARA ISSO: um identificador desta instalação (gerado ao abrir; NÃO vai no backup) e uma etiqueta com o sistema e a versão do Chrome (ex.: "Windows · Chrome 141"). O cartão
+         "Acesso da equipe" mostra "Este computador: …" e "computadores deste convite: 1 de 2". Nada identifica a pessoa além do nome que você mesmo cadastrou.
+       - LIMITES HONESTOS: conta a INSTALAÇÃO do navegador, não o aparelho (outro perfil do Chrome = outra vaga). Não impede quem tem conhecimento técnico (copiar o perfil do Chrome copia o identificador);
+         serve para impedir o compartilhamento casual do convite na equipe. Extensões antigas (que não mandam o identificador) são recusadas com "extensão desatualizada".
+
+   • ABA PERFIS ORGANIZADA, COM LISTAS E CORES (script v3): a aba Perfis passa a ter o mesmo padrão em TODAS as linhas: lista de escolha (ligado, desligado, bloqueado, obrigatorio) e cores:
+       VERDE = ligado (ativo) | VERDE ESCURO = obrigatorio (travado ligado) | LARANJA = desligado (liberado, mas vem desligado) | VERMELHO = bloqueado | VERMELHO CLARO = célula vazia (= bloqueado).
+     O AMARELO é SÓ do MODO DO ROBÔ (linha limite:roboModoMax, e a aba Excecoes): VERMELHO = desligado, VERDE = sugerir (só sugere; é o padrão com a célula vazia), AMARELO = automatico (o robô responde sozinho: atenção).
+     As linhas de recursos ficam em grupos (Partes do painel, Robô e IA, Tela de Configurações, Diagnóstico) e os limites no fim, com lista (roboModoMax) ou faixa de números (os demais).
+     As abas Usuarios (perfil em lista, Ativo sim/não colorido, Máx. computadores de 1 a 20) e Global (emergência e coleta de saúde em sim/não coloridos; emergência SIM = vermelho) seguem o mesmo padrão.
+     A aba "Legenda" explica as cores e as dependências.
+       - A APARÊNCIA SE APLICA SOZINHA ao abrir a planilha (listas e cores; não mexe em valores nem em ordem).
+       - PARA REORGANIZAR AS LINHAS EM GRUPOS: menu AtendeZap Admin > "9. Organizar e colorir a aba Perfis". Ele pergunta antes, MANTÉM todos os valores de todos os perfis e guarda uma cópia da aba
+         numa nova aba "Perfis (cópia …)" (pode apagar depois de conferir). Linhas que a extensão não conhece vão para o grupo "OUTROS" sem perder nada. Depois de organizada, recursos novos de versões futuras
+         entram sozinhos no grupo certo.
+       - ATENÇÃO COM "desligado": NÃO é "desativado". A pessoa VÊ a função e pode ligar. Para tirar a função da pessoa use BLOQUEADO (vermelho). Para o Administrador usar tudo, deixe "ligado". (Desde o script v3.1 o desligado é LARANJA; o amarelo ficou só para o modo automático do robô.)
+
+🔎 O QUE O RELATÓRIO DE 23/10 MOSTROU E O QUE FOI CORRIGIDO (v1.36.1)
+   • ROBÔ "SEM ESCUTA": o relatório dizia "a escuta de mensagens novas não está ligada", mas o robô (modo sugerir, chave ok) estava parado porque a PARTE "Atendente IA" estava DESLIGADA neste computador.
+     Isso acontece quando o administrador deixa a parte como "desligado" na planilha: ela é aplicada UMA vez (desligada) e a pessoa liga em Configurações › Partes do painel. Correções:
+       - o aviso do robô agora diz o motivo real ("a parte Atendente IA está DESLIGADA… ligue em Configurações › Partes do painel"; ou "o robô está parado: o administrador pausou…" / "falta entrar com o convite");
+       - o relatório ganhou a linha "Partes do painel DESLIGADAS: …" e o bloco `partes`;
+       - ao conectar, uma mensagem na tela AVISA o que o administrador deixou desligado por padrão (antes desligava em silêncio);
+       - DESCONECTAR E COLAR O MESMO CONVITE não refaz mais os padrões (antes desligava de novo o que a pessoa já tinha ligado: foi o que derrubou o robô). Convite de outra pessoa: padrões do zero.
+     Para o Administrador usar tudo, a coluna dele na aba Perfis deve ter `ligado` (verde), não `desligado` (laranja).
+   • "⚠ Configuração — desativada": era só a ASSINATURA desligada por escolha sua. Deixou de ser aviso (agora aparece como "desativada (escolha sua: não é problema)").
+   • "⚠ Erros no console: da extensão: 1 — func is not a function": vinha da wa-js (a biblioteca que fala com o WhatsApp). Ela embrulha 44 funções internas do WhatsApp e uma, `isLidMigrated` (checagem
+     da migração de contatos que o WhatsApp já removeu), não existe mais. Não afeta nada do AtendeZap. Agora o relatório descobre QUAL função foi (lib/wrapalvos.js, gerada por
+     tools/gerar-wrapalvos.js a partir da wa-js empacotada), ignora essa inofensiva (mostra "função(ões) interna(s) do WhatsApp que não existem mais, sem efeito: isLidMigrated") e, se aparecer outra,
+     o aviso continua mas com o NOME dela ("func is not a function (wa-js: …)"). Se trocar a wa-js por outra versão: rode `node tools/gerar-wrapalvos.js` (o teste avisa se esquecer).
+   • O resto estava saudável: ✔44 ⚠2 ✖0 (7 não testados porque não havia conversa aberta), custo 0%, ponte sem chamadas externas, WhatsApp atualizou 4 vezes em um dia sem mudar nenhuma chave que a extensão usa.
+
+🗑️ APAGAR MENSAGENS PARA TODOS, A QUALQUER TEMPO (v1.37, experimental)
+   • O QUE É: o WhatsApp só mostra "Apagar para todos" por um prazo (cerca de 2 dias e meio). Esta parte apaga PARA TODOS as SUAS mensagens enviadas, mesmo depois disso. Fica em "Conversas" > aba "Apagar"
+     (a mesma coluna das Fixadas e Ocultas) e é uma "Parte do painel" ("Apagar mensagens"), que o administrador libera ou bloqueia (recurso `apagar`; vem bloqueado por padrão para a equipe).
+   • COMO USAR: abra a conversa > aba Apagar > "Carregar minhas mensagens" (as últimas 30 que VOCÊ enviou, da mais nova para a mais antiga; as fora do prazo normal vêm marcadas) > marque as que quer
+     > "Apagar para todos (N)" > confirme. Ele apaga uma a uma, com pausa, e CONFERE se o WhatsApp apagou de fato. As que o WhatsApp não confirmar aparecem como "não confirmadas", com o motivo.
+   • SÓ MENSAGENS SUAS (nunca as do cliente); no máximo 50 por vez; a lista e os textos ficam só na tela, não vão para a IA nem para o relatório. Não dá para desfazer.
+   • COMO FUNCIONA / LIMITE HONESTO: a wa-js manda o pedido de apagar direto, sem olhar a idade da mensagem; quem decide se ACEITA uma mensagem muito antiga é o SERVIDOR do WhatsApp, e isso eu não consigo
+     garantir (pode mudar a qualquer momento). A outra extensão (Pragmaz) tem uma opção parecida e funcionou para você; teste primeiro com uma mensagem sem importância e antiga e me diga o resultado.
+   • A tela do próprio WhatsApp continua com o prazo normal: esta é uma tela nossa. Para um dia mexer no botão do WhatsApp, o mapa do WhatsApp ganhou a "sonda do prazo" (`sondaApagarPrazo`): nomes e números das
+     constantes de `WAWebRevokeMsgConstants`; mande o mapa depois de atualizar que eu leio.
+
+♻️ RECUPERAR MENSAGENS APAGADAS PELOS CONTATOS (v1.38)
+   • O QUE É: quando um contato apaga uma mensagem "para todos", o WhatsApp a troca por "Esta mensagem foi apagada". Esta parte guarda uma cópia (texto, legenda, miniatura da foto e, se você permitir,
+     a foto ou o áudio) para você ler depois. Fica em "Conversas" > aba "Recuperar". Vem DESLIGADA: você liga lá dentro (aparece um aviso explicando o que é guardado antes de ligar).
+   • COMO FUNCIONA: a biblioteca avisa que a mensagem vai ser apagada ANTES de o WhatsApp aplicar o apagar; nesse instante a mensagem ainda está inteira e o AtendeZap tira a cópia. Por isso NADA é
+     arquivado antes: só o que for apagado é guardado (muito menos dados do que guardar tudo o que chega).
+   • ONDE FICA: só neste computador (no armazenamento do navegador), por 1, 3, 7, 15 ou 30 dias (você escolhe; passado o prazo é esquecida). NÃO vai para a IA, a planilha, o relatório ou o administrador
+     (o relatório leva só contagens: quantas guardadas). Dá para "Esquecer" uma, "Esquecer tudo" e desligar a qualquer hora.
+   • AVISO NA HORA: quando alguém apaga, aparece "Fulano apagou uma mensagem: “…”. Guardada em Conversas › Recuperar."
+   • OPÇÕES: "Incluir grupos" (padrão: sim; em grupo mostra quem escreveu e o grupo); "Tentar guardar também fotos e áudios (até 3 MB)" (padrão: não). Visualização única NUNCA é guardada, e as mensagens
+     que VOCÊ apagou também não.
+   • LIMITES HONESTOS (leia): (1) só pega o que for apagado com o WhatsApp Web ABERTO neste computador; apagadas com a página fechada não dá para recuperar. (2) A foto ou o áudio inteiro só é guardado se o
+     WhatsApp ainda tiver o arquivo no instante em que a mensagem é apagada; senão fica só a miniatura e o texto (o painel diz "o áudio não foi guardado"). (3) Se a mensagem nem estava na memória do WhatsApp
+     (conversa antiga não carregada), aparece o aviso "conteúdo indisponível". (4) A cópia aparece no painel do AtendeZap, não dentro da conversa do WhatsApp. (5) Eu não consigo testar com o WhatsApp
+     de verdade: o comportamento do aviso antes do apagar vem da wa-js (4.7.1) e foi confirmado no código dela e no simulador. Teste com um amigo apagando uma mensagem e me diga o resultado.
+   • PRIVACIDADE E RESPONSABILIDADE: guardar o que os outros apagaram pode contrariar a expectativa das pessoas e os termos do WhatsApp; use com responsabilidade, só para o seu trabalho. Para a equipe é uma
+     "Parte do painel" (recurso `recuperar`) que o administrador libera ou bloqueia (vem bloqueada por padrão para quem não é Administrador).
+
+🧭 ORGANIZAÇÃO POR ASSUNTO (v1.39)
+   • Cada opção agora mora onde se trata do seu assunto. A barra tem 6 ícones: ⚡ Atendimento (Respostas · Aguardando · Assinatura · Atendente IA · Memória IA · Lista de frete) · 👥 Grupos (Pedidos ·
+     Conjuntos · Ajustes) · 🧰 Ferramentas (Iniciar conversa · Enviar para vários · Fixadas · Backup) · 🔒 Privacidade (Ocultas · Apagar · Recuperar) · 🩺 Diagnóstico (Saúde · Limites · Laboratório) ·
+     ⚙ Configurações (Acesso da equipe, Posição, Assistente de IA, Partes do painel). Nada foi apagado: só mudou de lugar.
+   • O que ainda não foi confirmado no seu WhatsApp leva a etiqueta 🧪 na própria aba (Apagar, Recuperar, Laboratório) e em Configurações › Partes do painel (que agora está agrupada por assunto).
+   • As opções de vagas e de "grupos só na aba Grupos" foram para Grupos › Ajustes; a planilha de frete para Atendimento › Lista de frete; os limites do WhatsApp para Diagnóstico › Limites.
+   • PLANILHA (aba Perfis): os blocos são os mesmos assuntos (ATENDIMENTO · GRUPOS · FERRAMENTAS · PRIVACIDADE · DIAGNÓSTICO · CONFIGURAÇÕES · LIMITES) e cada descrição diz onde a função mora. As linhas só mudam
+     de lugar quando você rodar o menu "9. Organizar e colorir a aba Perfis" (mantém todos os valores). O Laboratório NÃO depende mais do "diag".
+   • docs/FUNCOES.md = mapa de cada função (onde fica, qual recurso a libera, grau de certeza) e como adicionar/tirar o 🧪.
+
+🔔 BOTÃO "VER" NO AVISO DE APAGADA (v1.41)
+   • Quando um contato apaga uma mensagem (com "Recuperar" ligado), o aviso agora tem um botão VER que abre direto 🔒 Privacidade › Recuperar. O ícone Privacidade e a aba Recuperar mostram quantas apagadas você
+     ainda não viu; a contagem some quando você abre a aba. (Não existe botão no topo da conversa: o selo do topo está cheio e a regra é não alargá-lo.)
+
+📦 EXPORTAR CONVERSA (v1.42) — 🧰 Ferramentas › Exportar 🧪
+   • Abra a conversa, escolha "De" e "Até" (data e hora; ex.: 21/10/2026 18:00 até 19:30; o "Até" inclui o minuto inteiro) e clique em Exportar. Atalhos: Hoje, Ontem, Últimos 7 dias. Máximo de 31 dias por vez.
+   • Sai UM arquivo .zip com: conversa.txt (no estilo do WhatsApp: [21/10/2026 18:05:40] Nome: texto), conversa.csv (para abrir no Excel, separador ;), relatorio.txt e a pasta midia/ (fotos, áudios, vídeos,
+     documentos e figurinhas, com nomes em ordem: 0001_IMG_20261021_180540.jpg). Opção de exportar só o texto e limite de tamanho do arquivo todo (50/150/300/600 MB).
+   • LIMITES HONESTOS: (1) só sai o que o WhatsApp Web consegue carregar: conversa muito longa demora e, se o período for muito antigo, o WhatsApp pode não carregar o começo (o painel e o relatório avisam
+     até onde ele chegou); (2) mídia que o WhatsApp já descartou dos servidores NÃO pode ser baixada: o .zip sai do mesmo jeito e o relatorio.txt lista o que faltou; (3) visualização única nunca é exportada;
+     (4) mensagens apagadas aparecem como "[mensagem apagada]" (sem conteúdo); (5) tudo roda neste computador: nada vai para a IA, a planilha ou o administrador. Vem 🧪 (em teste): ainda não foi confirmada no seu WhatsApp.
+   • SEGURANÇA: a ponte agora só obedece ao painel (com a chave dele) para apagar mensagens, ler conversas, baixar mídia e ligar o "Recuperar" (antes o "Apagar para todos" não estava protegido: corrigido).
+
+🧠 ESCUTA AUTOMÁTICA, BANCO DE CONHECIMENTO E APROVAÇÃO AUTOMÁTICA (v1.43) — Atendimento › Memória IA 🧪
+   • O QUE FAZ: ligado ("Escutar e guardar automaticamente"; vem DESLIGADO e pede o seu aceite), o AtendeZap lê de tempos em tempos (a cada 60 min, com o WhatsApp Web aberto) as suas conversas INDIVIDUAIS (sem grupos)
+     e guarda no banco, SEM dados pessoais (telefone, CPF e e-mail mascarados), o que o cliente perguntou e o que VOCÊ respondeu. Fica neste computador e, se a planilha estiver ligada e com o script v4, também na
+     aba "IA - Conversas" da sua planilha de frete (atualize o AtendeZap.gs: ele mostra "script antigo" até você colar o novo; enquanto isso nada é enviado, para não perder linhas).
+   • O QUE NÃO ENTRA: respostas do próprio ROBÔ (o AtendeZap registra cada envio do robô e tira esse trecho; senão a IA aprenderia com ela mesma), grupos, mídia, falas curtas ("ok", "obrigado") e qualquer resposta
+     com preço, valor, data, horário, placa ou telefone (mudam todo dia).
+   • REGRAS DE REFINAMENTO (rodam a cada leitura): perguntas e respostas parecidas viram UMA (somando quantas vezes e em quantas conversas apareceram; "sim" e "não" nunca se juntam); o que apareceu 1 vez e ficou
+     velho (90 dias) sai, quanto mais repetido mais tempo fica (2x = 180 dias, 3x ou mais = 1 ano); teto de 600 itens (ficam os mais repetidos e recentes). A tela mostra quantas foram ignoradas/juntadas/removidas.
+   • A IA CONSOLIDA: uma vez por dia (se ligado e com 15+ novidades) ou no botão "Consolidar com a IA", a IA do Google (com a SUA chave) lê o banco já agrupado por pergunta e PROPÕE regras. Preço, data, placa, telefone e
+     link nunca viram regra.
+   • APROVAÇÃO — você escolhe: MANUAL (padrão): tudo vai para "Para você decidir" com a prova ("visto 3 vez(es) em 3 conversa(s); 100% das respostas iguais"). AUTOMÁTICA: a IA aprova SOZINHA, direto na memória que o
+     robô USA, só PERGUNTA E RESPOSTA que as suas conversas provam: apareceu 3+ vezes, em 2+ conversas, a resposta proposta é a que VOCÊ mais deu (nunca uma inventada) e suas respostas concordam em 70%+ das vezes.
+     Vocabulário e regras sempre ficam para você. No máximo 10 por dia. Cada uma aparece marcada "🤖 aprendido sozinho" com a prova, e há "↩ Desfazer os automáticos de hoje". Se você desfizer 3 numa semana, volta sozinho
+     para o MANUAL (a IA está errando).
+   • LIMITES HONESTOS: só lê com o WhatsApp Web aberto; a IA pode errar (por isso a prova é conferida pelo AtendeZap contra o banco, não pelo que a IA diz); o texto anonimizado vai para a IA do Google; tudo 🧪 (em teste).
+   • PRÓXIMO PASSO: testes de conversa para medir o robô com a memória aprendida (a bateria de testes do Treino já existe).
+
+📱 CONTATO DO CLIENTE (v1.43) — 🧰 Ferramentas › Contato 🧪
+   • Mostra o contato da conversa aberta e o aparelho PROVÁVEL (Android, iPhone ou WhatsApp Web/computador). É um PALPITE pelo formato do identificador das mensagens que a pessoa mandou (regra da própria biblioteca): vê as
+     últimas 40 mensagens dele, mostra a contagem e a confiança. Em grupos não dá para saber. "WhatsApp Web" quer dizer que ele escreveu pelo computador; ele pode ter celular também.
+
+📝 RESUMO DO QUE PERDI (v1.44) — ⚡ Atendimento › Resumo 🧪
+   • Lê as mensagens NÃO LIDAS das suas conversas individuais (sem grupos), mascara telefone/CPF/e-mail e pede à IA do Google (SUA chave) um resumo de cada conversa com prioridade (🔴 alta, 🟡 média, ⚪ baixa) e o que fazer.
+     A IA só resume: não responde a ninguém, não envia nada, e links vindos dela são removidos. Pede o seu aceite na 1ª vez. Pode errar: confirme abrindo a conversa.
+
+📊 AVALIAÇÃO DO ATENDIMENTO (v1.44) — 🩺 Diagnóstico › Avaliação 🧪 — SEM IA e SEM nota para ninguém
+   • Lê as suas conversas do período (hoje, 7 ou 30 dias) e confere contra a memória aprovada: quantas trocas "cliente perguntou → você respondeu" bateram com a memória e quais ficaram DIFERENTES (ou a memória está velha,
+     ou a resposta fugiu do combinado: você decide), clientes SEM RESPOSTA há mais de 15 min, tempo de resposta (mediana e "pior 1 em cada 10") e as perguntas repetidas que a memória AINDA NÃO cobre. Respostas do robô não entram.
+   • Cada avaliação grava UMA linha só de números na aba "IA - Avaliação" da planilha de frete (exige o AtendeZap.gs na versão 5).
+
+🧪 TESTAR A MEMÓRIA (v1.44) — ⚡ Atendimento › Atendente IA › Treino › Treinar conversando › "Testar a memória"
+   • Pergunta ao robô, SEM enviar nada a ninguém, até 8 perguntas que ele já aprendeu e confere se a resposta bate com a memória (✅ bateu · ❌ não bateu: a memória está mal escrita ou o robô não a usou · ⚠ a IA falhou).
+
+📞 LIGAÇÃO → MENSAGEM AUTOMÁTICA (v1.44) — ⚡ Atendimento › Aguardando (card no fim da tela) 🧪 — vem DESLIGADA
+   • Quando alguém LIGA, espera (15 a 600 s, padrão 60), confere se você já falou com a pessoa (até 5 min antes ou depois da ligação) e manda UMA mensagem curta com o texto que você escolher. Nunca atende nem recusa a chamada,
+     nunca em grupo, e não repete ao mesmo contato dentro do intervalo (1 a 24 h, padrão 6 h). Só com o WhatsApp Web aberto. NÃO sei se o WhatsApp Web avisa sempre a ligação: confirme com docs/TESTE-REAL.md. A mensagem vai EM SEU NOME.
+
+📚 PARA QUEM DESENVOLVE: docs/ARQUITETURA.md (mapa do main.js, onde mexer), docs/TESTE-REAL.md (checklist para confirmar no WhatsApp real), tools/teste/README.md (como rodar os testes e as armadilhas).
+
+🛡 MELHORIAS DA v1.45
+   • BACKUP SEGURO E COMPLETO: (1) CORREÇÃO DE SEGURANÇA: o backup AUTOMÁTICO gravava o armazenamento inteiro na pasta Downloads, incluindo o código do seu CONVITE da equipe e a identificação deste computador. Agora esses
+     (e a chave da IA) NUNCA vão para um arquivo, nem no backup completo. Se você já tem arquivos "atendezap-backup-….json" antigos, APAGUE-OS ou guarde-os em lugar seguro: eles podem ter o convite.
+     (2) As configurações novas (escuta, ligação, avaliação, aceites) agora voltam na restauração. (3) O BANCO DE CONHECIMENTO é um grupo à parte, DESMARCADO por padrão (só entra se você marcar; fica fora do backup automático).
+   • ENVIOS À IA (Diagnóstico › Envios à IA): mostra EXATAMENTE o que o AtendeZap mandou para a IA do Google nesta sessão (já com telefones/CPF/e-mails mascarados), os últimos 25. Só fica na memória da página: some ao
+     recarregar e nada é gravado em disco. A chave nunca aparece. Áudio vai como arquivo (a voz não dá para mascarar): a tela avisa.
+   • AVALIAÇÃO AUTOMÁTICA (Diagnóstico › Avaliação): opção "Avaliar sozinho uma vez por dia" (vem desligada): olha as últimas 24 h, sem IA, e mostra o número de clientes SEM RESPOSTA na aba e no ícone de Diagnóstico.
+   • COMEÇAR AQUI (Configurações › Geral): cartão no topo com o que ainda falta configurar (chave da IA, link da planilha, gravar na planilha, modo do robô, primeira memória aprovada, escuta). Só mostra o que está
+     liberado para você, some quando tudo estiver pronto e tem "Não mostrar mais".

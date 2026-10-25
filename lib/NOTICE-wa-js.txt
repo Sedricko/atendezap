@@ -1,0 +1,2 @@
+lib/wppconnect-wa.js = @wppconnect/wa-js v4.7.1 (https://github.com/wppconnect-team/wa-js)
+Copyright WPPConnect Team. Licenciado sob Apache License 2.0: https://www.apache.org/licenses/LICENSE-2.0

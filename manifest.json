@@ -1,0 +1,82 @@
+{
+  "manifest_version": 3,
+  "name": "AtendeZap - Atendimento no WhatsApp Web",
+  "version": "1.47.0",
+  "description": "Respostas rápidas com mídia e ações, assinatura automática, iniciar conversa, chats fixados, abas e backup automático.",
+  "background": {
+    "service_worker": "background.js"
+  },
+  "action": {
+    "default_icon": "icons/icon128.png",
+    "default_title": "Abrir WhatsApp Web"
+  },
+  "icons": {
+    "16": "icons/icon16.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://web.whatsapp.com/*"
+      ],
+      "js": [
+        "lib/wrapalvos.js",
+        "page/pre.js",
+        "lib/wppconnect-wa.js",
+        "page/bridge.js"
+      ],
+      "world": "MAIN",
+      "run_at": "document_end"
+    },
+    {
+      "matches": [
+        "https://web.whatsapp.com/*"
+      ],
+      "js": [
+        "content/util.js",
+        "content/ia.js",
+        "content/waimport.js",
+        "lib/iaerro.js",
+        "lib/acesso.js",
+        "lib/recuperar.js",
+        "lib/zip.js",
+        "lib/exportar.js",
+        "lib/aparelho.js",
+        "lib/treino.js",
+        "lib/avaliar.js",
+        "lib/resumo.js",
+        "lib/ligacao.js",
+        "lib/diagnostico.js",
+        "lib/iaregistro.js",
+        "content/main.js"
+      ],
+      "css": [
+        "content/page.css"
+      ],
+      "run_at": "document_end"
+    }
+  ],
+  "web_accessible_resources": [
+    {
+      "matches": [
+        "https://web.whatsapp.com/*"
+      ],
+      "resources": [
+        "content/ui.css"
+      ]
+    }
+  ],
+  "host_permissions": [
+    "https://script.google.com/*",
+    "https://script.googleusercontent.com/*",
+    "https://generativelanguage.googleapis.com/*",
+    "https://web.whatsapp.com/*"
+  ],
+  "permissions": [
+    "storage",
+    "unlimitedStorage",
+    "power"
+  ],
+  "minimum_chrome_version": "100"
+}

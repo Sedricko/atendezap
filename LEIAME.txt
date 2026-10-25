@@ -1,0 +1,51 @@
+AtendeZap — extensão para WhatsApp Web (Chrome/Edge) · v1.47.0
+
+COMO INSTALAR
+ 1. Descompacte a pasta "atendezap" num lugar fixo (não apague depois). Precisa de Chrome/Edge 100 ou mais novo.
+ 2. Abra chrome://extensions (no Edge: edge://extensions) e ative "Modo do desenvolvedor".
+ 3. Clique em "Carregar sem compactação" e escolha a pasta "atendezap".
+ 4. Abra ou recarregue https://web.whatsapp.com. O painel começa recolhido: Alt+Z (ou a aba verde com o raio na borda) abre.
+COMO ATUALIZAR: substitua os arquivos na MESMA pasta, clique em ⟳ na extensão em chrome://extensions e recarregue o WhatsApp Web (F5). A versão aparece em chrome://extensions.
+
+O PAINEL: 6 ÍCONES, UM POR ASSUNTO   (🧪 = em teste: passa nos nossos testes, mas ainda não foi confirmado no WhatsApp de verdade)
+ ⚡ Atendimento  Respostas · Aguardando (e a resposta automática a ligações 🧪) · Assinatura · Atendente IA (o robô) · Memória IA (e o banco de conhecimento 🧪) · Lista de frete · Resumo do que perdi 🧪
+ 👥 Grupos       Pedidos para entrar · Conjuntos · Ajustes (vagas nos grupos e "grupos só na aba Grupos")
+ 🧰 Ferramentas  Iniciar conversa · Enviar para vários (e Status) · Fixadas (sem o limite de 3) · Contato e aparelho 🧪 · Exportar conversa 🧪 · Backup
+ 🔒 Privacidade  Ocultas · Apagar para todos, a qualquer tempo 🧪 · Recuperar o que o contato apagou 🧪
+ 🩺 Diagnóstico  Saúde (e o pacote .zip de suporte) · Limites do WhatsApp · Avaliação do atendimento 🧪 · Envios à IA · Laboratório 🧪
+ ⚙ Configurações Começar aqui · Acesso da equipe · Posição do painel · Assistente de IA (chave do Gemini) · Partes do painel (liga e desliga cada parte)
+ No topo de cada conversa ficam 4 botões: 📌 fixar, 🙈 ocultar, 🚚 lista de frete e ⚡ respostas (e o contador de vagas, nos grupos).
+ Onde fica cada função, qual recurso da planilha a libera e o grau de certeza: docs/FUNCOES.md.
+
+PRIMEIROS PASSOS
+ Em ⚙ Configurações, o cartão "Começar aqui" mostra o que falta: chave do Gemini, link da planilha de frete, gravar o aprendizado na planilha, modo do robô (comece em "sugerir": ele propõe e você decide) e a primeira memória aprovada.
+
+PLANILHAS (duas, separadas; nunca no mesmo projeto do Apps Script)
+ • Planilha de frete / IA — script planilha/AtendeZap.gs (versão 5): guarda as abas IA - Demanda, IA - Aprendizado, IA - Memória (a equipe também edita), IA - Tempos, IA - Conversas e IA - Avaliação.
+   Mantenha a sua senha na linha TOKEN_IA e, ao atualizar o script, use Implantar › Gerenciar implantações › Nova versão (o link continua o mesmo).
+ • Painel Administrador — script planilha/AdminControle.gs: convites, perfis (29 recursos por perfil, vazio = bloqueado), limites, computadores e saúde. Menu "AtendeZap Admin" na própria planilha.
+   Detalhes e histórico: docs/HISTORICO.txt (seção v1.34 em diante).
+
+PRIVACIDADE E SEGURANÇA (resumo)
+ • Fica só neste computador: as suas configurações, respostas, memória aprovada e o banco de conhecimento. A planilha só recebe o que você liga.
+ • Vai para a IA do Google (com a SUA chave) apenas quando você usa: o robô, "aprender com o dia", consolidar o banco de conhecimento, resumo do que perdi e transcrição de áudio. Telefone, CPF e e-mail vão mascarados;
+   áudio vai como arquivo (a voz não dá para mascarar). Diagnóstico › Envios à IA mostra EXATAMENTE o que foi mandado na sessão.
+ • Backups e arquivos de diagnóstico NUNCA levam a chave da IA, o convite da equipe, a identificação do computador nem o endereço da planilha. O banco de conhecimento só entra no backup se você marcar.
+ • Visualização única nunca é salva, exportada nem recuperada: o aviso "só abre no celular" é regra do próprio WhatsApp.
+ • O AtendeZap não envia nada a clientes sem você configurar: o robô vem em "sugerir"; ligação, resposta automática e aprovação automática da IA vêm DESLIGADAS.
+
+DIAGNÓSTICO (para achar defeitos)
+ Em 🩺 Diagnóstico › Saúde, abra "Avançado: arquivos para suporte" e clique em "Gerar pacote de diagnóstico (.zip)": UM arquivo com relatório, mapa do WhatsApp (e o que ele mudou desde a última leitura), estrutura da tela,
+ ambiente (navegador, permissões, armazenamento), erros, chamadas ao WhatsApp e envios à IA. Sem mensagens nem contatos. Envie o .zip ao Claude.
+
+LIMITES HONESTOS
+ • Só funciona com o WhatsApp Web aberto neste computador. O WhatsApp muda de tempos em tempos: o autoteste avisa quando algo parar.
+ • Tudo o que tem 🧪 foi testado em simulador; confirme no WhatsApp real com docs/TESTE-REAL.md e me conte o resultado.
+ • Aparelho do contato é um palpite pelo formato das mensagens; resumo e avaliação feitos por IA podem errar.
+
+PARA QUEM DESENVOLVE
+ docs/SKILL.md (passagem de bastão: estado, regras, testes, armadilhas) · docs/NOVA-CONVERSA.md (como retomar em outra conversa ou IA) · docs/ARQUITETURA.md (mapa do main.js) · docs/FUNCOES.md · docs/ROTEIRO.md
+ docs/TESTE-REAL.md · docs/AUDITORIA.md (revisão de segurança e limpeza) · docs/HISTORICO.txt (diário por versão do usuário) · docs/SKILL-HISTORICO.md (diário técnico completo)
+ tools/teste/README.md (como rodar os testes e as armadilhas) · tools/auditoria.py (revisão automática do código) · tools/mapa_main.py (gera o mapa do main.js)
+ Testes: node test/util.test.js · node test/admin.test.js · node test/planilha.test.js · test/smoke.py (ponta a ponta, ~20 min)
+ Licença: a wa-js (lib/wppconnect-wa.js) é de terceiros, veja lib/NOTICE-wa-js.txt.

@@ -1,0 +1,28 @@
+/* Painel do AtendeZap aberto: o WhatsApp encolhe para não ficar por baixo dele */
+body.az-docked #app { width: calc(100% - var(--az-w, 380px)) !important; }
+/* Menus e janelas do WhatsApp que passam da borda ficam POR CIMA do painel (painel = z 900).
+   Só com o painel aberto: o #app encolhido não cobre o painel, só o que transborda dele (menus). */
+/* NUNCA mudar o position do #app: forçar relative colapsou a altura (mensagens sumiram). position só via JS, se for static. */
+body.az-docked #app { z-index: 1000 !important; overflow: visible !important; }
+/* Painel à esquerda: o WhatsApp anda para a direita. Em cima: desce a altura da barra (52 px) e usa a largura toda */
+body.az-docked.az-esq #app { margin-left: var(--az-w, 420px) !important; }
+body.az-docked.az-topo #app { width: 100% !important; margin-top: 52px !important; height: calc(100% - 52px) !important; }
+#az-head { display: flex; align-items: center; flex: none; }
+/* Conversa oculta pelo AtendeZap: some também da lista de Arquivadas */
+[data-az-oculta] { display: none !important; }
+
+/* v1.14.4: selo de vagas = só um número num anel fino, pequeno e discreto. #side + all:initial: o WhatsApp não estica nem herda tamanhos */
+#side .az-vagas { all: initial; box-sizing: border-box; display: inline-flex; align-items: center; justify-content: center; align-self: center; flex: none;
+  min-width: 18px; height: 16px; margin-left: 6px; padding: 0 5px; border: 1.5px solid currentColor; border-radius: 9px;
+  font: 700 10px/1 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; white-space: nowrap; cursor: default; vertical-align: middle; }
+#side .az-vagas.livre { color: #25d366; }
+#side .az-vagas.quase { color: #f59e0b; }
+#side .az-vagas.cheio { color: #ea4335; }
+body:not(.dark) #side .az-vagas.livre { color: #0a8f45; }
+body:not(.dark) #side .az-vagas.quase { color: #b45309; }
+
+/* v1.14.2: lista nativa de "/" (respostas rápidas do WhatsApp Business) escondida enquanto a lista do AtendeZap está aberta */
+[data-az-nativo] { display: none !important; }
+
+/* v1.17: faixa "Arquivadas" some pelo CSS (atributo no <html> posto pelo JS com o valor guardado): nem chega a aparecer ao abrir/trocar de aba */
+html[data-az-sumir-arq] [data-testid="chatlist-panel-archived-button"] { display: none !important; }
