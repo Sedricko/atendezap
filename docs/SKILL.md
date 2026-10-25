@@ -1,9 +1,9 @@
 ---
 name: atendezap-extensao-whatsapp
-description: Continuar o desenvolvimento do AtendeZap (extensão Chrome MV3 para WhatsApp Web do Johon + duas planilhas Google com scripts). Passagem de bastão para QUALQUER conversa nova ou outra IA: estado atual (v1.47.0), regras inegociáveis, como testar e empacotar, armadilhas já resolvidas e pendências.
+description: Continuar o desenvolvimento do AtendeZap (extensão Chrome MV3 para WhatsApp Web do Johon + duas planilhas Google com scripts). Passagem de bastão para QUALQUER conversa nova ou outra IA: estado atual (v1.47.1), regras inegociáveis, como testar e empacotar, armadilhas já resolvidas e pendências.
 ---
 
-# AtendeZap — passagem de bastão (estado na v1.47.0)
+# AtendeZap — passagem de bastão (estado na v1.47.1)
 
 > Ponto de partida para **qualquer conversa nova ou outra IA**. Leia inteiro antes de mexer em qualquer coisa. O diário completo por versão está em `docs/SKILL-HISTORICO.md` (consulte só para achar o motivo de uma decisão antiga).
 
@@ -18,12 +18,13 @@ description: Continuar o desenvolvimento do AtendeZap (extensão Chrome MV3 para
 3. Leia `docs/FUNCOES.md` (o que existe e onde), `docs/ARQUITETURA.md` (mapa do `main.js`), `docs/TESTE-REAL.md` (o que o Johon ainda precisa confirmar) e `tools/teste/README.md` (como testar).
 4. Se ele mandar **pacote de diagnóstico (.zip)**, relatório, mapa ou estrutura: leia o `mapa.json` (`mudancas`, `entregaViewOnce`, `sondaViewOnce`, `recursos`), `ambiente.json`, `ponte.json`, `ia.json` e `erros.json` antes de propor qualquer ajuste.
 
-## 3. Estado atual (v1.47.0)
+## 3. Estado atual (v1.47.1)
 - **Barra com 6 ícones, por assunto:** ⚡ Atendimento (Respostas · Aguardando · Assinatura · Atendente IA · Memória IA · Lista de frete · Resumo) · 👥 Grupos (Pedidos · Conjuntos · Ajustes) · 🧰 Ferramentas (Iniciar conversa · Enviar para vários · Fixadas · Contato · Exportar · Backup) · 🔒 Privacidade (Ocultas · Apagar · Recuperar) · 🩺 Diagnóstico (Saúde · Limites · Avaliação · Envios à IA · Laboratório) · ⚙ Configurações (Começar aqui · Acesso da equipe · Posição · Assistente de IA · Partes do painel).
 - **29 recursos** que o administrador libera ou bloqueia por perfil (vazio = bloqueado). **🧪 = ainda não confirmado no WhatsApp REAL:** apagar, recuperar, exportar, contato, escuta (banco de conhecimento), resumo, ligação (resposta automática), avaliação e laboratório. Tudo foi testado **só em simulador**; o Johon **ainda não devolveu nenhum teste real** desses itens (ver `docs/TESTE-REAL.md`).
 - **Confirmados no WhatsApp real (relatórios e uso dele):** respostas rápidas, assinatura, iniciar conversa, enviar para vários (e Status), fixadas, pedidos de grupos, vagas, "grupos só na aba Grupos", Atendente IA, acesso da equipe, diagnóstico.
-- **Testes (verificados em 24/10/2026, rodada final da v1.47.0):** 335 verificações de ponta a ponta, `_regressoes: []`, `errors: []`, `FIM saída=0`; `util.test.js`, `admin.test.js` e `planilha.test.js` passam.
-- **Conferir se recebeu os arquivos certos:** `manifest.json` diz `1.47.0`; a pasta `atendezap/` tem **52 arquivos**; `AtendeZap.gs` tem `VERSAO_IA_ = 5`; `A.RECURSOS.length` é 29. Se algo for diferente, diga ao Johon antes de mexer.
+- **Testes (verificados em 25/10/2026 na v1.47.0, num repositório Git; o smoke precisa do pacote Python `playwright` na MESMA versão do Chromium instalado, ex.: `pip install playwright==1.63.0` para `/opt/pw-browsers/chromium-1243`):** 338 chaves de ponta a ponta, `_regressoes: []`, `errors: []`, `FIM saída=0`; `util.test.js`, `admin.test.js` e `planilha.test.js` passam.
+- **v1.47.1 (preparação para a Chrome Web Store, sem mudar função):** nome "AtendeZap - Atendimento para WhatsApp Web", `minimum_chrome_version` 111 (exigido pelos scripts no mundo MAIN), `tools/loja/empacotar.sh` (gera `dist/atendezap-loja.zip`), `tools/loja/imagens.py` (capturas a partir dos prints do smoke), `docs/LOJA-CHROME.md` (todas as respostas do formulário da loja), `docs/privacidade.html` (política para publicar). **A versão da loja tem outro ID e começa vazia:** migrar com Exportar/Restaurar backup e recolocar chave da IA e convite. Ainda NÃO enviada à loja.
+- **Conferir se recebeu os arquivos certos:** `manifest.json` diz `1.47.1`; a extensão tem **52 arquivos** de origem (+ os da loja: `tools/loja/`, `docs/loja/`, `docs/LOJA-CHROME.md`, `docs/privacidade.html`); `AtendeZap.gs` tem `VERSAO_IA_ = 5`; `A.RECURSOS.length` é 29. Se algo for diferente, diga ao Johon antes de mexer.
 - **Segurança já feita:** backups nunca levam chave da IA, convite da equipe nem identificação do computador (`AZU.BACKUP_NUNCA`); a ponte só obedece ao painel em tudo que apaga, envia, lê conversa ou baixa mídia (`SENSIVEIS`); diagnóstico sem dados pessoais. Limite conhecido da ponte: `docs/AUDITORIA.md`.
 
 ## 4. Pendências e próximos passos

@@ -1,0 +1,62 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AtendeZap · Política de Privacidade</title>
+<style>
+  body { margin: 0; background: #f6f8f7; color: #1d2b28; font: 16px/1.6 system-ui, sans-serif; }
+  main { max-width: 760px; margin: 0 auto; padding: 32px 16px 64px; }
+  h1 { color: #0b5f55; margin-bottom: 4px; }
+  h2 { color: #0b5f55; margin-top: 32px; font-size: 1.2em; }
+  small { color: #5b6b67; }
+</style>
+</head>
+<body>
+<main>
+<h1>Política de Privacidade do AtendeZap</h1>
+<small>Última atualização: 25 de outubro de 2026 · vale para a extensão AtendeZap para Chrome e Edge</small>
+
+<h2>1. Resumo</h2>
+<p>O AtendeZap é uma extensão que ajuda a atender clientes no WhatsApp Web (respostas rápidas, assinatura, organização de conversas e grupos e um assistente de inteligência artificial opcional). <strong>A extensão não tem servidor próprio.</strong> Os dados ficam no seu computador e só saem dele para serviços que <strong>você mesmo configura</strong>: a API do Google Gemini, com a sua chave, e as suas planilhas Google, com o seu Apps Script. Não vendemos, não compartilhamos e não usamos dados para publicidade.</p>
+
+<h2>2. Quais dados a extensão acessa</h2>
+<ul>
+  <li><strong>Conteúdo do WhatsApp Web</strong> que aparece no seu navegador: nomes, números, mensagens e grupos das conversas. A extensão usa esses dados para mostrar as funções na tela (por exemplo: quem está aguardando resposta, pedidos para entrar em grupos).</li>
+  <li><strong>As suas configurações</strong>: respostas rápidas, assinatura, categorias, preferências do painel.</li>
+  <li><strong>A sua chave da API do Gemini</strong>, se você ativar o assistente de IA.</li>
+  <li><strong>Um identificador aleatório do computador</strong>, criado pela própria extensão, e o tipo de sistema e a versão do navegador (por exemplo: "Windows · Chrome 130"). Eles só são usados se você conectar a planilha da equipe.</li>
+</ul>
+
+<h2>3. Onde os dados ficam</h2>
+<p>Tudo é guardado no armazenamento local da extensão, no seu computador (<code>chrome.storage.local</code>). Backups, exportações e pacotes de diagnóstico só são gerados quando você pede e são baixados como arquivo no seu próprio computador. Backups e pacotes de diagnóstico <strong>nunca</strong> incluem a chave da IA nem o convite da equipe. Os pacotes de diagnóstico não incluem mensagens, contatos nem números de telefone.</p>
+
+<h2>4. Quando os dados saem do seu computador</h2>
+<ul>
+  <li><strong>Google Gemini (API de IA)</strong>: só se você ativar o assistente e colocar a sua chave. Os textos necessários para gerar a sugestão (por exemplo, as mensagens do cliente na conversa em que o robô atua) são enviados para <code>generativelanguage.googleapis.com</code> com a sua chave. Esse envio segue os termos e a política de privacidade do Google para a API Gemini. O Atendente IA começa desligado e pede o seu aceite antes de funcionar.</li>
+  <li><strong>As suas planilhas Google (Apps Script)</strong>: só se você colar o endereço de um script seu. A extensão aceita apenas endereços <code>https://script.google.com/macros/s/…/exec</code>. Para a planilha de frete e IA podem ser enviados a lista de cargas, perguntas e respostas para a memória da IA e o estado do robô. Para a planilha da equipe vão o código de convite, o identificador aleatório do computador, o tipo de sistema e navegador e a versão da extensão. Essas planilhas pertencem a você ou à sua empresa.</li>
+</ul>
+<p>Nenhum outro envio acontece. A extensão não usa ferramentas de estatística, rastreamento nem anúncios.</p>
+
+<h2>5. O que a extensão não faz</h2>
+<ul>
+  <li>Não vende nem transfere dados a terceiros.</li>
+  <li>Não usa dados para publicidade, perfil de crédito nem qualquer fim que não seja a própria função da extensão.</li>
+  <li>Não abre, salva nem exporta mensagens de visualização única.</li>
+  <li>Não tem acesso a nenhum site além do WhatsApp Web e dos serviços do Google listados acima.</li>
+</ul>
+
+<h2>6. Uso de dados de clientes (LGPD)</h2>
+<p>Quem usa a extensão para atender os próprios clientes é o controlador desses dados. Se você ativar a IA, avise os seus clientes quando a lei exigir, já que as mensagens deles serão processadas pela API do Google.</p>
+
+<h2>7. Como apagar os dados</h2>
+<p>Remover a extensão do navegador apaga todos os dados locais dela. Os dados enviados às suas planilhas podem ser apagados direto nelas. Os dados processados pela API Gemini seguem as regras de retenção do Google.</p>
+
+<h2>8. Contato</h2>
+<p>Dúvidas sobre esta política: <strong>[SEU E-MAIL DE CONTATO]</strong></p>
+
+<h2>9. Mudanças</h2>
+<p>Se esta política mudar, a data no topo será atualizada.</p>
+</main>
+</body>
+</html>

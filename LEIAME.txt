@@ -1,11 +1,12 @@
-AtendeZap — extensão para WhatsApp Web (Chrome/Edge) · v1.47.0
+AtendeZap — extensão para WhatsApp Web (Chrome/Edge) · v1.47.1
 
 COMO INSTALAR
- 1. Descompacte a pasta "atendezap" num lugar fixo (não apague depois). Precisa de Chrome/Edge 100 ou mais novo.
+ 1. Descompacte a pasta "atendezap" num lugar fixo (não apague depois). Precisa de Chrome/Edge 111 ou mais novo.
  2. Abra chrome://extensions (no Edge: edge://extensions) e ative "Modo do desenvolvedor".
  3. Clique em "Carregar sem compactação" e escolha a pasta "atendezap".
  4. Abra ou recarregue https://web.whatsapp.com. O painel começa recolhido: Alt+Z (ou a aba verde com o raio na borda) abre.
 COMO ATUALIZAR: substitua os arquivos na MESMA pasta, clique em ⟳ na extensão em chrome://extensions e recarregue o WhatsApp Web (F5). A versão aparece em chrome://extensions.
+PELA CHROME WEB STORE (sem modo do desenvolvedor, com atualização automática): passo a passo em docs/LOJA-CHROME.md.
 
 O PAINEL: 6 ÍCONES, UM POR ASSUNTO   (🧪 = em teste: passa nos nossos testes, mas ainda não foi confirmado no WhatsApp de verdade)
  ⚡ Atendimento  Respostas · Aguardando (e a resposta automática a ligações 🧪) · Assinatura · Atendente IA (o robô) · Memória IA (e o banco de conhecimento 🧪) · Lista de frete · Resumo do que perdi 🧪

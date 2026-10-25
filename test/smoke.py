@@ -265,7 +265,7 @@ async def main():
         res['mapa'] = (mp['mapa']['totalModulos'], mp['mapa']['apagarStatusVia'], len(mp['mapa']['wppFuncoes'].get('chat', [])), mp['mapa']['recursos'])
         # v1.47: DIAGNÓSTICO AMPLIADO — o mapa traz ambiente, ponte, IA, erros e o que mudou; o pacote .zip reúne tudo e NÃO leva dado pessoal
         res['dg_mapa_extras'] = {'chaves': all(k in mp for k in ['ambiente', 'ponte', 'ia', 'erros', 'mudancas']), 'primeira_leitura': mp['mudancas'].get('primeiraLeitura') is True or 'contagem' in mp['mudancas'], 'entrega_view_once': 'varridas' in mp['mapa'].get('entregaViewOnce', {}) and 'viewOnce' in mp['mapa']['entregaViewOnce'],
-                                 'ambiente': 'storage' in mp['ambiente']['permissoes'] and mp['ambiente']['minChrome'] == '100' and mp['ambiente']['armazenamento']['chaves'] > 0 and mp['ambiente']['armazenamento']['totalBytes'] > 0 and len(mp['ambiente']['armazenamento']['maiores']) > 0}
+                                 'ambiente': 'storage' in mp['ambiente']['permissoes'] and mp['ambiente']['minChrome'] == '111' and mp['ambiente']['armazenamento']['chaves'] > 0 and mp['ambiente']['armazenamento']['totalBytes'] > 0 and len(mp['ambiente']['armazenamento']['maiores']) > 0}
         async with page.expect_download() as dlz:
             await page.locator('#az-panel .gbtn', has_text='Gerar pacote de diagnóstico').click()
         zip_pac = __import__('zipfile').ZipFile(await (await dlz.value).path()); nomes_z = sorted(zip_pac.namelist()); conteudo_z = {n: zip_pac.read(n).decode('utf-8') for n in nomes_z}
