@@ -2,11 +2,15 @@ OBSERVADOR — o assistente que aprende com o seu dia (v0.1)
 
 O QUE ELE FAZ
  Registra, SÓ NESTE COMPUTADOR, o que você faz, onde e por quê, para uma IA aprender a sua rotina e depois repeti-la.
- • Windows inteiro (windows/): a cada 5 s anota o programa e a janela em uso (Word, Explorador, WhatsApp, Outlook, navegador…)
-   em Documentos\Observador\AAAA-MM-DD.txt e pergunta "por quê" na primeira vez do dia em cada programa.
+ • Windows inteiro (windows/): em Documentos\Observador\AAAA-MM-DD.txt anota a hora em que você começa a trabalhar, cada
+   programa e janela em uso (Word, Explorador, WhatsApp, Outlook, navegador…), o texto que você escreve (o final, já corrigido),
+   o nome do que você clica (botões, menus, itens) e os atalhos (Ctrl+C, Ctrl+V…). Pergunta "por quê" na primeira vez do dia
+   em cada programa. Pausas de 5 min sem mexer viram "ausente".
  • Navegador (extensao/): anota cada site, o tempo nele, os botões que você clica e o NOME dos campos que preenche,
    e pergunta "por que você está neste site?" uma vez por dia em cada site.
- Nunca grava o que você digita, nem senhas, nem os sites e programas da lista de privados (bancos já vêm na lista).
+ Serve SÓ para a IA aprender o seu jeito. Nunca grava: campos de senha, janelas e sites da lista de privados (bancos já vêm
+ na lista; edite $privado no observador.ps1 e a lista no painel da extensão) e o tempo em que estiver pausado.
+ ATENÇÃO: os arquivos do dia contêm tudo o que você escreveu. Não compartilhe a pasta e apague o que não precisar mais.
 
 COMO INSTALAR
  Windows: copie a pasta "observador" para um lugar fixo e dê dois cliques em windows\iniciar.bat.
