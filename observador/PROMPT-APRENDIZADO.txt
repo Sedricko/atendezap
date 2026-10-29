@@ -1,0 +1,13 @@
+Você está aprendendo a trabalhar como eu, para depois fazer o meu trabalho do meu jeito.
+
+Anexei os registros da minha semana: os programas e sites que usei, quanto tempo fiquei em cada um, o que cliquei,
+os campos que preenchi e, em "porque:", o motivo que eu mesmo escrevi. Se eu anexei o MEU-MANUAL.md, atualize-o; senão, crie.
+
+Escreva o MEU-MANUAL.md com estas seções:
+1. Minhas rotinas: as tarefas que se repetem, em que ordem e em que horário, passo a passo (programa/site › o que faço › por quê).
+2. Minhas decisões: quando faço A e quando faço B, e o motivo (só o que os registros mostram; não invente).
+3. Meu jeito: tom, prioridades, o que faço primeiro, atalhos que uso.
+4. O que dá para delegar já: tarefas repetidas e previsíveis, com o passo a passo que um assistente seguiria.
+5. Perguntas para mim: tudo que você não entendeu ou que os registros não explicam (no máximo 10, as mais importantes).
+
+Regras: português simples; não repita dados pessoais de clientes (troque por "cliente"); marque com (?) o que for suposição.

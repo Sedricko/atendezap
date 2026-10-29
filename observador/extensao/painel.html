@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<title>Observador — meu dia</title>
+<style>
+  body{font:15px system-ui,sans-serif;max-width:900px;margin:24px auto;padding:0 16px;color:#222;background:#fafafa}
+  pre{background:#fff;border:1px solid #ddd;padding:12px;white-space:pre-wrap;max-height:60vh;overflow:auto}
+  textarea{width:100%;height:120px;font:inherit}
+  button,select{font:inherit;padding:6px 12px;margin:4px 4px 4px 0;cursor:pointer}
+  section{margin:20px 0}
+</style>
+</head>
+<body>
+<h1>Observador — meu dia</h1>
+<p>Tudo fica só neste computador. Nada é enviado para lugar nenhum.</p>
+
+<section>
+  <button id="pausa"></button>
+  <label>Dia: <select id="dia"></select></label>
+  <button id="txt">Baixar dia para a IA (.txt)</button>
+  <button id="json">Backup de tudo (.json)</button>
+  <pre id="linha">Carregando…</pre>
+</section>
+
+<section>
+  <h2>Sites que nunca são registrados</h2>
+  <p>Um por linha (vale para os subdomínios). Coloque aqui banco, saúde e tudo que for pessoal.</p>
+  <textarea id="bloq" aria-label="Sites que nunca são registrados"></textarea>
+  <button id="salvaBloq">Salvar lista</button>
+</section>
+
+<section>
+  <button id="apaga">Apagar todos os registros</button>
+</section>
+<script src="util.js"></script>
+<script src="painel.js"></script>
+</body>
+</html>

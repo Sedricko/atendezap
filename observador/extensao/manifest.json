@@ -1,0 +1,12 @@
+{
+  "manifest_version": 3,
+  "name": "Observador - meu dia de trabalho",
+  "version": "0.1.0",
+  "description": "Registra, só neste computador, os sites que você usa, o que fez neles e por quê, para uma IA aprender sua rotina.",
+  "background": { "service_worker": "background.js" },
+  "action": { "default_title": "Observador: ver meu dia" },
+  "permissions": ["tabs", "storage", "unlimitedStorage"],
+  "content_scripts": [
+    { "matches": ["http://*/*", "https://*/*"], "js": ["content.js"], "run_at": "document_idle" }
+  ]
+}
