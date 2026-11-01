@@ -1914,7 +1914,7 @@
           const vis = MODULOS.filter(([k]) => !acessoOculto(k)), de = (k) => ({ cargas: 'respostas', vagas: 'grupos', gruposSo: 'grupos', escuta: 'respostas', ligacao: 'respostas' })[k] || HUB_DE[k];
           return Object.keys(HUBS).map((hub) => { const ms = vis.filter(([k]) => de(k) === hub); return ms.length ? [h('p', { class: 'hint grp' }, HUBS[hub].titulo), ms.map(linha)] : null; });
         })()),
-        h('p', { class: 'hint' }, 'Diagnóstico e Configurações ficam sempre ligados (avisam se o WhatsApp mudar e permitem religar as partes).')),
+        h('p', { class: 'hint' }, 'Configurações fica sempre visível: é onde fica o Acesso da equipe (o convite).')),
     ];
   }
 
@@ -3407,12 +3407,12 @@
     const r = AC.defaultsParaAplicar(acessoEf(), S.acessoAplicado || {}); let mexeu = false;
     for (const { k, valor } of r.aplicar) {
       if (k === 'iaAudio') { S.atendCfg = { ...S.atendCfg, transcreverAudio: valor }; await save('atendCfg'); }
-      else if (AC.MODULOS.includes(k)) { S.mods = { ...(S.mods || {}), [k]: valor }; mexeu = true; }
+      else { S.mods = { ...(S.mods || {}), [k]: valor }; mexeu = true; }   // v1.47.2: vale para TODOS os recursos (cartões de Configurações, Saúde, Limites, Memória IA…), não só as Partes do painel
     }
     if (mexeu) await save('modulos');
     const novo = { ...r.aplicado, _c: S.acessoAplicado?._c };
     if (JSON.stringify(novo) !== JSON.stringify(S.acessoAplicado || {})) { S.acessoAplicado = novo; await save('acessoAplicado'); }
-    const off = r.aplicar.filter((x) => !x.valor).map((x) => acessoNomeParte(x.k));
+    const off = r.aplicar.filter((x) => !x.valor && (AC.MODULOS.includes(x.k) || x.k === 'iaAudio')).map((x) => acessoNomeParte(x.k));
     if (off.length) toast('O administrador deixou DESLIGADAS por padrão: ' + off.join(', ') + '. Para usar, ligue em Configurações › Partes do painel.', 14000);
     return r.aplicar;
   }
