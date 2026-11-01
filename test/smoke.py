@@ -1161,6 +1161,9 @@ async def main():
         await chega(QV, 'bom dia, tudo bem?'); await page.wait_for_timeout(6000)
         res['ac_vazio_libera'] = {'cartoes': v1['cartoes'], 'respostas_na_barra': await page.locator('#az-panel .tb[data-tip^="Atendimento"]').count(), 'aviso_sumiu': not await page.evaluate(PBTXT + ".includes('ainda não liberou nenhuma parte')")}
         res['ac_vazio_robo'] = {'enviou': len(await textos(QV)), 'sugestoes': await sw.evaluate("chrome.storage.local.get('atendSug').then(d => (d.atendSug || []).filter((s) => s.id === '%s').map((s) => s.acao))" % QV), 'salvo': (await st('atendCfg')).get('modo')}
+        # v1.47.2: "desligado" vale também para os cartões de Configurações e o Diagnóstico (antes só as Partes do painel obedeciam)
+        await admin({'recursos': {'atendente': 'ligado', 'replies': 'ligado', 'cfgPosicao': 'desligado', 'cfgIA': 'desligado', 'diag': 'desligado', 'memoria': 'desligado'}, 'limites': {}, 'global': G1}); await atualizar(); await ir(page, 'Configurações'); await page.wait_for_timeout(600)
+        res['ac_desligado_extras'] = {'cartoes': (await page.evaluate(TELA))['cartoes'], 'diag_na_barra': await page.locator('#az-panel .tb[data-tip^="Diagnóstico"]').count()}
         await sw.evaluate("chrome.storage.local.set({ acessoExigir: false, acessoCfg: {}, acessoEstado: null, acessoAplicado: {}, modulos: {}, atendCfg: {}, atendEst: {}, atendLog: [], atendSug: [] }); self.__admin = {}"); await page.wait_for_timeout(1200)
         # v1.35.1: perfil ADMINISTRADOR com os 21 recursos ligados — TUDO o que a planilha oferece tem de aparecer e funcionar na extensão (era o caso do Laboratório que não aparecia)
         TODOS = {k: 'ligado' for k in ['replies', 'fila', 'sig', 'start', 'lote', 'pins', 'ocultas', 'apagar', 'recuperar', 'exportar', 'contato', 'escuta', 'resumo', 'ligacao', 'avaliacao', 'backup', 'lab', 'gruposSo', 'atendente', 'vagas', 'pedidos', 'cargas', 'iaAudio', 'diagAvancado', 'diag', 'cfgPosicao', 'cfgIA', 'cfgPartes', 'cfgLimites', 'memoria', 'unicos', 'iaenvios']}
@@ -1886,6 +1889,7 @@ async def main():
             'ac_todos_diag': lambda v: v == {'laboratorio': True, 'avancado': True}, 'ac_todos_robo': lambda v: v == {'audio': True, 'automatico_livre': True},
             'ac_vazio_tela': lambda v: v == {'cartoes': ['Acesso da equipe'], 'sem_diag_nem_backup': True, 'aberto': True, 'aviso': True, 'respostas_na_barra': 0, 'config_na_barra': 1},
             'ac_vazio_libera': lambda v: v == {'cartoes': ['Posição do painel', 'Acesso da equipe'], 'respostas_na_barra': 1, 'aviso_sumiu': True},
+            'ac_desligado_extras': lambda v: v == {'cartoes': ['Acesso da equipe'], 'diag_na_barra': 0},
             'ac_vazio_robo': lambda v: v == {'enviou': 0, 'sugestoes': ['responder'], 'salvo': 'automatico'},
             'ac_login_tela': lambda v: v == {'cartoes': ['Acesso da equipe'], 'sem_diag_nem_backup': True, 'aberto': True, 'respostas_na_barra': 0, 'config_na_barra': 1},
             'ac_login_robo': lambda v: v == {'enviou': 0, 'sugestoes': 0},
