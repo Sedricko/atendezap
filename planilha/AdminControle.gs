@@ -43,11 +43,11 @@ var ADM_COR = { ligado: ['#ceead6', '#137333'], obrigatorio: ['#81c995', '#0d652
 var ADM_LIMITES_VAL = { roboModoMax: ['desligado', 'sugerir', 'automatico'], roboMaxPorContatoDia: [1, 200], roboMaxPorHora: [1, 500], chavesMax: [1, 6], retencaoMaxDias: [1, 365] };
 // Como a aba Perfis é organizada: [título do grupo, explicação, [chaves]]. Todo recurso e todo limite está em exatamente um grupo (o teste confere).
 var ADM_GRUPOS = [
-  ['▸ ATENDIMENTO', 'Responder clientes: respostas, fila de espera, assinatura, o robô (Atendente IA), a transcrição de áudios e a Lista de frete', ['replies', 'fila', 'sig', 'atendente', 'iaAudio', 'escuta', 'resumo', 'ligacao', 'cargas']],
-  ['▸ GRUPOS', 'Tudo de grupos: pedidos para entrar, vagas e "grupos só na aba Grupos"', ['pedidos', 'vagas', 'gruposSo']],
+  ['▸ ATENDIMENTO', 'Responder clientes: respostas, fila de espera, assinatura, o robô (Atendente IA), a transcrição de áudios e a Lista de frete', ['replies', 'fila', 'sig', 'atendente', 'memoria', 'iaAudio', 'escuta', 'resumo', 'ligacao', 'cargas']],
+  ['▸ GRUPOS', 'Tudo de grupos: pedidos para entrar, vagas e "grupos só na aba Grupos"', ['pedidos', 'unicos', 'vagas', 'gruposSo']],
   ['▸ FERRAMENTAS', 'Iniciar conversa, enviar para vários, fixar conversas, exportar conversa e backup', ['start', 'lote', 'pins', 'contato', 'exportar', 'backup']],
   ['▸ PRIVACIDADE', 'Ocultar conversas, apagar as suas mensagens para todos e recuperar o que os contatos apagarem', ['ocultas', 'apagar', 'recuperar']],
-  ['▸ DIAGNÓSTICO', 'Saúde das funções, limites do WhatsApp, Laboratório (recursos escondidos) e arquivos para suporte (o autoteste roda mesmo com a aba escondida)', ['diag', 'cfgLimites', 'avaliacao', 'lab', 'diagAvancado']],
+  ['▸ DIAGNÓSTICO', 'Saúde das funções, limites do WhatsApp, Laboratório (recursos escondidos) e arquivos para suporte (o autoteste roda mesmo com a aba escondida)', ['diag', 'cfgLimites', 'avaliacao', 'iaenvios', 'lab', 'diagAvancado']],
   ['▸ CONFIGURAÇÕES', 'Os cartões da tela de Configurações: posição do painel, partes do painel e a chave do Gemini (o "Acesso da equipe" sempre aparece)', ['cfgPosicao', 'cfgPartes', 'cfgIA']],
   ['▸ LIMITES (números; vazio = sem teto)', 'Tetos que valem por cima do que a pessoa configurou', ['limite:roboModoMax', 'limite:roboMaxPorContatoDia', 'limite:roboMaxPorHora', 'limite:chavesMax', 'limite:retencaoMaxDias']]
 ];
@@ -63,13 +63,14 @@ var ADM_RECURSOS = [
   ['recuperar', '[Em teste] Privacidade › Recuperar mensagens que os contatos apagarem (cópia local e temporária; a pessoa liga lá dentro)'], ['backup', 'Ferramentas › Backup'],
   ['lab', '[Em teste] Diagnóstico › Laboratório: liga recursos escondidos do próprio WhatsApp para experimentar (ainda não sabemos o que cada um faz)'], ['gruposSo', 'Grupos › Ajustes: "grupos só na aba Grupos"'],
   ['atendente', 'Atendimento › Atendente IA (robô). Libere também "cfgIA": é onde a pessoa coloca a chave do Gemini'], ['vagas', 'Grupos › Ajustes: vagas nos grupos'],
-  ['pedidos', 'Grupos › Pedidos para entrar e Conjuntos'], ['cargas', 'Atendimento › Lista de frete (a planilha Google do robô)'],
+  ['pedidos', 'Grupos › Pedidos para entrar'], ['cargas', 'Atendimento › Lista de frete (a planilha Google do robô)'],
   ['iaAudio', '[Em teste] Atendimento › Atendente IA: transcrever áudios do robô (precisa de "atendente")'], ['diagAvancado', 'Diagnóstico › Saúde: arquivos para suporte (fica dentro da aba Saúde: precisa de "diag")'],
   ['diag', 'Diagnóstico › Saúde (o autoteste continua rodando e enviando, com a aba escondida)'], ['cfgPosicao', 'Configurações › Geral: cartão "Posição do painel"'],
   ['cfgIA', 'Configurações › Geral: cartão "Assistente de IA" (a chave do Gemini da pessoa)'], ['cfgPartes', 'Configurações › Geral: cartão "Partes do painel" (ligar/desligar as partes liberadas)'],
   ['cfgLimites', 'Diagnóstico › Limites do WhatsApp (só leitura)'], ['exportar', '[Em teste] Ferramentas › Exportar conversa: mensagens e mídia de um intervalo de data e hora, em um arquivo .zip'],
   ['contato', '[Em teste] Ferramentas › Contato: dados do contato aberto e o aparelho provável dele (Android, iPhone ou Web)'], ['resumo', '[Em teste] Atendimento › Resumo: a IA resume as mensagens não lidas das conversas individuais e sugere o que fazer primeiro (só resume, não responde a ninguém)'], ['ligacao', '[Em teste] Atendimento › Aguardando: responde com UMA mensagem curta quem ligar e não foi atendido (nunca em grupo, nunca atende nem recusa a chamada; a pessoa liga lá dentro)'], ['avaliacao', '[Em teste] Diagnóstico › Avaliação: confere o que a pessoa respondeu contra a memória aprendida, quem ficou sem resposta e o tempo de resposta (sem IA, sem nota para ninguém)'],
-  ['escuta', '[Em teste] Atendimento › Memória IA › Banco de conhecimento: lê as conversas de tempos em tempos e guarda o conhecimento (sem dados pessoais); a pessoa liga lá dentro e a IA só propõe, ela aprova']
+  ['escuta', '[Em teste] Atendimento › Memória IA › Banco de conhecimento: lê as conversas de tempos em tempos e guarda o conhecimento (sem dados pessoais); a pessoa liga lá dentro e a IA só propõe, ela aprova'],
+  ['memoria', 'Atendimento › Memória IA (o que a IA aprendeu; a escuta automática fica aqui dentro)'], ['unicos', 'Grupos › Conjuntos de grupos (sem duplicar quem já está em grupo igual)'], ['iaenvios', 'Diagnóstico › Envios à IA (quantos pedidos foram à IA, tempo e erros)']
 ];
 // Limites (valor vazio = sem teto). [chave, descrição]
 var ADM_LIMITES = [
@@ -79,7 +80,7 @@ var ADM_LIMITES = [
 var ADM_GLOBAL = [
   ['emergencia', 'nao', 'sim = PAUSA o robô de todos (vale em até "consultaMin" minutos)'], ['emergenciaMensagem', '', 'Texto mostrado na tela durante a pausa'],
   ['versaoMinima', '', 'Ex.: 1.34.0 — quem estiver com versão menor vê um aviso para atualizar'], ['aviso', '', 'Recado que aparece na tela de todos'],
-  ['coletarSaude', 'sim', 'sim = a extensão pode enviar o resumo de saúde (cada pessoa ainda precisa aceitar)'], ['consultaMin', '10', 'De quantos em quantos minutos a extensão consulta esta planilha (5-120)'],
+  ['coletarSaude', 'sim', 'sim = a extensão pode enviar o resumo de saúde (cada pessoa ainda precisa aceitar)'], ['consultaMin', '15', 'De quantos em quantos minutos a extensão consulta esta planilha (5-120)'],
   ['saudeMin', '30', 'De quantos em quantos minutos envia o resumo de saúde (10-240)'], ['validadeOfflineDias', '7', 'Dias que a última configuração vale se a internet/planilha falhar (depois o robô desliga)'],
   ['vigiaMin', '15', 'Minutos sem sinal de um robô LIGADO para você receber o alerta'], ['emailAlerta', '', 'Seu e-mail para os alertas do vigia']
 ];
@@ -91,6 +92,7 @@ var ADM_PERFIS_EXEMPLO = {
   atendente: ['', 'bloqueado', 'ligado', 'ligado'], vagas: ['', 'ligado', 'ligado', 'ligado'], pedidos: ['', 'desligado', 'desligado', 'ligado'], cargas: ['', 'ligado', 'ligado', 'ligado'],
   iaAudio: ['', 'bloqueado', 'desligado', 'ligado'], diagAvancado: ['', 'bloqueado', 'bloqueado', 'ligado'],
   diag: ['', 'bloqueado', 'bloqueado', 'ligado'], cfgPosicao: ['', 'ligado', 'ligado', 'ligado'], cfgIA: ['', 'bloqueado', 'ligado', 'ligado'], cfgPartes: ['', 'bloqueado', 'bloqueado', 'ligado'], cfgLimites: ['', 'bloqueado', 'bloqueado', 'ligado'],
+  memoria: ['', 'bloqueado', 'ligado', 'ligado'], unicos: ['', 'desligado', 'desligado', 'ligado'], iaenvios: ['', 'bloqueado', 'bloqueado', 'ligado'],
   'limite:roboModoMax': ['', 'desligado', 'sugerir', 'automatico'], 'limite:roboMaxPorContatoDia': ['', '', '15', ''], 'limite:roboMaxPorHora': ['', '', '40', ''], 'limite:chavesMax': ['', '1', '2', '6'], 'limite:retencaoMaxDias': ['', '90', '90', '']
 };
 var ADM_NOMES_PERFIS = ['Novo', 'Básico', 'Com robô', 'Administrador'];   // "Novo" fica em branco: quem entra sem perfil (ou com perfil que não existe) só vê o "Acesso da equipe"
@@ -195,7 +197,7 @@ function admLiberarComputadores_(texto) {
 }
 function admLiberarComputadores() {
   var ui; try { ui = SpreadsheetApp.getUi(); } catch (e) { return 0; }
-  var r = ui.prompt('Liberar computadores', 'Nome (ou código) da pessoa. Os computadores dela serão desconectados na próxima consulta (até 10 minutos) e ela poderá se conectar de novo, até o limite de computadores dela.', ui.ButtonSet.OK_CANCEL);
+  var r = ui.prompt('Liberar computadores', 'Nome (ou código) da pessoa. Os computadores dela serão desconectados na próxima consulta (até "consultaMin" minutos, aba Global) e ela poderá se conectar de novo, até o limite de computadores dela.', ui.ButtonSet.OK_CANCEL);
   if (r.getSelectedButton() !== ui.Button.OK) return 0;
   var n = admLiberarComputadores_(r.getResponseText());
   ui.alert(n < 0 ? 'Não achei essa pessoa na aba Usuarios (escreva o nome exatamente como está na coluna Nome, ou o código).' : n + ' computador(es) desconectado(s). A pessoa pode colar o convite de novo, até o limite dela.');

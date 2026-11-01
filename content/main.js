@@ -142,7 +142,7 @@
   }
   const ligado = (k) => {
     if (k === 'gruposAj') return ligado('vagas') || ligado('gruposSo');   // abas novas = chaves que já existiam (a planilha não muda)
-    const m = k === 'unicos' ? 'pedidos' : k === 'memoria' ? 'atendente' : k === 'frete' ? 'cargas' : k === 'limites' ? 'cfgLimites' : k === 'iaenvios' ? 'diag' : k, ef = acessoEf();
+    const m = k === 'frete' ? 'cargas' : k === 'limites' ? 'cfgLimites' : k, ef = acessoEf();   // v1.47.2: Memória IA, Conjuntos e Envios à IA têm linha própria na planilha
     return AC.liberado(ef, m, S.mods?.[m]);
   };
   // v1.12 — fixada por aba: cada conversa pode valer só em uma aba da lista (Todas | Não lidas | Favoritas | Grupos).

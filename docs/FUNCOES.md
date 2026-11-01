@@ -22,10 +22,10 @@ Grau: ✅ confirmada no seu WhatsApp (autoteste ✔ real e/ou uso real) · 🟡 
 | Respostas rápidas | Atendimento › Respostas | `replies` | ✅ |
 | Aguardando resposta | Atendimento › Aguardando | `fila` | 🟡 |
 | Assinatura | Atendimento › Assinatura | `sig` | ✅ |
-| Atendente IA (robô) | Atendimento › Atendente IA / Memória IA | `atendente` | ✅ (pendentes dentro dele: trava de robô único, modelo reserva, chaves em projetos diferentes) |
+| Atendente IA (robô) | Atendimento › Atendente IA / Memória IA | `atendente` / `memoria` | ✅ (pendentes dentro dele: trava de robô único, modelo reserva, chaves em projetos diferentes) |
 | Transcrição de áudios | Atendente IA › Ajustes | `iaAudio` | 🧪 |
 | Lista de frete | Atendimento › Lista de frete | `cargas` | ✅ |
-| Pedidos de grupos / Conjuntos | Grupos › Pedidos / Conjuntos | `pedidos` | ✅ |
+| Pedidos de grupos / Conjuntos | Grupos › Pedidos / Conjuntos | `pedidos` / `unicos` | ✅ |
 | Vagas nos grupos | Grupos › Ajustes | `vagas` | ✅ |
 | Grupos só na aba Grupos | Grupos › Ajustes | `gruposSo` | ✅ (correção do "Mostrar contato" aguarda o seu retorno) |
 | Iniciar conversa | Ferramentas › Iniciar conversa | `start` | ✅ |
@@ -37,7 +37,7 @@ Grau: ✅ confirmada no seu WhatsApp (autoteste ✔ real e/ou uso real) · 🟡 
 | Resumo do que perdi (IA resume as não lidas) | Atendimento › Resumo | `resumo` | 🧪 |
 | Ligação não atendida → mensagem automática | Atendimento › Aguardando (card) | `ligacao` | 🧪 (não sei se o WhatsApp Web avisa a ligação) |
 | Avaliação do atendimento contra a memória (sem IA) | Diagnóstico › Avaliação | `avaliacao` | 🧪 |
-| Envios à IA (o que foi mandado ao Google, já mascarado, só na memória da página; com tempo e erro de cada envio) | Diagnóstico › Envios à IA | *(vem com `diag`)* | ✅ regra simples |
+| Envios à IA (o que foi mandado ao Google, já mascarado, só na memória da página; com tempo e erro de cada envio) | Diagnóstico › Envios à IA | `iaenvios` | ✅ regra simples |
 | Pacote de diagnóstico .zip (relatório, mapa e o que mudou, estrutura, ambiente, erros, chamadas, IA) | Diagnóstico › Saúde › Avançado | `diagAvancado` | ✅ |
 | Começar aqui (primeira configuração guiada) | Configurações › Geral (cartão no topo) | *(sempre)* | ✅ |
 | Testar a memória (o robô responde as perguntas que aprendeu?) | Atendente IA › Treino | *(parte do `atendente`)* | 🧪 |

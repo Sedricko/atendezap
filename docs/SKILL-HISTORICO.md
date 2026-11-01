@@ -4,6 +4,9 @@
 > Para o estado ATUAL e as regras, leia `SKILL.md`. Consulte este arquivo só para achar o motivo de uma decisão antiga.
 
 
+## v1.47.2 (01/11/2026) — cada card obedece a uma linha própria da planilha
+Pedido do Johon: tudo vem bloqueado e só aparece o que a planilha liberar; sem convite, só o card "Acesso da equipe" (já era assim desde a v1.34.1, `EXIGIR_CONVITE`). Memória IA, Conjuntos e Envios à IA seguiam `atendente`, `pedidos` e `diag`; agora têm `memoria`, `unicos` e `iaenvios` (EXTRAS de `lib/acesso.js`, 32 recursos). `AdminControle.gs`: 3 linhas novas (entram sozinhas na aba Perfis ao reabrir; exemplo Administrador = ligado). `consultaMin` padrão 10 → 15 (configurável na aba Global, 5-120; planilha antiga mantém o valor da célula). Continuam sem linha própria, de propósito: Configurações › Geral (é onde fica o convite) e Grupos › Ajustes (aparece se `vagas` ou `gruposSo` estiver liberado).
+
 ## v1.47.1 (25/10/2026) — preparação para a Chrome Web Store
 Sem mudança de função. Manifesto: nome "para WhatsApp Web" (menos risco de marca), Chrome mínimo 111 (scripts `world: MAIN` não funcionam antes). Novos: `tools/loja/empacotar.sh`, `tools/loja/imagens.py`, `docs/loja/` (5 capturas + bloco 440×280), `docs/LOJA-CHROME.md`, `docs/privacidade.html`. Conferido: zip da loja carrega no Chromium (service worker sobe, versão 1.47.1); testes rápidos passam. Smoke completo na v1.47.1: 338 chaves, `errors: []`, `_regressoes: []`, `FIM saída=0` (o smoke agora espera `minChrome` 111).
 
