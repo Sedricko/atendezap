@@ -338,6 +338,7 @@ function admFormatarGlobal_() {
     k = String(vals[r - 1][0] == null ? '' : vals[r - 1][0]).trim();
     if (k === 'emergencia') { sh.getRange(r, 2).setDataValidation(lista).setHorizontalAlignment('center'); rangesEm.push(sh.getRange(r, 2)); }
     if (k === 'coletarSaude') { sh.getRange(r, 2).setDataValidation(lista).setHorizontalAlignment('center'); rangesCol.push(sh.getRange(r, 2)); }
+    if (k === 'versaoMinima') sh.getRange(r, 2).setNumberFormat('@');   // texto puro: "1.40" não vira o número 1.4
   }
   sh.setConditionalFormatRules([].concat(rangesEm.length ? [admRegraCor_('sim', ADM_COR.bloqueado, rangesEm), admRegraCor_('nao', ADM_COR.ligado, rangesEm)] : [], rangesCol.length ? [admRegraCor_('sim', ADM_COR.ligado, rangesCol), admRegraCor_('nao', ADM_COR.bloqueado, rangesCol)] : []));
 }
@@ -376,7 +377,8 @@ function admFormatarTudo_() {
 function admVenceu_(v, agora) {
   if (v === '' || v == null) return false;
   var d = v instanceof Date ? v : null, m;
-  if (!d && (m = /^(\d{1,2})\/(\d{1,2})\/(\d{4})$/.exec(String(v).trim()))) d = new Date(Number(m[3]), Number(m[2]) - 1, Number(m[1]));
+  if (!d && (m = /^(\d{1,2})[\/.-](\d{1,2})[\/.-](\d{4})$/.exec(String(v).trim()))) d = new Date(Number(m[3]), Number(m[2]) - 1, Number(m[1]));   // 31/12/2026, 31.12.2026, 31-12-2026
+  if (!d && (m = /^(\d{4})-(\d{1,2})-(\d{1,2})$/.exec(String(v).trim()))) d = new Date(Number(m[1]), Number(m[2]) - 1, Number(m[3]));   // 2026-12-31
   if (!d || isNaN(d.getTime())) return false;
   var fim = new Date(d.getFullYear(), d.getMonth(), d.getDate(), 23, 59, 59);
   return agora.getTime() > fim.getTime();

@@ -2530,9 +2530,11 @@
     const keys = U.backupKeys(r.obj.dados, [...r.sel]);
     if (!keys.length) return toast('Marque pelo menos um item.');
     if (r.modo === 'substituir' && !await confirmar('Substituir os itens marcados pelos do arquivo? Os atuais desses itens serão apagados.')) return;
-    const atual = await chrome.storage.local.get(null);
-    if (r.modo === 'substituir' && r.sel.has('respostas')) await chrome.storage.local.remove(Object.keys(atual).filter((k) => k.startsWith('midia_')));
-    await chrome.storage.local.set(U.mergeBackup(atual, r.obj.dados, keys, r.modo));
+    const atual = await chrome.storage.local.get(null), novo = U.mergeBackup(atual, r.obj.dados, keys, r.modo);
+    try {   // v1.47.3: grava o novo ANTES de apagar as mídias antigas; se a gravação falhar, nada do que você tinha se perde
+      await chrome.storage.local.set(novo);
+      if (r.modo === 'substituir' && r.sel.has('respostas')) await chrome.storage.local.remove(Object.keys(atual).filter((k) => k.startsWith('midia_') && !(k in r.obj.dados)));
+    } catch (e) { return toast('Não consegui restaurar: ' + e.message + '. Seus dados atuais não foram apagados.', 9000); }
     view.restore = null;
     await load(); applyPins(); renderHead(); renderPanel();
     toast('Backup restaurado.');

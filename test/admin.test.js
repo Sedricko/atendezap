@@ -21,7 +21,7 @@ function carrega({ url = URL_EXEC } = {}) {
         setValues(v) { v.forEach((lin, k) => { const i = r - 1 + k; while (abas[nome].length <= i) abas[nome].push([]); lin.forEach((x, j) => { checa(nome, i + 1, c + j, x); abas[nome][i][c - 1 + j] = x; }); }); return self; },
         getValue: () => { const v = (abas[nome][r - 1] || [])[c - 1]; return v === undefined ? '' : v; },
         setValue(v) { const i = r - 1; while (abas[nome].length <= i) abas[nome].push([]); abas[nome][i][c - 1] = v; return self; },
-        _pos: [r, c, n, m], setFontWeight() { return self; }, setBackground() { return self; }, setFontColor() { return self; }, setHorizontalAlignment() { return self; },
+        _pos: [r, c, n, m], setFontWeight() { return self; }, setBackground() { return self; }, setFontColor() { return self; }, setNumberFormat() { return self; }, setHorizontalAlignment() { return self; },
         setDataValidation(d) { reg.valids.push({ aba: nome, r, c, n, m, d }); return self; }, clearDataValidations() { reg.valids = reg.valids.filter((v) => v.aba !== nome); return self; },
       };
       return self;
@@ -102,7 +102,7 @@ s.abas.Usuarios[1][3] = 'não'; assert.deepEqual(s.post({ acao: 'config', codigo
 s.abas.Usuarios[1][4] = '01/01/2020'; assert.deepEqual(s.post({ acao: 'config', codigo: 'MARIACODIGO123456' }), { ok: false, desativado: true, erro: 'validade vencida' });
 s.abas.Usuarios[1][4] = s.data(Date.now() - 3 * 864e5); assert.equal(s.post({ acao: 'config', codigo: 'MARIACODIGO123456' }).desativado, true);                  // data real na célula
 s.abas.Usuarios[1][4] = s.data(Date.now() + 3 * 864e5); assert.equal(s.post({ acao: 'config', codigo: 'MARIACODIGO123456' }).ok, true); s.abas.Usuarios[1][4] = '31/12/2099'; assert.equal(s.post({ acao: 'config', codigo: 'MARIACODIGO123456' }).ok, true); s.abas.Usuarios[1][4] = '';
-for (const [v, esp] of [['', false], [null, false], ['lixo', false], ['01/01/2000', true], ['01/01/2999', false]]) assert.equal(s.run(`admVenceu_(${JSON.stringify(v)}, new Date())`), esp, String(v));
+for (const [v, esp] of [['', false], [null, false], ['lixo', false], ['01/01/2000', true], ['01/01/2999', false], ['2000-01-01', true], ['01.01.2000', true], ['01-01-2000', true], ['2999-01-01', false]]) assert.equal(s.run(`admVenceu_(${JSON.stringify(v)}, new Date())`), esp, String(v));
 // 6) saúde: só se o administrador deixou coletar; formato da extensão; atualiza Robô e Último sinal; tamanho e tipo
 const dados = A.montarSaude({ v: '1.34.0', wa: '2.3000.1', autoteste: { ok: 46, warn: 0, bad: 1, skip: 6, ruins: ['Envio de mídia'] }, robo: { modo: 'sugerir', ativo: true, respondeu24h: 12, humano24h: 2, ignorado24h: 3, iaFalhou24h: 1, pendencias: 1 }, tempos: { iaS: 3.4, esperouS: 12 }, ia: { usoHoje: 22, falhas: { instavel: 2 }, chaves: 2 } });
 s.abas.Global[5][1] = 'nao'; assert.deepEqual(s.post({ acao: 'saude', codigo: 'MARIACODIGO123456', dados }), { ok: true, ignorado: true }); assert.equal(s.abas.Saude.length, 1);   // administrador desligou a coleta

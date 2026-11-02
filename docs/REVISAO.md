@@ -1,4 +1,4 @@
-# Revisão completa do AtendeZap (v1.47.3, 02/11/2026)
+# Revisão completa do AtendeZap (v1.47.3, 02/11/2026) — 23 correções
 
 Feita pelo roteiro "Prompt de revisão completa do app". Regras seguidas: só corrigir defeito real e confirmado no código, sem mudar o que já funciona nem o visual. Tudo está no Git: cada mudança pode ser desfeita.
 
@@ -31,12 +31,13 @@ Feita pelo roteiro "Prompt de revisão completa do app". Regras seguidas: só co
 | 17 | baixo | `content/util.js` | Backup mensal em 31/01 ia para 03/03. | Vai para 28/02. |
 | 18 | baixo | `planilha/AdminControle.gs` | Perfil em branco podia pegar uma coluna sem nome da aba Perfis. | Perfil em branco = só o "Acesso da equipe". |
 | 19 | baixo | `planilha/AdminControle.gs` | Código de convite só com números (raro) virava número na planilha e parava de funcionar. | Códigos novos começam com letra (os antigos continuam valendo). |
+| 20 | baixo | `planilha/AdminControle.gs` | Validade escrita como `2026-12-31`, `31.12.2026` ou `31-12-2026` era ignorada (o convite nunca vencia). | Esses formatos agora valem. Texto que não é data continua sem validade, para não bloquear ninguém por engano. |
+| 21 | baixo | `planilha/AdminControle.gs` | `versaoMinima` digitada como `1.40` virava o número 1.4. | A célula passa a ser texto puro ao reabrir a planilha. Se já estiver como 1.4, digite de novo. |
+| 22 | baixo | `background.js` | Robô e Resumo usando a IA no mesmo segundo: a contagem de uso perdia um registro. | Lê a contagem de novo na hora de gravar e soma só o que aquela chamada fez. |
+| 23 | baixo | `content/main.js` | Restaurar backup em "substituir" apagava as mídias antes de gravar as novas; se a gravação falhasse, elas se perdiam. | Grava primeiro e só depois apaga as antigas; se falhar, avisa e não apaga nada. |
 
-## Não corrigido (de propósito ou baixo risco) — precisa da sua decisão
-- **Validade com data escrita fora do padrão** (ex.: `2026-12-31` como texto) é tratada como "sem validade". O teste da planilha fixa esse comportamento; mudar pode bloquear quem já usa. Use sempre `dd/mm/aaaa` ou uma célula de data.
-- **`versaoMinima` digitada como número** (ex.: `1.40` vira `1.4`): escreva a versão com 3 partes (`1.47.3`), que fica como texto.
-- **Contagem de uso da IA** pode perder 1 registro se o robô e o Resumo usarem a IA no mesmo segundo. Efeito: o limite diário pode passar por pouco.
-- **Restaurar backup** sem tratamento de erro se o armazenamento recusar (muito raro).
+
+Fica de fora (sem efeito para você): enquanto o WhatsApp carrega, o painel guarda alguns pedidos "está pronto?" que nunca recebem resposta (poucos bytes, somem ao recarregar).
 
 ## Interface
 A revisão das telas e do CSS não achou elementos cortados ou sobrepostos; o teste completo tira fotos de todas as telas.

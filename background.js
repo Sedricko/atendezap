@@ -99,9 +99,13 @@ async function iaTratar(m) {
       estado[id] = { ate: E.descanso(r.info.tipo, r.info.espera, agora), tipo: r.info.tipo, t: agora };
     }
     // contagem do dia: inclui as FALHAS (para você ver que é o Google e não o limite local de pedidos)
-    const novo = { data: hoje, n: uso.n + (r.ok ? 1 : 0), tokens: (uso.tokens || 0) + (r.ok ? r.tokens : 0), lat: r.ok ? [...(uso.lat || []).slice(-19), r.ms] : (uso.lat || []), falhas: { ...(uso.falhas || {}) }, reserva: (uso.reserva || 0) + (usouReserva ? 1 : 0), chaves: porChave };
+    // v1.47.3: lê de novo AGORA (outra chamada à IA pode ter gravado enquanto esta esperava) e soma só o que ESTA chamada fez
+    const { iaUso: fresco = {}, iaChaveEstado: estFresco = {} } = await chrome.storage.local.get(['iaUso', 'iaChaveEstado']), u = fresco.data === hoje ? fresco : { data: hoje, n: 0, tokens: 0, lat: [], falhas: {}, reserva: 0 };
+    const chavesNovo = { ...(u.chaves || {}) }; for (const [id, x] of Object.entries(porChave)) { const a = (uso.chaves || {})[id] || {}; chavesNovo[id] = { n: (chavesNovo[id]?.n || 0) + (x.n - (a.n || 0)), f: (chavesNovo[id]?.f || 0) + (x.f - (a.f || 0)) }; }
+    const estadoNovo = { ...estFresco }; for (const k of fila) { const id = E.idChave(k); if (estado[id]) estadoNovo[id] = estado[id]; else if (iaChaveEstado[id] && !estado[id]) delete estadoNovo[id]; }
+    const novo = { data: hoje, n: (u.n || 0) + (r.ok ? 1 : 0), tokens: (u.tokens || 0) + (r.ok ? r.tokens : 0), lat: r.ok ? [...(u.lat || []).slice(-19), r.ms] : (u.lat || []), falhas: { ...(u.falhas || {}) }, reserva: (u.reserva || 0) + (usouReserva ? 1 : 0), chaves: chavesNovo };
     for (const f of eventos) novo.falhas[f.tipo] = (novo.falhas[f.tipo] || 0) + 1;
-    await chrome.storage.local.set({ iaUso: novo, iaChaveEstado: estado });
+    await chrome.storage.local.set({ iaUso: novo, iaChaveEstado: estadoNovo });
     if (!r.ok) {
       const ref = tentativas.find((t) => !E.permanente(t.info.tipo)) || tentativas[tentativas.length - 1]; // se alguma falha passa com o tempo, é essa que vale para o robô
       return { erro: tentativas.length > 1 ? `Nenhuma das ${tentativas.length} chaves funcionou. ${ref.info.msg}` : ref.info.msg, tipo: ref.info.tipo, espera: ref.info.espera ?? null, chavesTentadas: tentativas.length };
