@@ -33,7 +33,8 @@
   AZIA.mascarar = (txt) => String(txt ?? '')
     .replace(/\b\d{2}\.?\d{3}\.?\d{3}\/?\d{4}-?\d{2}\b/g, '**.***.***/****-**')
     .replace(/\b\d{3}\.?\d{3}\.?\d{3}-?\d{2}\b/g, '***.***.***-**')
-    .replace(/\+?\d[\d\s().-]{8,}\d/g, (m) => { const d = m.replace(/\D/g, ''); return d.length >= 10 && d.length <= 15 ? '•••••••' + d.slice(-2) : m; })
+    .replace(/\+?\d[\d\s().-]{8,}\d/g, (m) => { const d = m.replace(/\D/g, ''); return d.length >= 10 && d.length <= 15 ? '•••••••' + d.slice(-2) : d.length > 15 ? m.replace(/\d(?=(?:\D*\d){2})/g, '•') : m; })   // >15 dígitos = vários telefones juntos
+    .replace(/\b9?\d{4}-\d{4}\b/g, (m) => '•••••••' + m.slice(-2))   // celular sem DDD ("99999-0000")
     .replace(/[\w.+-]+@([\w-]+\.[\w.-]+)/g, '***@$1');
 
   // Escolhe o modelo padrão da lista que a própria API devolve (os nomes mudam: nada fixo no código).

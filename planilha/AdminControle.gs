@@ -102,7 +102,9 @@ function admSemAcento_(s) { return String(s == null ? '' : s).normalize('NFD').r
 function admSim_(v) { var x = admSemAcento_(v); return x === 'sim' || x === 's' || x === 'true' || x === '1' || x === 'on'; }
 function admJson_(o) { return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON); }
 function admHash_(s) { var h = 5381, i; for (i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0; return (h >>> 0).toString(36); }
-function admNovoCodigo_() { return Utilities.getUuid().replace(/-/g, '').slice(0, 16).toUpperCase(); }
+function admNovoCodigo_() { return 'A' + Utilities.getUuid().replace(/-/g, '').slice(0, 15).toUpperCase(); }   // começa com letra: a planilha nunca o converte em número
+// texto que veio da extensão: nunca vira fórmula na planilha (=, +, -, @ no início)
+function admCel_(v) { var t = String(v == null ? '' : v); return /^[=+\-@]/.test(t) ? "'" + t : t; }
 function admCodificarConvite_(url, codigo) { return 'AZ1.' + Utilities.base64EncodeWebSafe(JSON.stringify({ u: url, c: codigo }), Utilities.Charset.UTF_8).replace(/=+$/, ''); }
 function admDataBR_(d) { return Utilities.formatDate(d, 'America/Sao_Paulo', 'dd/MM/yyyy HH:mm'); }
 // validade pode vir como Date (célula de data) ou texto "dd/mm/aaaa"; vazio = sem validade
@@ -164,7 +166,7 @@ function admGarantirComputadores_() {
 }
 // Confere e registra o computador desta consulta. Devolve { recusa } (resposta pronta) ou { pcs: {emUso, max} }.
 function admChecarComputador_(u, nome, codigo, b, agora, acao) {
-  var inst = String(b.inst == null ? '' : b.inst).trim(), sh, vals, regs = [], r, max, d, maq = String(b.maquina || '').slice(0, 40), ver = String(b.versao || '').slice(0, 14), emUso;
+  var inst = String(b.inst == null ? '' : b.inst).trim(), sh, vals, regs = [], r, max, d, maq = admCel_(String(b.maquina || '').slice(0, 40)), ver = admCel_(String(b.versao || '').slice(0, 14)), emUso;
   if (!/^[A-Za-z0-9_-]{6,60}$/.test(inst)) return { recusa: { ok: false, erro: 'extensão desatualizada' } };   // sem identificador não há como contar computadores
   sh = admGarantirComputadores_(); vals = sh.getDataRange().getValues(); max = admMaxPc_(u[ADM_U.MAXPC - 1]);
   for (r = 1; r < vals.length; r++) if (String(vals[r][1]).trim() === codigo) regs.push({ linha: r + 1, inst: String(vals[r][2]).trim(), situacao: vals[r][7] });
@@ -173,7 +175,7 @@ function admChecarComputador_(u, nome, codigo, b, agora, acao) {
   if (d.acao === 'recusar') return { recusa: { ok: false, erro: d.erro, limite: max, emUso: d.ativos } };
   emUso = d.ativos;
   if (acao === 'config') {
-    if (d.acao === 'registrar') { sh.appendRow([nome, codigo, inst, maq, agora, agora, ver, 'Liberado']); emUso++; }
+    if (d.acao === 'registrar') { sh.appendRow([nome, codigo, admCel_(inst), maq, agora, agora, ver, 'Liberado']); emUso++; }
     else {
       sh.getRange(d.linha, 6, 1, 2).setValues([[agora, ver]]);
       if (maq) sh.getRange(d.linha, 4).setValue(maq);
@@ -384,7 +386,7 @@ function admMontarConfig_(perfil, codigo, perfisVals, excecoesVals, globalVals) 
   var recursos = {}, limites = {}, glob = {}, i, col = -1, cab = perfisVals[0] || [], r, k, v, validos = {}, vl = {};
   for (i = 0; i < ADM_RECURSOS.length; i++) validos[ADM_RECURSOS[i][0]] = 1;
   for (i = 0; i < ADM_LIMITES.length; i++) vl['limite:' + ADM_LIMITES[i][0]] = ADM_LIMITES[i][0];
-  for (i = 2; i < cab.length; i++) if (admSemAcento_(cab[i]) === admSemAcento_(perfil)) { col = i; break; }
+  for (i = 2; i < cab.length; i++) if (admSemAcento_(perfil) && admSemAcento_(cab[i]) === admSemAcento_(perfil)) { col = i; break; }   // perfil em branco nunca pega coluna sem nome
   for (r = 1; r < perfisVals.length; r++) {
     k = String(perfisVals[r][0] || '').trim(); v = col >= 0 ? perfisVals[r][col] : '';
     if (v === '' || v == null) continue;
@@ -426,10 +428,11 @@ function doPost(e) {
     var b = JSON.parse((e && e.postData && e.postData.contents) || '{}'), acao = String(b.acao || '');
     if (acao === 'ping') return admJson_({ ok: true, admin: true, versao: ADM_VERSAO });
     var codigo = String(b.codigo || '').trim(), agora = new Date(), sh = admAba_(ADM_ABA.usuarios);
-    if (!sh || !/^[A-Za-z0-9]{8,64}$/.test(codigo)) { Utilities.sleep(400); return admJson_({ ok: false, erro: 'acesso negado' }); }
+    if (!sh || !/^[A-Za-z0-9]{8,64}$/.test(codigo)) { lock.releaseLock(); Utilities.sleep(400);   // a espera anti-tentativa não segura a fila dos outros
+      return admJson_({ ok: false, erro: 'acesso negado' }); }
     var vals = sh.getDataRange().getValues(), linha = -1, i;
     for (i = 1; i < vals.length; i++) if (String(vals[i][ADM_U.CODIGO - 1]).trim() === codigo) { linha = i; break; }
-    if (linha < 0) { Utilities.sleep(400); return admJson_({ ok: false, erro: 'acesso negado' }); }   // não diz se o código existe
+    if (linha < 0) { lock.releaseLock(); Utilities.sleep(400); return admJson_({ ok: false, erro: 'acesso negado' }); }   // não diz se o código existe
     var u = vals[linha], nome = String(u[ADM_U.NOME - 1] || ''), perfil = String(u[ADM_U.PERFIL - 1] || '');
     if (!admSim_(u[ADM_U.ATIVO - 1])) return admJson_({ ok: false, desativado: true, erro: 'desativado' });
     if (admVenceu_(u[ADM_U.VALIDADE - 1], agora)) return admJson_({ ok: false, desativado: true, erro: 'validade vencida' });
@@ -437,7 +440,7 @@ function doPost(e) {
     if (acao === 'config' || acao === 'saude') { pc = admChecarComputador_(u, nome, codigo, b, agora, acao); if (pc.recusa) return admJson_(pc.recusa); }   // limite de computadores por convite
     var global = admLerAba_(ADM_ABA.global), cfg = admMontarConfig_(perfil, codigo, admLerAba_(ADM_ABA.perfis), admLerAba_(ADM_ABA.excecoes), global);
     if (acao === 'config') {
-      sh.getRange(linha + 1, ADM_U.ULTIMA, 1, 3).setValues([[agora, String(b.versao || '').slice(0, 14), String(b.inst || '').slice(0, 40)]]);
+      sh.getRange(linha + 1, ADM_U.ULTIMA, 1, 3).setValues([[agora, admCel_(String(b.versao || '').slice(0, 14)), admCel_(String(b.inst || '').slice(0, 40))]]);
       var corpo = { nome: nome, perfil: perfil, recursos: cfg.recursos, limites: cfg.limites, global: cfg.global };
       return admJson_({ ok: true, nome: nome, perfil: perfil, recursos: cfg.recursos, limites: cfg.limites, global: cfg.global, pcs: pc.pcs, hash: admHash_(JSON.stringify(corpo)), agora: agora.getTime() });
     }
@@ -458,8 +461,8 @@ function admRegistrarSaude_(shUsuarios, linhaUsuario, nome, d, agora) {
   var a = d.autoteste || {}, r = d.robo || {}, t = d.tempos || {}, ia = d.ia || {}, sh = admAba_(ADM_ABA.saude), n = function (v) { return typeof v === 'number' && isFinite(v) ? v : ''; };
   var falhas = []; for (var k in (ia.falhas || {})) falhas.push(String(k).slice(0, 14) + ' x' + n(ia.falhas[k]));
   var ruins = (Array.isArray(a.ruins) ? a.ruins : []).slice(0, 8).map(function (x) { return String(x).slice(0, 60); }).join('; ');
-  sh.appendRow([agora, nome, String(d.v || '').slice(0, 14), String(d.wa || '').slice(0, 20), n(a.ok), n(a.warn), n(a.bad), n(a.skip), ruins, String(r.modo || '').slice(0, 12), r.ativo === true ? 'sim' : 'nao',
-    n(r.respondeu24h), n(r.humano24h), n(r.ignorado24h), n(r.iaFalhou24h), n(r.pendencias), n(t.iaS), n(t.esperouS), falhas.join(', '), txt]);
+  sh.appendRow([agora, nome, admCel_(String(d.v || '').slice(0, 14)), admCel_(String(d.wa || '').slice(0, 20)), n(a.ok), n(a.warn), n(a.bad), n(a.skip), admCel_(ruins), admCel_(String(r.modo || '').slice(0, 12)), r.ativo === true ? 'sim' : 'nao',
+    n(r.respondeu24h), n(r.humano24h), n(r.ignorado24h), n(r.iaFalhou24h), n(r.pendencias), n(t.iaS), n(t.esperouS), admCel_(falhas.join(', ')), admCel_(txt)]);
   shUsuarios.getRange(linhaUsuario, ADM_U.ROBO, 1, 2).setValues([[(r.ativo === true ? 'ligado (' : 'desligado (') + String(r.modo || '').slice(0, 12) + ')', agora]]);
   var ultima = sh.getLastRow(); if (ultima > ADM_LIMITE_SAUDE + 500) sh.deleteRows(2, ultima - 1 - ADM_LIMITE_SAUDE);   // fica o cabeçalho + as ADM_LIMITE_SAUDE mais novas
 }

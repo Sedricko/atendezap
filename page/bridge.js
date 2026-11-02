@@ -223,7 +223,8 @@
   // leituras, mas os métodos que ENVIAM, BLOQUEIAM ou REMOVEM são recusados e todo pedido fica na auditoria. Limite honesto: a ponte vive na mesma
   // página que o WhatsApp, então um script que ESCUTE as mensagens da página ainda consegue ver a chave; isto barra pedidos soltos, não é um cofre.
   const SENSIVEIS = new Set(['sendText', 'sendFile', 'sendContact', 'sendStatus', 'removeStatus', 'block', 'enviarConvite', 'enviarConvites', 'pedidosPlano', 'padronizar', 'sendEspecial', 'removerDuplicados',
-    'apagarParaTodos', 'minhasMsgs', 'recuperarAtivo', 'exportarLer', 'exportarMidia', 'contatoAparelho', 'conversasParaTreino', 'naoLidas', 'ligacaoAtivo', 'ligacaoContexto']);   // v1.42: tudo que apaga, lê conversas ou baixa mídia só obedece ao painel (com a chave dele)
+    'apagarParaTodos', 'minhasMsgs', 'recuperarAtivo', 'exportarLer', 'exportarMidia', 'contatoAparelho', 'conversasParaTreino', 'naoLidas', 'ligacaoAtivo', 'ligacaoContexto',
+    'sendActive', 'historicoChat', 'baixarAudio', 'aguardando', 'votosEnquete']);   // v1.47.3: também enviam ou leem conversa/mídia   // v1.42: tudo que apaga, lê conversas ou baixa mídia só obedece ao painel (com a chave dele)
   let tkOk = null, externas = 0, recusadas = 0; const auditoria = [];
   const api = {
     ready: () => isReady(),

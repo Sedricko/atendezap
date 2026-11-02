@@ -1,6 +1,6 @@
 # Mapa do content/main.js (gerado por tools/mapa_main.py)
 
-`content/main.js` tem 4918 linhas e é UM bloco só (tudo depende das mesmas variáveis: `S`, `h`, `call`, `toast`, `renderPanel`). Não foi dividido de propósito: dividir sem poder testar no WhatsApp de verdade tem risco alto e valor baixo. Os marcadores `// ----- … -----` são irregulares (o primeiro cobre muita coisa): use também a busca por nome da função.
+`content/main.js` tem 4933 linhas e é UM bloco só (tudo depende das mesmas variáveis: `S`, `h`, `call`, `toast`, `renderPanel`). Não foi dividido de propósito: dividir sem poder testar no WhatsApp de verdade tem risco alto e valor baixo. Os marcadores `// ----- … -----` são irregulares (o primeiro cobre muita coisa): use também a busca por nome da função.
 
 ## Por seção
 
@@ -24,17 +24,17 @@
 - **Apagar mensagens para todos, a qualquer tempo (v1.37)** — linhas 2122–2163: `apagarCarregar`, `apagarExecutar`, `apagarView`
 - **Recuperar mensagens apagadas (v1.38)** — linhas 2164–2245: `recCfg`, `recNaoVistas`, `recAbrir`, `recReq`, `recTodas`, `recPut`, `recuperarSincronizar`, `recuperarRecebeu`, `recuperarRecebeuMidia`, `recuperarPurgar`, `recuperarCarregar`, `recuperarResumo`, `recuperarCfgSalvar`, `recuperarLigar` …
 - **Contato do cliente: aparelho provável (v1.43)** — linhas 2246–2277: `contatoCarregar`, `contatoView`
-- **Ligação não atendida → mensagem automática (v1.44)** — linhas 2278–2321: `ligCfg`, `ligAtivo`, `ligUlt`, `ligacaoSincronizar`, `ligacaoRecebeu`, `ligSalvar`, `ligacaoLigar`, `ligacaoCard`
-- **Resumir o que perdi (v1.44)** — linhas 2322–2356: `resumoExecutar`, `resumoView`
-- **Avaliação do atendimento contra a memória (v1.44)** — linhas 2357–2399: `avCfg`, `avPendentes`, `avSalvar`, `avAuto`, `avaliarExecutar`, `avaliacaoView`
-- **Envios à IA (v1.45): transparência** — linhas 2400–2413: `iaEnviosView`
-- **Começar aqui (v1.45): primeira configuração guiada, só mostra o que falta e some quando ac** — linhas 2414–2430: `comecarCard`
-- **Exportar conversa (v1.42)** — linhas 2431–2493: `expF`, `expAtalho`, `exportarExecutar`, `exportarView`
-- **Backup** — linhas 2494–2538: `fmt`, `doBackup`, `checkBackup`, `readBackup`, `doRestore`
-- **Importar do waTidy (v1.13; escolher o que importar na v1.14)** — linhas 2539–2693: `wtEscolher`, `wtPlanejar`, `wtRefazer`, `wtImportar`, `wtCard`, `backupView`
-- **Diagnóstico** — linhas 2694–3882: `describe`, `chavesDe`, `iaPronta`, `iaPedir`, `iaContexto`, `iaEnviar`, `iaAplicar`, `iaDesfazer`, `iaPainel`, `iaTestar`, `salvarChaves`, `chavesBloco`, `iaCard`, `mdLeve` …
-- **Escuta automática e banco de conhecimento (v1.43)** — linhas 3883–4528: `conhecCfg`, `conhecScriptOk`, `conhecSalvar`, `conhecLigar`, `conhecEscutar`, `memChave`, `memAprovarAuto`, `conhecDesfeita`, `conhecDesfazerAuto`, `conhecAprovacao`, `conhecConsolidar`, `conhecEsquecer`, `conhecCard`, `memoriaView` …
-- **Autodiagnóstico** — linhas 4529–4918: `autoDiag`, `renderAlerta`, `vigiaConexao`, `salvarRefs`, `lerCodigoWA`, `loadLab`, `ehBool`, `comoBool`, `labToggle`, `labPacote`, `labView`, `novidadesCard`, `diagView`
+- **Ligação não atendida → mensagem automática (v1.44)** — linhas 2278–2322: `ligCfg`, `ligAtivo`, `ligUlt`, `ligacaoSincronizar`, `ligacaoRecebeu`, `ligSalvar`, `ligacaoLigar`, `ligacaoCard`
+- **Resumir o que perdi (v1.44)** — linhas 2323–2357: `resumoExecutar`, `resumoView`
+- **Avaliação do atendimento contra a memória (v1.44)** — linhas 2358–2400: `avCfg`, `avPendentes`, `avSalvar`, `avAuto`, `avaliarExecutar`, `avaliacaoView`
+- **Envios à IA (v1.45): transparência** — linhas 2401–2414: `iaEnviosView`
+- **Começar aqui (v1.45): primeira configuração guiada, só mostra o que falta e some quando ac** — linhas 2415–2431: `comecarCard`
+- **Exportar conversa (v1.42)** — linhas 2432–2494: `expF`, `expAtalho`, `exportarExecutar`, `exportarView`
+- **Backup** — linhas 2495–2539: `fmt`, `doBackup`, `checkBackup`, `readBackup`, `doRestore`
+- **Importar do waTidy (v1.13; escolher o que importar na v1.14)** — linhas 2540–2694: `wtEscolher`, `wtPlanejar`, `wtRefazer`, `wtImportar`, `wtCard`, `backupView`
+- **Diagnóstico** — linhas 2695–3897: `describe`, `chavesDe`, `iaPronta`, `iaPedir`, `iaContexto`, `iaEnviar`, `iaAplicar`, `iaDesfazer`, `iaPainel`, `iaTestar`, `salvarChaves`, `chavesBloco`, `iaCard`, `mdLeve` …
+- **Escuta automática e banco de conhecimento (v1.43)** — linhas 3898–4543: `conhecCfg`, `conhecScriptOk`, `conhecSalvar`, `conhecLigar`, `conhecEscutar`, `memChave`, `memAprovarAuto`, `conhecDesfeita`, `conhecDesfazerAuto`, `conhecAprovacao`, `conhecConsolidar`, `conhecEsquecer`, `conhecCard`, `memoriaView` …
+- **Autodiagnóstico** — linhas 4544–4933: `autoDiag`, `renderAlerta`, `vigiaConexao`, `salvarRefs`, `lerCodigoWA`, `loadLab`, `ehBool`, `comoBool`, `labToggle`, `labPacote`, `labView`, `novidadesCard`, `diagView`
 
 ## Onde mexer para…
 
@@ -49,4 +49,4 @@
 
 ## Prefixos de teste já usados em test/smoke.py (antes de criar um novo, confira)
 
-`ac_` (31), `ap_` (3), `au_` (3), `av_` (1), `bk_` (1), `cc_` (1), `ch_` (4), `ct_` (1), `dg_` (5), `dl_` (1), `es_` (11), `ex_` (6), `fl_` (8), `gs_` (19), `ia_` (8), `ie_` (1), `inv_` (1), `lg_` (2), `lm_` (8), `nv_` (1), `perm_` (1), `pv_` (3), `rb_` (21), `rc_` (14), `rcp_` (8), `refs_` (1), `rel_` (1), `rs_` (8), `rsu_` (1), `sc_` (4), `tm_` (1), `tp_` (8), `tr_` (3), `va_` (1)
+`ac_` (32), `ap_` (3), `au_` (3), `av_` (1), `bk_` (1), `cc_` (1), `ch_` (4), `ct_` (1), `dg_` (5), `dl_` (1), `es_` (11), `ex_` (6), `fl_` (8), `gs_` (19), `ia_` (8), `ie_` (1), `inv_` (1), `lg_` (2), `lm_` (8), `nv_` (1), `perm_` (1), `pv_` (3), `rb_` (21), `rc_` (14), `rcp_` (8), `refs_` (1), `rel_` (1), `rs_` (8), `rsu_` (1), `sc_` (4), `tm_` (1), `tp_` (8), `tr_` (3), `va_` (1)

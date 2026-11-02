@@ -9,6 +9,7 @@
     let d = String(raw || '').replace(/\D/g, '');
     if (d.startsWith('00')) d = d.slice(2);
     const intl = /^\s*(\+|00)/.test(String(raw));
+    if (!intl && /^0[1-9]{2}\d{8,9}$/.test(d)) d = d.slice(1);   // "(085) 99999-0000": o 0 da ligação interurbana sai
     if (!intl && (d.length === 10 || d.length === 11)) d = '55' + d;
     return d.length >= 8 && d.length <= 15 ? d : null;
   };
@@ -94,7 +95,7 @@
     }
     const d = new Date(cfg.ultimo);
     if (cfg.recorrencia === 'semanal') d.setDate(d.getDate() + 7);
-    else if (cfg.recorrencia === 'mensal') d.setMonth(d.getMonth() + 1);
+    else if (cfg.recorrencia === 'mensal') { const dia = d.getDate(); d.setDate(1); d.setMonth(d.getMonth() + 1); d.setDate(Math.min(dia, new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate())); }   // 31/01 → 28/02, sem pular mês
     else d.setDate(d.getDate() + 1);
     d.setHours(hh, mm, 0, 0);
     return d;
@@ -267,7 +268,7 @@
     ['conhecimento', 'Banco de conhecimento (trocas já sem dados pessoais) — fica de fora, a não ser que você marque', ['conhecBanco', 'conhecVistos', 'conhecEstado']],
   ];
   // chaves que NUNCA vão para um arquivo de backup (segredos e identificação deste computador), nem no backup completo
-  AZU.BACKUP_NUNCA = ['iaCfg', 'iaUso', 'acessoCfg', 'acessoInst', 'acessoEstado', 'acessoAplicado', 'mapaBase', 'refCache', 'inventarioHist', 'diagUltimo'];   // + caches do diagnóstico (grandes e que não voltam na restauração)
+  AZU.BACKUP_NUNCA = ['iaCfg', 'iaUso', 'acessoCfg', 'acessoInst', 'instId', 'acessoEstado', 'acessoAplicado', 'mapaBase', 'refCache', 'inventarioHist', 'diagUltimo'];   // + caches do diagnóstico (grandes e que não voltam na restauração)
   AZU.backupKeys = (dados, grupos) => {
     const keys = [];
     for (const [g, , ks] of AZU.BACKUP_GROUPS) if (grupos.includes(g)) keys.push(...ks.filter((k) => k in dados));

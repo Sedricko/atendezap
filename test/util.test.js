@@ -1152,3 +1152,20 @@ const cifrar = (obj, senha) => { // mesmo formato do CryptoJS/OpenSSL ("Salted__
   for (const k of ['mapaBase', 'refCache', 'inventarioHist', 'diagUltimo']) assert.ok(U.BACKUP_NUNCA.includes(k), k);
   console.log('diagnóstico (diff, ponte, armazenamento, envios à IA) ok');
 }
+
+// ---- v1.47.3: revisão completa (cada caso reproduz um defeito achado) ----
+{
+  require('../lib/recuperar.js'); require('../lib/acesso.js'); const R = globalThis.AZREC, A = globalThis.AZACESSO, IA = globalThis.AZIA;
+  assert.ok(U.BACKUP_NUNCA.includes('instId'));                                                                         // a identificação do computador nunca vai no backup
+  assert.equal(U.normalizePhone('(085) 99999-0000'), '5585999990000');                                                  // o 0 da ligação interurbana sai
+  const reg = R.montarRegistro({ id: 'x', existe: true, tipo: 'document', nome: 'Canhoto.pdf', dur: 12 }, {}, { ligado: true });
+  assert.equal(reg.nome, 'Canhoto.pdf'); assert.equal(reg.dur, 12);                                                     // nome e duração estavam dentro de um comentário
+  assert.ok(!/\d{4}-\d{4}/.test(IA.mascarar('ligar 85 99999-0000 85 98888-1111')));                                     // dois telefones juntos
+  assert.ok(!IA.mascarar('meu zap 99999-0000').includes('99999'));                                                      // celular sem DDD
+  assert.equal(IA.mascarar('Frete de 1200 reais, 3 caminhões'), 'Frete de 1200 reais, 3 caminhões');
+  const fev = new Date(U.nextBackup({ hora: '10:30', ultimo: new Date(2026, 0, 31, 10, 30).toISOString(), recorrencia: 'mensal' }));
+  assert.equal(fev.getMonth(), 1); assert.equal(fev.getDate(), 28);                                                     // 31/01 → 28/02 (antes pulava para março)
+  const ac = { url: 'https://script.google.com/macros/s/x/exec', codigo: 'ABCDEFGH12' }, agora = Date.now();
+  assert.equal(A.avaliar(ac, { config: A.normalizar({}), t: agora + 365 * 864e5 }, agora).valido, false);               // relógio adiantado não estica a validade offline
+  console.log('revisão completa v1.47.3 ok');
+}

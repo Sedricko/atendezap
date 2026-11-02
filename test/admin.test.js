@@ -280,4 +280,7 @@ for (const v of ['sim', 'Sim', 'on', 'liberado', 'não', 'NAO', 'off', 'negado',
     assert.match(sd.abas.Legenda.find((l) => l[0] === 'automatico')[1], /RESPONDE SOZINHO.*AMARELO/); assert.match(sd.abas.Legenda.find((l) => l[0] === 'desligado')[1], /LARANJA/);
     const ex = Object.keys(sd.abas).length; sd.run('admOnOpen()'); sd.run('admOnOpen()'); assert.equal(Object.keys(sd.abas).length, ex); }                              // abrir várias vezes não cria nada a mais
   { const se = carrega(); se.ui.resposta = 'YES'; se.abas.Clientes = []; se.abas.Perfis = []; assert.equal(se.run('admOrganizarPerfis_(false)'), -1); } }
+// v1.47.3: texto vindo da extensão nunca vira fórmula; código novo sempre começa com letra; perfil em branco não pega coluna sem nome
+{ const sv = carrega(); assert.equal(sv.run("admCel_('=IMAGE(1)')"), "'=IMAGE(1)"); assert.equal(sv.run("admCel_('1.47.3')"), '1.47.3'); assert.match(sv.run('admNovoCodigo_()'), /^A[0-9A-F]{15}$/);
+  const cfgB = sv.run(`admMontarConfig_('', 'X', [['Recurso', 'O que é', ''], ['replies', 'd', 'ligado']], [], [])`); assert.deepEqual(cfgB.recursos, {}); }
 console.log('script da planilha administrativa: todos os casos ok (preparar, convites, perfis, exceções, acesso negado, validade, saúde, limpeza, vigia, coexistência e aviso de planilha com outro uso)');

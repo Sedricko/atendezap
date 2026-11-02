@@ -2291,6 +2291,7 @@
       try {
         const ctx = await call('ligacaoContexto', ev.chatId).catch(() => null), d2 = AZLIG.depoisDaEspera(ctx, ev), d3 = AZLIG.decidir(ev, ligUlt(S.ligEstado || {}, ev.chatId), ligCfg(), Date.now());   // reconfere: você pode ter falado com ele, ou desligado
         if (!ligAtivo() || !d2.enviar || !d3.enviar) { S.ligEstado = { ...(S.ligEstado || {}), motivo: d2.motivo || d3.motivo || 'desligado' }; await save('ligEstado'); return; }
+        atend.enviando.set(ev.chatId, Date.now() + 15000);   // é envio automático: o robô não deve achar que foi você
         await call('sendText', ev.chatId, ligCfg().texto);
         const cur = S.ligEstado || {};   // lido de novo AGORA: outra ligação pode ter gravado enquanto esta enviava
         S.ligEstado = { ...cur, ult: { ...(cur.ult || {}), [hash32(ev.chatId)]: Date.now() }, enviadas: (cur.enviadas || 0) + 1, motivo: '' }; await save('ligEstado');
@@ -2984,7 +2985,8 @@
     atend.envioT.delete(id);
     let nome = '';
     // se algo prender esta conversa por mais de 2 min (WhatsApp sem responder), libera: antes ela ficava muda até recarregar a página
-    const trava = setTimeout(() => { atend.busy.delete(id); atendLog(id, nome, 'erro', 'a conversa travou por mais de 2 minutos; liberei'); }, 120000);
+    let travou = false;
+    const trava = setTimeout(() => { travou = true; atend.busy.delete(id); atendLog(id, nome, 'erro', 'a conversa travou por mais de 2 minutos; liberei'); }, 120000);
     try {
       const c = atendC();
       if (!atendAtivo() || !IA.deveAtuar(c, new Date())) return;
@@ -3007,8 +3009,10 @@
       const ini = h.msgs.length - bloco.length, prev = h.msgs[ini - 1]; // tempos: desde quando o cliente espera, e quanto ele demorou a responder a nossa última mensagem
       dec.tempos = { inicioMs: (h.msgs[ini].t || 0) * 1000, clienteS: prev && prev.de === 'atendente' && h.msgs[ini].t && prev.t ? Math.max(0, h.msgs[ini].t - prev.t) : null };
       if (dec.erroIA) return atendFalhaIA(id, nome, dec, falhas, c); // a IA falhou (tempo, cota, rede): NÃO é "chamar humano"
+      // v1.47.3: a IA pode levar 1 min; se nesse tempo você respondeu, pausou ou desligou o robô (ou a trava liberou a conversa), não envia
+      if (travou || !atendAtivo() || !IA.deveAtuar(atendC(), new Date()) || (S.atendEst?.pausas?.[id] || 0) > Date.now()) return atendLog(id, nome, 'ignorado', 'a situação mudou enquanto a IA pensava');
       await atendAgir(id, h, dec, c);
-    } catch (e) { atendLog(id, nome, 'erro', e.message); } finally { clearTimeout(trava); atend.busy.delete(id); }
+    } catch (e) { atendLog(id, nome, 'erro', e.message); } finally { clearTimeout(trava); if (!travou) atend.busy.delete(id); }
   }
   // Falha técnica da IA: não pausa a conversa e não escreve ao cliente. Tenta de novo (20 s, 1 min, 3 min, 10 min); só no fim avisa você, sem silenciar o contato.
   function atendFalhaIA(id, nome, dec, falhas, c) {
@@ -3105,6 +3109,7 @@
     atend.enviando.set(id, agora + 120000);
     try {
       for (let i = 0; i < textos.length; i++) {
+        if (i > 0 && (!atendAtivo() || (S.atendEst?.pausas?.[id] || 0) > Date.now())) break;   // desligou ou pausou no meio: para as próximas
         let t = textos[i];
         if (i === 0 && c.identificar && !((S.atendEst?.identificado?.[id] || 0) > agora - 86400000)) {
           t = `${String(c.prefixo || '🤖 Assistente virtual:').trim()} ${t}`;
@@ -3420,7 +3425,9 @@
     if (!acessoConectado() || acesso.busy) return;
     acesso.busy = true; acesso.ult = Date.now();
     try {
+      const cod = S.acessoCfg.codigo;
       const antes = S.acessoEstado?.config?.hash, r = await acessoPost({ acao: 'config', codigo: S.acessoCfg.codigo, versao: acessoVersao(), inst: acessoInst(), maquina: acessoMaquina() });
+      if (S.acessoCfg?.codigo !== cod) return;   // trocaram o convite enquanto eu perguntava: esta resposta é do antigo
       if (r?.ok) {
         const config = AC.normalizar(r); acesso.falhas = 0;
         S.acessoEstado = { config, t: Date.now(), desativado: false, erro: '' }; await save('acessoEstado');
@@ -3430,7 +3437,8 @@
       } else if (r?.ok === false) { // o servidor respondeu e recusou (a rede está boa)
         const negado = r.erro === 'acesso negado', semVaga = r.erro === 'limite de computadores', fora = r.erro === 'computador desconectado';
         const erro = negado ? 'o código não é reconhecido' : semVaga ? `este convite já está em uso em outro computador (limite de ${r.limite || 1})` : fora ? 'este computador foi desconectado pelo administrador' : String(r.erro || 'recusado');
-        S.acessoEstado = { ...(S.acessoEstado || {}), t: Date.now(), desativado: !!r.desativado || negado || semVaga || fora, erro }; await save('acessoEstado');
+        const desat = !!r.desativado || negado || semVaga || fora;   // recusa passageira (erro no script) NÃO renova a validade da configuração antiga
+        S.acessoEstado = { ...(S.acessoEstado || {}), t: desat ? Date.now() : (S.acessoEstado?.t || 0), desativado: desat, erro }; await save('acessoEstado');
         if (manual) toast('O administrador recusou: ' + S.acessoEstado.erro + '.', 7000);
       } else { // sem rede ou servidor fora do ar: vale a última configuração por alguns dias
         acesso.falhas++; S.acessoEstado = { ...(S.acessoEstado || {}), erro: String(r?.erro || 'sem resposta') }; await save('acessoEstado');
@@ -3467,15 +3475,18 @@
     await dialogo({ titulo: 'O que é enviado ao administrador', texto: AC.descreverEnvio(dados).map((x) => '• ' + x).join('\n') + (acesso.ultSaude ? `\n\nÚltimo envio: ${hhmm(acesso.ultSaude.t)}.` : '\n\nAinda não enviou nada.'), cancelar: null });
   }
   async function acessoPerguntarSaude() {
-    const ef = acessoEf(); if (!ef.valido || !ef.global.coletarSaude || S.acessoCfg?.saude != null) return;
+    const ef = acessoEf(); if (!ef.valido || !ef.global.coletarSaude || S.acessoCfg?.saude != null || acesso.perguntando) return;
+    acesso.perguntando = true; try {   // uma pergunta por vez (antes empilhava uma a cada consulta)
     const dados = AC.montarSaude(await acessoOrigemSaude());
     const ok = await dialogo({ titulo: 'O administrador pede um resumo técnico', texto: `Para cuidar do funcionamento, o administrador quer receber a cada ${ef.global.saudeMin} min este resumo do seu AtendeZap:\n\n${AC.descreverEnvio(dados).map((x) => '• ' + x).join('\n')}\n\nVocê pode mudar de ideia depois em Configurações › Acesso da equipe.`, ok: 'Aceitar e enviar', cancelar: 'Não enviar' });
     S.acessoCfg = { ...S.acessoCfg, saude: !!ok }; await save('acessoCfg'); renderPanel();
     if (ok) acessoEnviarSaude(true);
+    } finally { acesso.perguntando = false; }
   }
   async function acessoConectar(txt) {
     const c = AC.decodificarConvite(txt);
     if (!c) return toast('Esse convite não é válido. Cole o texto inteiro que começa com AZ1.', 6000);
+    if (acesso.busy) return toast('Estou falando com o administrador agora. Tente de novo em alguns segundos.', 5000);
     acesso.busy = true;
     const r = await chrome.runtime.sendMessage({ tipo: 'acesso', url: c.url, corpo: { acao: 'config', codigo: c.codigo, versao: acessoVersao(), inst: acessoInst(), maquina: acessoMaquina(), conectar: true } }).catch((e) => ({ erro: e.message }));
     acesso.busy = false;
@@ -3633,7 +3644,7 @@
           h('small', null, it.acao === 'humano' ? `Chamou você: ${it.motivo}` : it.acao === 'executar' ? `Sugere executar /${it.atalho}` : 'Sugestão de resposta:'),
           it.mensagens?.map((m) => h('small', { class: 'iaprop' }, m)),
           h('div', { class: 'rowf' },
-            it.acao !== 'humano' ? h('button', { class: 'gbtn sm', onclick: () => atendSugEnviar(it) }, 'Enviar') : null,
+            it.acao !== 'humano' ? h('button', { class: 'gbtn sm', onclick: async (e) => { if (e.currentTarget.disabled) return; e.currentTarget.disabled = true; await atendSugEnviar(it); } }, 'Enviar') : null,   // clique duplo não envia duas vezes
             it.acao === 'responder' ? h('button', { class: 'obtn', onclick: () => atendSugCampo(it) }, 'Colocar no campo') : null,
             h('button', { class: 'obtn', onclick: () => atendSugTirar(it.id) }, it.acao === 'humano' ? 'Já resolvi' : 'Descartar'),
             h('button', { class: 'obtn', title: 'O robô nunca mais atende este contato', onclick: () => atendNunca(it.id, it.nome) }, 'Nunca atender'))))))
@@ -3751,6 +3762,10 @@
     S.memFila = [...(S.memFila || []), { aba, linha }].slice(-300); save('memFila'); memSyncLogo();
   }
   async function memSincronizar() {
+    if (memSt.enviando) return; memSt.enviando = true;   // dois envios juntos duplicavam linhas na planilha
+    try { return await memSincronizar0(); } finally { memSt.enviando = false; }
+  }
+  async function memSincronizar0() {
     const tok = S.iaCfg?.tokenPlanilha || '';
     if (!atendC().planilhaAprende || !S.cargasUrl || !tok || !(S.memFila || []).length) return;
     const lote = S.memFila.slice(0, 150), porAba = {};

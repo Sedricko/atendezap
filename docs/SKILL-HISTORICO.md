@@ -4,6 +4,9 @@
 > Para o estado ATUAL e as regras, leia `SKILL.md`. Consulte este arquivo só para achar o motivo de uma decisão antiga.
 
 
+## v1.47.3 (02/11/2026) — revisão completa
+Quatro revisões paralelas (ponte, acesso/planilha, bibliotecas, painel); cada achado conferido no código antes de corrigir. Detalhes e o que ficou de fora: `docs/REVISAO.md`. Testes novos no fim de `test/util.test.js` e `test/admin.test.js`.
+
 ## v1.47.2 (01/11/2026) — cada card obedece a uma linha própria da planilha
 Pedido do Johon: tudo vem bloqueado e só aparece o que a planilha liberar; sem convite, só o card "Acesso da equipe" (já era assim desde a v1.34.1, `EXIGIR_CONVITE`). Memória IA, Conjuntos e Envios à IA seguiam `atendente`, `pedidos` e `diag`; agora têm `memoria`, `unicos` e `iaenvios` (EXTRAS de `lib/acesso.js`, 32 recursos). `AdminControle.gs`: 3 linhas novas (entram sozinhas na aba Perfis ao reabrir; exemplo Administrador = ligado). `consultaMin` padrão 10 → 15 (configurável na aba Global, 5-120; planilha antiga mantém o valor da célula). Continuam sem linha própria, de propósito: Configurações › Geral (é onde fica o convite) e Grupos › Ajustes (aparece se `vagas` ou `gruposSo` estiver liberado).
 
