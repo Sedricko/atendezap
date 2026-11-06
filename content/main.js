@@ -1933,6 +1933,34 @@
     if (!mon.base) { mon.base = mon.atual; await chrome.storage.local.set({ monitorBase: mon.base }); }   // primeira leitura: guarda como já visto
     return { mudancas: MON.comparar(mon.base.valores, mon.atual.valores), novos: MON.eventosNovos(mon.base.eventos, mon.atual.eventos) };
   }
+  // v1.50: SONDA — procura em todos os módulos com assunto de limite/anti-spam (ver sondaLimites na ponte) e compara com a sonda anterior.
+  // + o que está NA TELA agora: faixas/janelas/ícones de limite do próprio WhatsApp (pelo data-testid; nada de texto de mensagem).
+  const AVISO_TELA = ['capping', 'quota', 'limit', 'banned', 'restrict', 'spam', 'suspend'].map((p) => `[data-testid*="${p}" i]`).join(',');
+  const avisosNaTela = () => [...new Set([...document.querySelectorAll(AVISO_TELA)].filter((e) => !e.closest('[id^="az-"]')).map((e) => e.getAttribute('data-testid')))].slice(0, 20);
+  async function sondaRodar() {
+    mon.sondando = true; renderPanel();
+    try {
+      const r = await Promise.race([call('sondaLimites'), sleep(45000).then(() => { throw new Error('demorou demais'); })]);
+      const antes = (await chrome.storage.local.get('sondaBase')).sondaBase || null, ids = [...Object.keys(r.modulos), ...r.telas, ...r.registros, ...r.buscasNoServidor];
+      r.novos = antes ? ids.filter((i) => !antes.ids.includes(i)) : []; r.tela = avisosNaTela(); r.t = Date.now();
+      mon.sonda = r; await chrome.storage.local.set({ sondaBase: { ids, t: r.t } });
+    } catch (e) { mon.sonda = { erro: e.message }; }
+    mon.sondando = false; renderPanel();
+  }
+  function sondaView() {
+    const s = mon.sonda, botao = h('button', { class: 'gbtn sm', disabled: !!mon.sondando || !S.ready, onclick: sondaRodar }, mon.sondando ? 'Procurando em tudo…' : s ? 'Procurar de novo' : '🔎 Procurar agora (≈30 s)');
+    const head = [h('p', { class: 'hint grp' }, 'Sonda de limitações (procura em tudo)'), h('small', { class: 'hint' }, 'Procura em todos os módulos do WhatsApp sobre limite, teto, cota, spam, denúncia, bloqueio, banimento, restrição e suspensão. Só lê: não pede nada ao servidor.'), h('div', { class: 'rowf' }, botao)];
+    if (!s) return head;
+    if (s.erro) return [...head, h('small', { class: 'dan' }, 'Não consegui: ' + s.erro)];
+    const ligadas = Object.entries(s.modulos).flatMap(([m, i]) => Object.entries(i.leituras).filter(([, v]) => v === true).map(([f]) => `${m}.${f}`));
+    const lista = (titulo, l, n = 12) => (l.length ? h('div', { class: 'kv' }, h('span', null, titulo, h('small', { class: 'hint' }, ' — ' + l.slice(0, n).join(', ') + (l.length > n ? ` e mais ${l.length - n}` : ''))), h('b', null, String(l.length))) : null);
+    return [...head,
+      s.tela.length ? h('div', { class: 'errs' }, h('b', null, '⚠ Aviso de limite do WhatsApp NA TELA agora'), h('small', null, s.tela.join(', '))) : h('small', { class: 'iaok' }, '✔ Nenhum aviso de limite do WhatsApp na tela agora.'),
+      s.novos.length ? h('div', { class: 'errs warn' }, h('b', null, `🆕 ${s.novos.length} novidade(s) desde a sonda anterior`), h('small', null, s.novos.slice(0, 20).join(', '))) : null,
+      h('div', { class: 'col' }, h('div', { class: 'kv' }, h('span', null, 'Módulos sobre limites e anti-spam'), h('b', null, `${s.total} (${s.lidos} lidos${s.cortado ? ', parou pelo tempo' : ''}, ${(s.ms / 1000).toFixed(1).replace('.', ',')} s)`)),
+        lista('Funções de leitura que dizem "sim" agora', ligadas), lista('Telas de aviso que existem no programa', s.telas), lista('Buscas no servidor que existem', s.buscasNoServidor), lista('Registros (telemetria) sobre o assunto', s.registros)),
+      h('small', { class: 'hint' }, 'O resultado completo vai no pacote de diagnóstico (mapa). Mande ao Claude para ligar os números "X de Y usadas" quando o WhatsApp começar a contar.')];
+  }
   async function monitorVisto() { mon.base = mon.atual; await chrome.storage.local.set({ monitorBase: mon.base }); toast('Marcado como visto: o monitor avisa só o que mudar daqui em diante.'); renderPanel(); }
   const fmtValor = (v) => (v === undefined ? '—' : v === true ? 'ligado' : v === false ? 'desligado' : v === -1 ? 'sem teto' : typeof v === 'number' ? v.toLocaleString('pt-BR') : String(v));
   function monitorCard() {
@@ -1956,6 +1984,7 @@
       h('details', { class: 'tec' }, h('summary', null, `O que o WhatsApp registra: ${mon.atual.eventos.length} tipos de registro`),
         h('small', { class: 'hint' }, 'São os módulos de telemetria do próprio programa do WhatsApp (…WamEvent). O nome diz o assunto; o que cada um mede exatamente o AtendeZap não consegue ler.'),
         Object.entries(ev).sort((a, b) => b[1].length - a[1].length).map(([assunto, l]) => h('div', { class: 'kv' }, h('span', null, assunto, h('small', { class: 'hint' }, ' — ' + l.slice(0, 6).join(', ') + (l.length > 6 ? '…' : ''))), h('b', null, String(l.length))))),
+      sondaView(),
       h('small', { class: 'hint' }, 'Passar dos limites anti-spam põe o número da empresa em risco de banimento: o AtendeZap mostra, nunca muda.'));
   }
   function configView() {
@@ -4276,6 +4305,7 @@
     if (!br?.ready) return { ok: 'skip', d: 'o WhatsApp ainda não está pronto' };
     let r; try { r = await monitorLer(); } catch (e) { return { ok: 'skip', d: 'não consegui ler: ' + e.message }; }
     const imp = r.mudancas.filter((x) => x.grupo !== 'outras'), outras = r.mudancas.length - imp.length;
+    const tela = avisosNaTela(); if (tela.length) return { ok: 'warn', d: `o WhatsApp está mostrando um aviso de limite na tela (${tela.join(', ')}) — veja Diagnóstico › Limites` };
     if (imp.length) return { ok: 'warn', d: `mudou desde que você viu: ${imp.slice(0, 3).map((x) => `${x.nome} ${fmtValor(x.antes)} → ${fmtValor(x.agora)}`).join('; ')}${imp.length > 3 ? '…' : ''} (Diagnóstico › Limites)` };
     return { ok: true, d: `${Object.keys(mon.atual.valores).length} limites acompanhados${outras ? ` · ${outras} ajuste(s) técnico(s) mudaram` : ''}${r.novos.length ? ` · ${r.novos.length} registro(s) novo(s) do WhatsApp` : ''}` };
   });
@@ -4620,7 +4650,9 @@ ${hist ? `<h2>Histórico de autotestes</h2><table><tr><td><b>Quando</b></td><td>
       const { data } = recente || await runChecks('mapa');
       const hist = ((await chrome.storage.local.get(INV_HIST))[INV_HIST] || []).slice(0, 5);
       const texto = JSON.stringify({ atendezap: chrome.runtime.getManifest().version, data: new Date().toISOString(), resumo: data.resumo, novidades: hist,
-        referencias: ref?.stats ? { stats: ref.stats, indices: ref.ref, portoes: ref.portoes } : { erro: ref?.erro || 'não gerado' }, mapa, ...(await diagnosticoExtra(mapa)) });
+        referencias: ref?.stats ? { stats: ref.stats, indices: ref.ref, portoes: ref.portoes } : { erro: ref?.erro || 'não gerado' }, mapa,
+        sondaLimites: await Promise.race([call('sondaLimites'), sleep(45000).then(() => ({ erro: 'demorou demais' }))]).then((s) => ({ ...s, tela: avisosNaTela() })).catch((e) => ({ erro: e.message })),   // v1.50
+        ...(await diagnosticoExtra(mapa)) });
       if (retornar === true) return texto;
       baixar(`atendezap-mapa-whatsapp-${stamp()}.json`, texto, 'application/json');
       toast(`Mapa salvo (${mapa.totalModulos} módulos · ${Math.round(texto.length / 1024)} KB). Envie o arquivo ao Claude quando precisar de ajuste.`, 6000);

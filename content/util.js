@@ -268,7 +268,7 @@
     ['conhecimento', 'Banco de conhecimento (trocas já sem dados pessoais) — fica de fora, a não ser que você marque', ['conhecBanco', 'conhecVistos', 'conhecEstado']],
   ];
   // chaves que NUNCA vão para um arquivo de backup (segredos e identificação deste computador), nem no backup completo
-  AZU.BACKUP_NUNCA = ['iaCfg', 'iaUso', 'acessoCfg', 'acessoInst', 'instId', 'acessoEstado', 'acessoAplicado', 'mapaBase', 'refCache', 'inventarioHist', 'diagUltimo', 'desempHist', 'monitorBase', 'riscoDia'];   // + caches do diagnóstico (grandes e que não voltam na restauração)
+  AZU.BACKUP_NUNCA = ['iaCfg', 'iaUso', 'acessoCfg', 'acessoInst', 'instId', 'acessoEstado', 'acessoAplicado', 'mapaBase', 'refCache', 'inventarioHist', 'diagUltimo', 'desempHist', 'monitorBase', 'riscoDia', 'sondaBase'];   // + caches do diagnóstico (grandes e que não voltam na restauração)
   AZU.backupKeys = (dados, grupos) => {
     const keys = [];
     for (const [g, , ks] of AZU.BACKUP_GROUPS) if (grupos.includes(g)) keys.push(...ks.filter((k) => k in dados));

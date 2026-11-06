@@ -262,6 +262,7 @@ async def main():
         _p = mp.get('referencias', {}).get('portoes', {})
         res['mapa_refs'] = [mp.get('referencias', {}).get('stats', {}).get('portoes'), _p.get('StatusGatingUtils'), _p.get('GroupAdminConsoleGatingUtils'), mp.get('referencias', {}).get('indices', {}).get('status_delete_enabled'), len(mp.get('novidades', []))]
         res['mapa_enxuto'] = ['indice' not in mp['mapa'], 'diagnostico' not in mp, 'Saúde:' in mp.get('resumo', ''), len(mp['mapa']['modulos']) == mp['mapa']['totalModulos'], sorted(mp['mapa'].get('contagemPorPalavra', {}))[:2], '\n' not in open(caminho_mapa).read().strip()]
+        res['mapa_sonda'] = isinstance(mp.get('sondaLimites'), dict) and 'erro' not in mp['sondaLimites'] and 'total' in mp['sondaLimites'] and 'tela' in mp['sondaLimites']   # v1.50
         res['mapa'] = (mp['mapa']['totalModulos'], mp['mapa']['apagarStatusVia'], len(mp['mapa']['wppFuncoes'].get('chat', [])), mp['mapa']['recursos'])
         # v1.47: DIAGNÓSTICO AMPLIADO — o mapa traz ambiente, ponte, IA, erros e o que mudou; o pacote .zip reúne tudo e NÃO leva dado pessoal
         res['dg_mapa_extras'] = {'chaves': all(k in mp for k in ['ambiente', 'ponte', 'ia', 'erros', 'mudancas']), 'primeira_leitura': mp['mudancas'].get('primeiraLeitura') is True or 'contagem' in mp['mudancas'], 'entrega_view_once': 'varridas' in mp['mapa'].get('entregaViewOnce', {}) and 'viewOnce' in mp['mapa']['entregaViewOnce'],
@@ -1655,6 +1656,11 @@ async def main():
         mon2 = await page.evaluate(PBTXT + ".includes('Nada mudou desde que você viu')")
         await page.evaluate("() => { WPP.conn.getABProps = window.__abOrig; }")
         res['monitor'] = {'primeira_leitura': mon0, 'avisou': mon1, 'autoteste': mon_auto, 'entendi': mon2, 'registra': await page.evaluate(PBTXT + ".includes('O que o WhatsApp registra')")}
+        # v1.50: Sonda de limitações — procura em tudo, mostra o resumo e vigia a tela (um aviso falso de teto com data-testid é detectado)
+        await page.evaluate("() => { const d = document.createElement('div'); d.setAttribute('data-testid', 'capping-warning-banner'); d.id = 'capTeste'; document.body.append(d); }")
+        await page.locator('#az-panel .gbtn', has_text='Procurar agora').click(); await page.wait_for_timeout(4000)
+        res['sonda'] = {'resumo': await page.evaluate(PBTXT + ".includes('Módulos sobre limites e anti-spam')"), 'tela': await page.evaluate(PBTXT + ".includes('capping-warning-banner')")}
+        await page.evaluate("() => document.getElementById('capTeste')?.remove()")
         # v1.50: Risco de banimento — o card conta o que o AtendeZap já enviou nesta rodada do teste (robô, respostas, Enviar para vários…)
         rc = page.locator('#az-panel .sec', has_text='Risco de banimento (hoje)')
         rtxt = (await rc.inner_text()) if await rc.count() else ''
@@ -1847,6 +1853,8 @@ async def main():
             'rb_F_G_H_textos': lambda v: v == [1, 1, 0],
             'rb_sugestao': lambda v: v[0] == 0 and len(v[1]) == 1 and v[1][0][0] == 'responder',
             'rb_sug_manual_tudo': lambda v: v == 2,
+            'mapa_sonda': lambda v: v is True,   # v1.50
+            'sonda': lambda v: v == {'resumo': True, 'tela': True},   # v1.50
             'risco_card': lambda v: v == {'existe': True, 'contou': True, 'semaforo': True},   # v1.50
             'monitor': lambda v: v == {'primeira_leitura': True, 'avisou': True, 'autoteste': True, 'entendi': True, 'registra': True},   # v1.49
             'lab_funcoes': lambda v: v['itens'] and v['mudou_ao_ligar'] and v['voltou'] and v['sem_teto'],   # v1.49

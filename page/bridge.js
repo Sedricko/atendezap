@@ -1099,6 +1099,35 @@
     }),
     ping: () => Date.now(),
     labList: () => ({ ...labEstado(), recursos: recursosInternos() }),
+    // v1.50: SONDA DE LIMITAÇÕES — procura em TODOS os módulos do WhatsApp com assunto de limite/teto/cota/spam/denúncia/bloqueio/banimento/restrição/integridade/suspensão.
+    // De cada um: o que ele exporta (nome e tipo), as chaves que o código dele cita e o resultado das funções de LEITURA de estado (is/has/can/should, sem parâmetros).
+    // Nunca chama nada que envia, busca no servidor ou muda algo; nada de mensagens, contatos ou números (só nomes técnicos e liga/desliga).
+    sondaLimites: async () => {
+      const t0 = performance.now(), ids = moduleIds(), flags = new Set(recursosInternos().map((r) => r.nome).filter(Boolean));
+      const ASSUNTO = /Capping|Capped|Quota|Limit|Spam|Report|Block|Ban[A-Z]|Banned|Restrict|Integrity|Enforcement|RateLimit|Suspend|Suspension|Abuse|Suspicious|Reachout|Defense|Appeal|Violation|Throttl|Quarantine|Fraud|Scam/;
+      const TELA = /\.react$|Loadable|Banner|Modal|Toast|Icon|Popup|Bubble/, DADOS = /WamEvent$|WamEnum|\.graphql$|Query$/;
+      const achados = ids.filter((i) => ASSUNTO.test(i)), RE = /["']([a-z][a-z0-9_]{5,90})["']/g, respira = () => new Promise((r) => setTimeout(r, 0));
+      const out = { total: achados.length, telas: achados.filter((i) => TELA.test(i)).map((i) => i.replace(/^WAWeb/, '')), registros: achados.filter((i) => /WamEvent$/.test(i)).map((i) => i.replace(/^WAWeb|WamEvent$/g, '')),
+        buscasNoServidor: achados.filter((i) => /Job|Query|Fetch/.test(i) && !/WamEvent/.test(i)).map((i) => i.replace(/^WAWeb/, '')), modulos: {}, lidos: 0 };
+      for (const [j, id] of achados.filter((i) => !TELA.test(i) && !DADOS.test(i)).entries()) {
+        if (performance.now() - t0 > 30000) { out.cortado = true; break; }
+        const mod = loadMod(id); if (!mod || typeof mod !== 'object') continue;
+        out.lidos++; const info = { exporta: {}, leituras: {}, chaves: [] };
+        let ks = []; try { ks = Object.keys(mod).slice(0, 80); } catch { /* protegido */ }
+        for (const k of ks) {
+          let v; try { v = mod[k]; } catch { continue; }
+          if (typeof v === 'function') {
+            info.exporta[k] = 'função';
+            try { const txt = Function.prototype.toString.call(v); RE.lastIndex = 0; for (let x = RE.exec(txt); x; x = RE.exec(txt)) if (flags.has(x[1]) && !info.chaves.includes(x[1]) && info.chaves.length < 12) info.chaves.push(x[1]); } catch { /* sem texto */ }
+            if (/^(is|has|can|should)[A-Z]/.test(k) && v.length === 0) { try { const r = v(); info.leituras[k] = typeof r === 'boolean' || typeof r === 'number' ? r : r && typeof r.then === 'function' ? 'assíncrona' : typeof r; } catch { info.leituras[k] = 'erro'; } }
+          } else info.exporta[k] = v === null ? 'null' : typeof v === 'object' ? 'objeto' : typeof v === 'string' ? `texto(${v.length})` : `${typeof v}: ${String(v).slice(0, 20)}`;
+        }
+        out.modulos[id.replace(/^WAWeb/, '')] = info;
+        if (j % 10 === 9) await respira();
+      }
+      out.ms = Math.round(performance.now() - t0);
+      return out;
+    },
     // v1.49: monitor de limitações — as chaves (o painel escolhe as de limite) e os nomes dos módulos de telemetria. Só nomes e valores do WhatsApp.
     monitorLer: () => ({ recursos: recursosInternos(), eventos: moduleIds().filter((n) => n.endsWith('WamEvent')) }),
     labSet: (nome, valor) => {
