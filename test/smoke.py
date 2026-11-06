@@ -1636,7 +1636,7 @@ async def main():
         await page.evaluate("""() => { const now = Date.now(), d = (n) => Math.floor((now - n * 864e5) / 1000), mk = (id, t, x = {}) => ({ id: { _serialized: id }, t, formattedTitle: 'Contato ' + id.slice(9, 13), unreadCount: 0, labels: [], ...x });
           window.__lpOrig = [WPP.chat.list, WPP.chat.getMessages]; window.__msgsG = [{ id: { _serialized: 'g1' }, t: d(40) }, { id: { _serialized: 'g2' }, t: d(40), star: true }, { id: { _serialized: 'g3' }, t: d(2) }];
           WPP.chat.list = async () => [mk('5511900000001@c.us', d(400)), mk('5511900000002@c.us', d(100)), mk('5511900000003@c.us', d(5)), mk('5511900000004@c.us', d(400), { pin: 5 }), mk('5511900000005@c.us', d(400), { unreadCount: 2 }), mk('120000000000000001@g.us', d(1), { formattedTitle: 'Grupo Velho' })];
-          WPP.chat.clear = async (id, k) => { L('limpar', id, k); }; WPP.chat.delete = async (id) => { L('apagarConversa', id); };
+          WPP.chat.clear = async (id, k) => { window.__log.push(['limpar', id, k]); }; WPP.chat.delete = async (id) => { window.__log.push(['apagarConversa', id]); };
           WPP.chat.getMessages = async (id) => (String(id).endsWith('@g.us') ? window.__msgsG : []); }""")
         await ir(page, 'Limpar conversas'); await page.wait_for_timeout(1500)
         await page.screenshot(path=f'{OUT}/previa-limpeza.png')
@@ -1817,8 +1817,8 @@ async def main():
             'rb_sugestao': lambda v: v[0] == 0 and len(v[1]) == 1 and v[1][0][0] == 'responder',
             'rb_sug_manual_tudo': lambda v: v == 2,
             'lp_limpeza': lambda v: v == {'botoes': ['Apagar as 2', 'Apagar as 2', 'Apagar as 2', 'Apagar as 1', 'Apagar as 1'], 'apagou': [['limpar', '5511900000001@c.us', True], ['apagarConversa', '5511900000001@c.us']], 'contou': True, 'grupo': [[['g1'], False]]},   # v1.48
-            'desempenho_card': lambda v: bool(v) and 'Peso do AtendeZap na página' in v and 'Memória da aba do WhatsApp' in v and 'mais lentas' in v,   # v1.48
-            'limites_card': lambda v: bool(v) and 'O que o WhatsApp controla na sua conta' in v and 'desligado (sem teto)' in v and 'sem teto' in v and '30 dias' in v,   # v1.47.5
+            'desempenho_card': lambda v: bool(v) and 'Peso do AtendeZap na página' in v and 'Memória da aba do WhatsApp' in v and 'mais lentas' in v.lower() and 'composing' not in v,   # v1.48
+            'limites_card': lambda v: bool(v) and 'o que o whatsapp controla na sua conta' in v.lower() and 'desligado (sem teto)' in v and 'sem teto' in v and '30 dias' in v,   # v1.47.5
             'rb_sugestao_enviada': lambda v: len(v) == 1 and 'Posso ajudar' in v[0], 'rb_exemplo': lambda v: bool(v) and len(v) == 1,
             'rb_sem_aceite': lambda v: v == 'desligado', 'rb_desligado_sem_ia': lambda v: v == 0,
             'rc_resposta': lambda v: len(v) == 1 and 'Tem sim' in v[0], 'rc_prompt': lambda v: v == [True, False, False],

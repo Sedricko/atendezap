@@ -4936,13 +4936,14 @@ ${hist ? `<h2>Histórico de autotestes</h2><table><tr><td><b>Quando</b></td><td>
     const d = AZDIAG.desempenho(desempAgora(), hist, hojeISO()), L = AZDIAG.DESEMP_LIM;
     const tempo = (ms) => (ms >= 60000 ? (ms / 60000).toFixed(1) + ' min' : ms >= 1000 ? (ms / 1000).toFixed(1) + ' s' : ms + ' ms').replace('.', ',');
     const kv = (nome, valor, aviso) => h('div', { class: 'kv' }, h('span', null, nome), h('b', { class: aviso ? 'dan' : null }, (aviso ? '⚠ ' : '') + valor));
+    const NOME = { composing: 'Digitando… (robô)', diag: 'Autoteste', probe: 'Testes ao vivo', marcarLinhas: 'Marcar linhas da lista', vagasGrupos: 'Vagas nos grupos', chatInfo: 'Dados da conversa', inventario: 'Mapa do WhatsApp', mapa: 'Mapa do WhatsApp', referencias: 'Mapa do WhatsApp', activeChat: 'Conversa aberta', aguardando: 'Aguardando resposta', labels: 'Etiquetas', conversasParaTreino: 'Treino da IA', historicoChat: 'Atendente IA', recuperarAtivo: 'Recuperar apagadas', gruposSo: 'Grupos só na aba Grupos', limpezaListar: 'Limpar conversas', limpezaApagar: 'Limpar conversas', limpezaGrupoVelhas: 'Limpar conversas', limpezaGrupoApagar: 'Limpar conversas' };
     return h('div', { class: 'sec' }, h('div', { class: 'sh' }, tile('pulse'), h('b', { class: 'grow' }, 'Desempenho')),
       h('div', { class: 'col' },
         kv('Peso do AtendeZap na página', d.pct == null ? '—' : String(d.pct).replace('.', ',') + '%', d.avisos.pct),
         kv('Memória da aba do WhatsApp', d.memMB == null ? '—' : d.memMB.toLocaleString('pt-BR') + ' MB', d.avisos.mem),
         d.avisos.mem ? h('small', { class: 'dan' }, `Passou de ${L.memMB} MB: feche e abra a aba do WhatsApp para liberar memória.`) : null,
         h('p', { class: 'hint grp' }, 'Chamadas ao WhatsApp mais lentas' + (d.ontem ? ` (antes = ${d.ontem.split('-').reverse().join('/')})` : '')),
-        d.lentas.length ? d.lentas.map((x) => kv(`${METHOD_FEAT[x.metodo] || x.metodo} · ${x.n.toLocaleString('pt-BR')}×`, `média ${tempo(x.mediaMs)} · pior ${tempo(x.maxMs)}${x.antes != null ? ' · antes ' + tempo(x.antes) : ''}`, x.aviso))
+        d.lentas.length ? d.lentas.map((x) => kv(`${NOME[x.metodo] || METHOD_FEAT[x.metodo] || x.metodo} · ${x.n.toLocaleString('pt-BR')}×`, `média ${tempo(x.mediaMs)} · pior ${tempo(x.maxMs)}${x.antes != null ? ' · antes ' + tempo(x.antes) : ''}`, x.aviso))
           : h('small', { class: 'hint' }, 'Ainda sem chamadas suficientes para medir.'),
         h('small', { class: 'hint' }, `Medido neste computador desde que o WhatsApp abriu. Aviso: peso acima de ${L.pct}%, memória acima de ${L.memMB} MB ou chamada com média acima de ${L.mediaMs / 1000} s. Um resumo por dia fica guardado por 7 dias (só tempos).`)));
   }
