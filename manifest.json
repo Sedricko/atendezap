@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "AtendeZap - Atendimento para WhatsApp Web",
-  "version": "1.49.0",
+  "version": "1.49.1",
   "description": "Respostas rápidas com mídia e ações, assinatura automática, iniciar conversa, chats fixados, abas e backup automático.",
   "background": {
     "service_worker": "background.js"

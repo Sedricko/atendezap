@@ -849,7 +849,7 @@
     lastEdit = view.editing;
     if (fresh) loadPreviews(view.editing); // miniaturas das mídias salvas
     // Posição: direita (padrão), esquerda ou topo (barra de ícones no alto e o conteúdo abre como quadro suspenso)
-    const lado = LADOS[ui.lado] ? ui.lado : 'direita';
+    const lado = LADOS[ui.lado] ? ui.lado : 'esquerda';   // v1.49.1: padrão à esquerda (pedido do Johon); quem já escolheu mantém
     document.body.classList.toggle('az-docked', !!ui.open);
     document.body.classList.toggle('az-esq', lado === 'esquerda');
     document.body.classList.toggle('az-topo', lado === 'topo');
@@ -1931,7 +1931,7 @@
       h('small', { class: 'hint' }, 'Passar dos limites anti-spam põe o número da empresa em risco de banimento: o AtendeZap mostra, nunca muda.'));
   }
   function configView() {
-    const lado = LADOS[ui.lado] ? ui.lado : 'direita';
+    const lado = LADOS[ui.lado] ? ui.lado : 'esquerda';   // v1.49.1: padrão à esquerda (pedido do Johon); quem já escolheu mantém
     const alternar = async (k, v) => { if (acessoEf().conectado && (acessoEf().recursos[k] === 'obrigatorio' || acessoEf().desativado)) return toast('O administrador não permite mudar isto.'); S.mods = { ...S.mods, [k]: v }; await save('modulos'); recuperarSincronizar(); renderHead(); renderPanel(); };
     if (acessoEf().login || acessoEf().desativado) return [h('div', { class: 'eh' }, h('b', null, 'Configurações')), acessoCard()]; // login primeiro: nada além do acesso da equipe
     return [
