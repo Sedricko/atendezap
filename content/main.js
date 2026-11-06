@@ -2010,12 +2010,25 @@
       esconderLinhas(); renderPanel(); garantirOcultas();
     } catch (e) { toast('Erro: ' + e.message); }
   }
+  // v1.48.1: durante uma ação EM MASSA do AtendeZap (limpar, ocultar várias), esconde os avisos do próprio WhatsApp que têm "Desfazer".
+  // Eles se empilhavam por cima do painel, e um clique sem querer desfazia o lote. Fora dessas ações, nada muda.
+  let semAvisosN = 0; const semAvisosOcultos = new Set();
+  const semAvisosObs = new MutationObserver((ms) => { for (const m of ms) for (const n of m.addedNodes) {
+    if (n.nodeType !== 1 || n.closest?.('[id^="az-"]') || (n.textContent || '').length > 200) continue;
+    if ([...(n.querySelectorAll?.('button, [role=button]') || [])].some((b) => /^(desfazer|undo)$/i.test((b.textContent || '').trim()))) { n.style.display = 'none'; semAvisosOcultos.add(n); }
+  } });
+  async function semAvisosWA(fn) {
+    if (!semAvisosN++) semAvisosObs.observe(document.body, { childList: true, subtree: true });
+    try { return await fn(); } finally {
+      if (!--semAvisosN) { semAvisosObs.disconnect(); setTimeout(() => { if (semAvisosN) return; for (const n of semAvisosOcultos) n.style.display = ''; semAvisosOcultos.clear(); }, 8000); }   // devolve o que escondeu (o aviso em si já sumiu; a caixa deles volta a aparecer)
+    }
+  }
   async function garantirOcultas() {
     if (!S.ready || !S.ocultas.length || !ligado('ocultas')) return;
     const fora = await call('arquivadasFora', S.ocultas.map(([i]) => i)).catch(() => null);
     if (typeof fora === 'number' && fora !== S.arqFora) { S.arqFora = fora; save('arqFora'); } // guardado: na próxima abertura a faixa já sai escondida
     esconderLinhas();
-    const r = await call('ocultar', S.ocultas.map(([i]) => i), true).catch(() => null);
+    const r = await semAvisosWA(() => call('ocultar', S.ocultas.map(([i]) => i), true)).catch(() => null);
     if (!r) return;
     let mudou = false;
     S.ocultas = S.ocultas.map(([i, n]) => { const nome = r[i]?.nome; if (nome && nome !== n) mudou = true; return [i, nome || n]; });
@@ -2220,11 +2233,11 @@
   }
   async function limpRodar(rotulo, itens, fazer, apaga = true) {
     limp.rodando = { rotulo, feitas: 0, total: itens.length, erros: 0 }; limp.cancelar = false; renderPanel();
-    for (const it of itens) {
+    await semAvisosWA(async () => { for (const it of itens) {
       if (limp.cancelar) break;
       try { await fazer(it); } catch (e) { limp.rodando.erros++; logErr('limpeza', e.message); }
       limp.rodando.feitas++; renderSeguro(); await sleep(350);
-    }
+    } });
     const r = limp.rodando; limp.rodando = null; if (apaga) { limp.lista = null; limp.contagem = {}; }   // contar não zera a contagem que acabou de fazer
     toast(`${r.rotulo}: ${r.feitas} de ${r.total} feitas${r.erros ? ` (${r.erros} com erro)` : ''}${limp.cancelar ? ' — você parou.' : '.'}`, 8000); renderPanel();
   }
@@ -2243,14 +2256,20 @@
     const alvo = Object.entries(limp.contagem).filter(([, c]) => c.velhas?.length && c.dias === limp.diasG), n = alvo.reduce((s, [, c]) => s + c.velhas.length, 0);
     if (!n) return toast('Nenhuma mensagem antiga nos grupos conferidos.');
     if (!await confirmar(`Apagar ${n.toLocaleString('pt-BR')} mensagem(ns) com mais de ${limp.diasG} dias em ${alvo.length} grupo(s)?\n\nSó para VOCÊ: os outros participantes continuam vendo. Você não sai de nenhum grupo. As mensagens com estrela ficam. Não tem volta.`)) return;
-    await limpRodar('Grupos limpos', alvo, ([id, c]) => call('limpezaGrupoApagar', id, c.velhas));
+    let feitasMsg = 0;
+    await limpRodar('Grupos limpos', alvo, async ([id, c]) => {
+      for (let i = 0; i < c.velhas.length && !limp.cancelar; i += 100) {
+        await call('limpezaGrupoApagar', id, c.velhas.slice(i, i + 100)); feitasMsg += Math.min(100, c.velhas.length - i);
+        limp.rodando.detalhe = `${feitasMsg.toLocaleString('pt-BR')} de ${n.toLocaleString('pt-BR')} mensagens`; renderSeguro(); await sleep(800);
+      }
+    });
   }
   function limpezaView() {
     const topo = h('div', { class: 'eh' }, h('b', null, 'Limpar conversas 🧪'));
     if (!S.ready) return [topo, h('p', { class: 'hint' }, 'Aguardando o WhatsApp…')];
     if (!limp.lista && !limp.lendo && !limp.rodando) setTimeout(limpCarregar, 0);
     const r = limp.rodando;
-    const progresso = r ? h('div', { class: 'sec' }, h('div', { class: 'sh' }, h('b', { class: 'grow' }, `${r.rotulo}… ${r.feitas} de ${r.total}`), h('button', { class: 'obtn', onclick: () => { limp.cancelar = true; } }, 'Parar')),
+    const progresso = r ? h('div', { class: 'sec' }, h('div', { class: 'sh' }, h('b', { class: 'grow' }, `${r.rotulo}… ${r.feitas} de ${r.total}`), h('button', { class: 'obtn', onclick: () => { limp.cancelar = true; } }, 'Parar')), r.detalhe ? h('small', { class: 'hint' }, r.detalhe) : null,
       h('div', { class: 'prog' }, h('i', { style: `width:${Math.round((r.feitas / Math.max(1, r.total)) * 100)}%` }))) : null;
     if (!limp.lista) return [topo, progresso, h('p', { class: 'hint' }, limp.lendo ? 'Lendo a lista de conversas…' : '')];
     const c = LP.contar(limp.lista, Date.now(), S.pins || []), P = c.protegidas, grupos = limp.lista.filter((x) => x.grupo).sort((a, b) => String(a.nome).localeCompare(String(b.nome), 'pt-BR'));

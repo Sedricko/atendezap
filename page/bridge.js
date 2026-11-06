@@ -441,8 +441,12 @@
     // Apaga SÓ PARA VOCÊ (revoke = false): os outros participantes continuam vendo. Nunca sai do grupo.
     limpezaGrupoApagar: async (id, ids) => {
       if (!String(id).endsWith('@g.us')) throw new Error('só grupo');
-      let n = 0; for (let i = 0; i < ids.length; i += 50) { const lote = ids.slice(i, i + 50); await WPP.chat.deleteMessage(id, lote, false, false); n += lote.length; await sleep(300); }
-      return { n };
+      // v1.48.1: WPP.chat.deleteMessage apaga UMA por vez por dentro (um aviso "Mensagem apagada para mim" por mensagem e, em grupo, um "sou admin?" por mensagem).
+      // Aqui vai a lista inteira numa chamada só do próprio WhatsApp (o mesmo Cmd.sendDeleteMsgs que a wa-js usa): um aviso por lote. O painel manda lotes de até 100.
+      const Cmd = WPP.whatsapp?.Cmd, chat = WPP.whatsapp?.ChatStore?.get?.(id) || await WPP.chat.find(id).catch(() => null);
+      const msgs = typeof Cmd?.sendDeleteMsgs === 'function' && chat ? (await WPP.chat.getMessageById(ids).catch(() => [])).filter(Boolean) : [];
+      if (msgs.length) { await Cmd.sendDeleteMsgs(chat, { type: 'message', list: msgs }, false); return { n: msgs.length }; }
+      await WPP.chat.deleteMessage(id, ids, false, false); return { n: ids.length };   // sem o caminho direto: o antigo (devagar, um aviso por mensagem)
     },
     // ---- Pedidos para entrar no grupo (v1.12) ----
     // gruposLista: grupos (id + nome) para montar os conjuntos "sem duplicar".

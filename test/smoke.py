@@ -1637,7 +1637,9 @@ async def main():
           window.__lpOrig = [WPP.chat.list, WPP.chat.getMessages]; window.__msgsG = [{ id: { _serialized: 'g1' }, t: d(40) }, { id: { _serialized: 'g2' }, t: d(40), star: true }, { id: { _serialized: 'g3' }, t: d(2) }];
           WPP.chat.list = async () => [mk('5511900000001@c.us', d(400)), mk('5511900000002@c.us', d(100)), mk('5511900000003@c.us', d(5)), mk('5511900000004@c.us', d(400), { pin: 5 }), mk('5511900000005@c.us', d(400), { unreadCount: 2 }), mk('120000000000000001@g.us', d(1), { formattedTitle: 'Grupo Velho' })];
           WPP.chat.clear = async (id, k) => { window.__log.push(['limpar', id, k]); }; WPP.chat.delete = async (id) => { window.__log.push(['apagarConversa', id]); };
-          WPP.chat.getMessages = async (id) => (String(id).endsWith('@g.us') ? window.__msgsG : []); }""")
+          WPP.chat.getMessages = async (id) => (String(id).endsWith('@g.us') ? window.__msgsG : []);
+          window.__lpOrig2 = [WPP.whatsapp.Cmd, WPP.chat.getMessageById]; WPP.chat.getMessageById = async (ids) => (Array.isArray(ids) ? ids : [ids]).map((i) => ({ id: { _serialized: i } }));
+          WPP.whatsapp.Cmd = Object.assign({}, WPP.whatsapp.Cmd, { sendDeleteMsgs: async (c, o, m) => { window.__log.push(['delLote', o.list.map((x) => x.id._serialized), m]); const d = document.createElement('div'); d.id = 'toastTeste'; d.textContent = 'Mensagem apagada para mim'; const b = document.createElement('button'); b.textContent = 'Desfazer'; d.append(b); document.body.append(d); } }); }""")
         await ir(page, 'Limpar conversas'); await page.wait_for_timeout(1500)
         await page.screenshot(path=f'{OUT}/previa-limpeza.png')
         botoes = await page.locator('#az-panel .kv button').all_inner_texts()
@@ -1647,8 +1649,8 @@ async def main():
         await page.locator('#az-panel .gbtn', has_text='Contar nos 1').click(); await page.wait_for_timeout(1800)
         contou = await page.evaluate(PBTXT + ".includes('1 de 3 com mais de 30 dias')")
         await dlg_next(page); await page.locator('#az-panel .gbtn', has_text='Apagar as antigas').click(); await page.wait_for_timeout(2500)
-        res['lp_limpeza'] = {'botoes': botoes, 'apagou': lpl, 'contou': contou, 'grupo': await page.evaluate("window.__log.filter((l) => l[0] === 'del' && Array.isArray(l[1])).map((l) => [l[1], l[2]])")}
-        await page.evaluate("() => { [WPP.chat.list, WPP.chat.getMessages] = window.__lpOrig; }")
+        res['lp_limpeza'] = {'botoes': botoes, 'apagou': lpl, 'contou': contou, 'grupo': await page.evaluate("window.__log.filter((l) => l[0] === 'delLote').map((l) => [l[1], l[2]])"), 'aviso_escondido': await page.evaluate("document.getElementById('toastTeste')?.style.display === 'none'")}
+        await page.evaluate("() => { [WPP.chat.list, WPP.chat.getMessages] = window.__lpOrig; [WPP.whatsapp.Cmd, WPP.chat.getMessageById] = window.__lpOrig2; }")
         dicas = await page.evaluate("[...document.querySelector('#az-panel').shadowRoot.querySelectorAll('.ph .tb')].map(b=>b.dataset.tip)")
         await ir(page, 'Diagnóstico'); await page.wait_for_timeout(400)   # com o Laboratório desligado, a aba some do Diagnóstico
         res['modulos_off'] = [dicas, await page.locator('#az-panel .hubtabs .ht', has_text='Laboratório').count(), await sw.evaluate("chrome.storage.local.get('modulos').then(d=>d.modulos)")]
@@ -1816,7 +1818,7 @@ async def main():
             'rb_F_G_H_textos': lambda v: v == [1, 1, 0],
             'rb_sugestao': lambda v: v[0] == 0 and len(v[1]) == 1 and v[1][0][0] == 'responder',
             'rb_sug_manual_tudo': lambda v: v == 2,
-            'lp_limpeza': lambda v: v == {'botoes': ['Apagar as 2', 'Apagar as 2', 'Apagar as 2', 'Apagar as 1', 'Apagar as 1'], 'apagou': [['limpar', '5511900000001@c.us', True], ['apagarConversa', '5511900000001@c.us']], 'contou': True, 'grupo': [[['g1'], False]]},   # v1.48
+            'lp_limpeza': lambda v: v == {'botoes': ['Apagar as 2', 'Apagar as 2', 'Apagar as 2', 'Apagar as 1', 'Apagar as 1'], 'apagou': [['limpar', '5511900000001@c.us', True], ['apagarConversa', '5511900000001@c.us']], 'contou': True, 'grupo': [[['g1'], False]], 'aviso_escondido': True},   # v1.48 (v1.48.1: um lote só e sem a pilha de avisos)
             'desempenho_card': lambda v: bool(v) and 'Peso do AtendeZap na página' in v and 'Memória da aba do WhatsApp' in v and 'mais lentas' in v.lower() and 'composing' not in v,   # v1.48
             'limites_card': lambda v: bool(v) and 'o que o whatsapp controla na sua conta' in v.lower() and 'desligado (sem teto)' in v and 'sem teto' in v and '30 dias' in v,   # v1.47.5
             'rb_sugestao_enviada': lambda v: len(v) == 1 and 'Posso ajudar' in v[0], 'rb_exemplo': lambda v: bool(v) and len(v) == 1,
