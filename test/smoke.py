@@ -317,7 +317,7 @@ async def main():
         if fn_itens: await page.locator('#az-panel .labr').first.locator('label.tog').click(); await page.wait_for_timeout(500)
         ls1 = await page.evaluate("localStorage.getItem('az-lab')")
         if fn_itens: await page.locator('#az-panel .labr').first.locator('label.tog').click(); await page.wait_for_timeout(500)
-        res['lab_funcoes'] = {'itens': fn_itens > 0, 'mudou_ao_ligar': ls1 != ls0, 'voltou': await page.evaluate("localStorage.getItem('az-lab')") == ls0, 'sem_teto': not await page.evaluate(PBTXT + ".includes('capping')"), 'primeira': fn_primeira}
+        res['lab_funcoes'] = {'itens': fn_itens > 0, 'mudou_ao_ligar': ls1 != ls0, 'voltou': await page.evaluate("localStorage.getItem('az-lab')") == ls0, 'sem_teto': not await page.evaluate("document.querySelector('#az-panel').shadowRoot.querySelector('.pb').innerText.includes('capping')"), 'primeira': fn_primeira}
         await page.locator('#az-panel .fchip', has_text='Para testar').click(); await page.wait_for_timeout(300)   # volta à aba em que os testes seguintes esperam estar
         await page.locator('#az-panel .fchip', has_text='Funcionando').click(); await page.wait_for_timeout(300)
         # rolagem preservada ao ligar uma opção do fim da lista + descrição + marcação de teste
