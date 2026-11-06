@@ -4652,6 +4652,7 @@ ${hist ? `<h2>Histórico de autotestes</h2><table><tr><td><b>Quando</b></td><td>
       const texto = JSON.stringify({ atendezap: chrome.runtime.getManifest().version, data: new Date().toISOString(), resumo: data.resumo, novidades: hist,
         referencias: ref?.stats ? { stats: ref.stats, indices: ref.ref, portoes: ref.portoes } : { erro: ref?.erro || 'não gerado' }, mapa,
         sondaLimites: await Promise.race([call('sondaLimites'), sleep(45000).then(() => ({ erro: 'demorou demais' }))]).then((s) => ({ ...s, tela: avisosNaTela() })).catch((e) => ({ erro: e.message })),   // v1.50
+        explorar: await Promise.race([call('explorar'), sleep(60000).then(() => ({ erro: 'demorou demais' }))]).catch((e) => ({ erro: e.message })),   // v1.50: o mapa completo por tema
         ...(await diagnosticoExtra(mapa)) });
       if (retornar === true) return texto;
       baixar(`atendezap-mapa-whatsapp-${stamp()}.json`, texto, 'application/json');
@@ -4903,6 +4904,34 @@ ${hist ? `<h2>Histórico de autotestes</h2><table><tr><td><b>Quando</b></td><td>
     } catch (e) { toast('Não foi possível alterar o pacote: ' + e.message); }
     lab.pacoteBusy = false; renderPanel();
   }
+  // v1.50: aba "Explorar o WhatsApp" — tudo o que o programa sabe fazer, guarda, busca, mostra, mede e esconde, por tema; 🆕 = novo desde a exploração anterior.
+  const EXP_TEMAS = { acoes: ['Ações', 'o que o programa sabe fazer (e as funções de cada ação)'], dados: ['Dados', 'o que ele guarda neste computador'], recursos: ['Recursos escondidos', 'funções-porteiro e experimentos'],
+    telas: ['Telas', 'cada pedaço de tela que existe'], servidor: ['Servidor', 'o que ele busca ou manda para o servidor'], registros: ['Registros', 'o que ele mede (telemetria)'], limites: ['Limites e anti-spam', 'teto, cota, denúncia, bloqueio, restrição'] };
+  const expl = { r: null, rodando: false, tema: 'acoes', q: '', erro: '' };
+  async function explorarRodar() {
+    expl.rodando = true; expl.erro = ''; renderPanel();
+    try {
+      const r = await Promise.race([call('explorar'), sleep(60000).then(() => { throw new Error('demorou demais'); })]);
+      const base = (await chrome.storage.local.get('exploraBase')).exploraBase || null, nova = {};
+      for (const [tema, x] of Object.entries(r.temas)) { const vistos = base?.[tema] ? new Set(base[tema]) : null; x.novos = vistos ? x.itens.filter((i) => !vistos.has(i.id)).map((i) => i.id) : []; nova[tema] = x.itens.map((i) => i.id); }
+      await chrome.storage.local.set({ exploraBase: nova }); expl.r = r;
+    } catch (e) { expl.erro = e.message; }
+    expl.rodando = false; renderPanel();
+  }
+  function labExplorar() {
+    const r = expl.r, botao = h('button', { class: 'gbtn sm', disabled: expl.rodando || !S.ready, onclick: explorarRodar }, expl.rodando ? 'Explorando… (até 1 min)' : r ? 'Explorar de novo' : '🔭 Explorar agora');
+    if (!r) return [h('div', { class: 'rowf' }, botao), expl.erro ? h('small', { class: 'dan' }, 'Não consegui: ' + expl.erro) : null];
+    const t = r.temas[expl.tema] || { itens: [], novos: [] }, q = expl.q.toLowerCase(), novos = new Set(t.novos || []);
+    const lista = t.itens.filter((i) => !q || i.id.toLowerCase().includes(q) || (i.exporta || []).some((e) => e.toLowerCase().includes(q))).sort((a, b) => novos.has(b.id) - novos.has(a.id));
+    return [h('div', { class: 'rowf' }, botao, h('small', { class: 'hint' }, `${r.total.toLocaleString('pt-BR')} módulos · ${(r.ms / 1000).toFixed(1).replace('.', ',')} s${r.cortado ? ' · parou pelo tempo' : ''}`)),
+      h('div', { class: 'fchips' }, Object.entries(EXP_TEMAS).map(([k, [nome]]) => { const x = r.temas[k]; return x ? h('button', { class: 'fchip' + (expl.tema === k ? ' on' : ''), onclick: () => { expl.tema = k; renderPanel(); } }, `${nome} (${x.total.toLocaleString('pt-BR')})${x.novos?.length ? ` 🆕${x.novos.length}` : ''}`) : null; })),
+      h('small', { class: 'hint' }, `${EXP_TEMAS[expl.tema][0]}: ${EXP_TEMAS[expl.tema][1]}.${t.novos?.length ? ` 🆕 ${t.novos.length} novo(s) desde a exploração anterior (aparecem primeiro).` : ''}`),
+      h('input', { class: 'in sm lbx', placeholder: 'Buscar (ex: schedule, label, pin, order)', value: expl.q, oninput: (e) => { expl.q = e.target.value; renderPanel(); const el = panelRoot.querySelector('.lbx'); el?.focus(); el?.setSelectionRange(expl.q.length, expl.q.length); } }),
+      h('div', { class: 'col' }, lista.slice(0, 150).map((i) => h('div', { class: 'labr' }, h('div', { class: 'grow' }, h('code', null, (novos.has(i.id) ? '🆕 ' : '') + i.id),
+        i.exporta?.length ? h('small', { class: 'mut' }, i.exporta.join(', ')) : i.naoCarregado ? h('small', { class: 'hint' }, 'ainda não carregado pelo WhatsApp (só o nome)') : null)))),
+      lista.length > 150 ? h('p', { class: 'hint' }, `Mostrando 150 de ${lista.length.toLocaleString('pt-BR')}. Use a busca.`) : null,
+      h('p', { class: 'hint' }, 'Só leitura: nada é executado nem enviado. O resultado completo vai no pacote de diagnóstico; mande ao Claude para achar novas possibilidades para o AtendeZap.')];
+  }
   // v1.49: aba "Funções do WhatsApp" — agrupadas pelas funções-porteiro do código (regras em lib/funcoes.js)
   function labFuncoes(d, ov) {
     if (!lab.refs?.portoes) return h('div', { class: 'labwarn' }, h('p', null, 'Para montar a lista, o AtendeZap precisa ler o código do WhatsApp uma vez (alguns segundos).'),
@@ -5034,6 +5063,7 @@ ${hist ? `<h2>Histórico de autotestes</h2><table><tr><td><b>Quando</b></td><td>
         chip('testando', `⏳ Testando (${listaDe('testando').length})`, 'aba'),
         listaDe('nativo').length ? chip('nativo', `◎ Já nativos (${listaDe('nativo').length})`, 'aba') : null,
         chip('funcoes', `🧩 Funções do WhatsApp${lab.refs?.portoes ? ` (${AZFUN.agrupar(lab.refs.portoes, d.recursos).length})` : ''}`, 'aba'),
+        chip('explorar', '🔭 Explorar o WhatsApp', 'aba'),
         chip('todas', '🔎 Avançado: todas as chaves', 'aba')),
       // interruptor único do pacote (v1.18): em vez de ligar um por um, liga/desliga tudo o que já apareceu na sua conta
       lab.aba === 'funciona' && pacoteLista.length ? h('div', { class: 'labwarn ok pacote' },
@@ -5046,11 +5076,12 @@ ${hist ? `<h2>Histórico de autotestes</h2><table><tr><td><b>Quando</b></td><td>
         testando: 'Ligados e esperando você testar: depois de recarregar, marque ✔ ou ✖.',
         funciona: 'Apareceram na sua conta. Use o interruptor do pacote (ou ligue um a um) e deixe ligados para continuar usando.',
         nativo: 'Já existem no seu WhatsApp sem o Laboratório: ficam fora das outras abas. Só para desfazer se marcou errado.',
+        explorar: 'Mapa de tudo o que o programa do WhatsApp tem, por tema: ações, dados, recursos escondidos, telas, servidor, registros e limites. Rode de novo depois de cada atualização do WhatsApp para ver o que é 🆕.',
         funcoes: 'Cada item é uma função do próprio código do WhatsApp com as chaves de que ela depende: um botão liga ou desliga todas juntas. O nome é o do WhatsApp (em inglês). 🆕 = apareceu desde a última leitura do código. Limites e anti-spam não entram.',
         todas: 'Avançado: todas as chaves liga/desliga do WhatsApp (as testadas que não aparecem ficam só aqui, com a marca do teste). Para quem quer procurar por nome.' }[lab.aba] || ''),
       lab.aba === 'todas' ? [busca, h('div', { class: 'fchips' }, chip('desligados', 'Desligadas'), chip('alterados', 'Alteradas'),
         h('button', { class: 'fchip' + (lab.internas ? ' on' : ''), title: 'Chaves de registro, travas, migração, experimentos e as que só servem de par para outra', onclick: () => { lab.internas = !lab.internas; renderPanel(); } }, 'Mostrar internas'))] : null,
-      lab.aba === 'funcoes' ? labFuncoes(d, ov) : lista.length ? h('div', { class: 'col' }, lista.map(([r, rot]) => linha(r, rot)))
+      lab.aba === 'explorar' ? labExplorar() : lab.aba === 'funcoes' ? labFuncoes(d, ov) : lista.length ? h('div', { class: 'col' }, lista.map(([r, rot]) => linha(r, rot)))
         : h('p', { class: 'empty' }, { paratestar: 'Você já testou todas as sugestões. Peça novas ao Claude mandando o mapa.', funciona: 'Nenhum marcado como ✔ Apareceu ainda.',
           testando: 'Nada ligado esperando teste.' }[lab.aba] || 'Nada encontrado.'),
       lab.aba === 'todas' ? h('p', { class: 'hint' }, 'Mostrando até 200. Use a busca para achar outras.') : null,

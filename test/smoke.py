@@ -262,6 +262,7 @@ async def main():
         _p = mp.get('referencias', {}).get('portoes', {})
         res['mapa_refs'] = [mp.get('referencias', {}).get('stats', {}).get('portoes'), _p.get('StatusGatingUtils'), _p.get('GroupAdminConsoleGatingUtils'), mp.get('referencias', {}).get('indices', {}).get('status_delete_enabled'), len(mp.get('novidades', []))]
         res['mapa_enxuto'] = ['indice' not in mp['mapa'], 'diagnostico' not in mp, 'Saúde:' in mp.get('resumo', ''), len(mp['mapa']['modulos']) == mp['mapa']['totalModulos'], sorted(mp['mapa'].get('contagemPorPalavra', {}))[:2], '\n' not in open(caminho_mapa).read().strip()]
+        res['mapa_explorar'] = isinstance(mp.get('explorar'), dict) and 'erro' not in mp['explorar'] and set(mp['explorar'].get('temas', {})) == {'acoes', 'dados', 'recursos', 'telas', 'servidor', 'registros', 'limites'}   # v1.50
         res['mapa_sonda'] = isinstance(mp.get('sondaLimites'), dict) and 'erro' not in mp['sondaLimites'] and 'total' in mp['sondaLimites'] and 'tela' in mp['sondaLimites']   # v1.50
         res['mapa'] = (mp['mapa']['totalModulos'], mp['mapa']['apagarStatusVia'], len(mp['mapa']['wppFuncoes'].get('chat', [])), mp['mapa']['recursos'])
         # v1.47: DIAGNÓSTICO AMPLIADO — o mapa traz ambiente, ponte, IA, erros e o que mudou; o pacote .zip reúne tudo e NÃO leva dado pessoal
@@ -319,6 +320,11 @@ async def main():
         ls1 = await page.evaluate("localStorage.getItem('az-lab')")
         if fn_itens: await page.locator('#az-panel .labr').first.locator('label.tog').click(); await page.wait_for_timeout(500)
         res['lab_funcoes'] = {'itens': fn_itens > 0, 'mudou_ao_ligar': ls1 != ls0, 'voltou': await page.evaluate("localStorage.getItem('az-lab')") == ls0, 'sem_teto': not await page.evaluate("document.querySelector('#az-panel').shadowRoot.querySelector('.pb').innerText.includes('capping')"), 'primeira': fn_primeira}
+        # v1.50: Explorar o WhatsApp — mapa por tema, só leitura
+        await page.locator('#az-panel .fchip', has_text='Explorar o WhatsApp').click(); await page.wait_for_timeout(300)
+        await page.locator('#az-panel .gbtn', has_text='Explorar agora').click(); await page.wait_for_timeout(3500)
+        ex_txt = await page.evaluate("document.querySelector('#az-panel').shadowRoot.querySelector('.pb').innerText")
+        res['lab_explorar'] = {'temas': all(n in ex_txt for n in ['Ações', 'Dados', 'Recursos escondidos', 'Telas', 'Servidor', 'Registros', 'Limites e anti-spam']), 'resumo': 'módulos' in ex_txt and 'Explorar de novo' in ex_txt}
         await page.locator('#az-panel .fchip', has_text='Para testar').click(); await page.wait_for_timeout(300)   # volta à aba em que os testes seguintes esperam estar
         await page.locator('#az-panel .fchip', has_text='Funcionando').click(); await page.wait_for_timeout(300)
         # rolagem preservada ao ligar uma opção do fim da lista + descrição + marcação de teste
@@ -1853,6 +1859,8 @@ async def main():
             'rb_F_G_H_textos': lambda v: v == [1, 1, 0],
             'rb_sugestao': lambda v: v[0] == 0 and len(v[1]) == 1 and v[1][0][0] == 'responder',
             'rb_sug_manual_tudo': lambda v: v == 2,
+            'lab_explorar': lambda v: v == {'temas': True, 'resumo': True},   # v1.50
+            'mapa_explorar': lambda v: v is True,   # v1.50
             'mapa_sonda': lambda v: v is True,   # v1.50
             'sonda': lambda v: v == {'resumo': True, 'tela': True},   # v1.50
             'risco_card': lambda v: v == {'existe': True, 'contou': True, 'semaforo': True},   # v1.50

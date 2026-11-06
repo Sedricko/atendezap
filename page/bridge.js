@@ -1099,6 +1099,37 @@
     }),
     ping: () => Date.now(),
     labList: () => ({ ...labEstado(), recursos: recursosInternos() }),
+    // v1.50: EXPLORADOR — mapeia TODOS os módulos do WhatsApp por tema (o que ele sabe fazer, guarda, busca, mostra, mede e esconde).
+    // Ações e dados: também os NOMES do que cada módulo exporta (nunca chama nada). Só nomes técnicos; sem mensagens, contatos ou números.
+    explorar: async () => {
+      const t0 = performance.now(), ids = moduleIds(), respira = () => new Promise((r) => setTimeout(r, 0)), curto = (i) => i.replace(/^WAWeb/, '');
+      const TEMAS = { acoes: /(Action|Actions|Cmd)$/, dados: /(Store|Collection|Model|Table|Db)$/, recursos: /Gating|GateModel|ABProp|Experiment|Rollout|Eligib|FeatureFlag|Killswitch|KillSwitch/,
+        telas: /\.react$|Loadable$/, servidor: /(Job|Query|Mutation|Subscription)$|^WAWebMex|Fetch[A-Z]|Iq[A-Z]|Api$/, registros: /WamEvent$/,
+        limites: /Capping|Capped|Quota|Limit|Spam|Report|Block|Ban[A-Z]|Banned|Restrict|Integrity|Enforcement|RateLimit|Suspend|Abuse|Suspicious|Defense|Appeal|Violation|Throttl|Quarantine|Fraud|Scam/ };
+      const COM_EXPORTS = new Set(['acoes', 'dados', 'limites']), out = { temas: {}, total: ids.length }; let lidos = 0, cortado = false, mapaMods = null;
+      try { mapaMods = WPP.loader.__debug?.().modulesMap || null; } catch { /* sem acesso */ }
+      try { const um = mapaMods && Object.values(mapaMods).find((r) => r && typeof r === 'object'); out.camposDoRegistro = um ? Object.keys(um).slice(0, 20) : null; } catch { out.camposDoRegistro = null; }   // para o próximo ajuste
+      for (const [tema, rx] of Object.entries(TEMAS)) {
+        const l = ids.filter((i) => rx.test(i) && !(tema === 'limites' && /\.react$|Loadable$|WamEvent$/.test(i))), itens = [];
+        for (const [j, id] of l.entries()) {
+          const it = { id: curto(id) };
+          if (COM_EXPORTS.has(tema) && !cortado) {
+            if (performance.now() - t0 > 40000) cortado = true;
+            else {
+              // SÓ o que o WhatsApp JÁ carregou (lido do registro do módulo, sem executar nada); os outros ficam só com o nome
+              let rec = null; try { rec = mapaMods?.[id] || null; } catch { /* sem registro */ }
+              const ex = rec && (rec.factoryFinished === true || rec.exports) ? rec.exports : null;
+              if (ex && typeof ex === 'object') { lidos++; try { it.exporta = Object.keys(ex).slice(0, 40); } catch { /* protegido */ } } else it.naoCarregado = true;
+            }
+            if (j % 15 === 14) await respira();
+          }
+          itens.push(it);
+        }
+        out.temas[tema] = { total: l.length, itens };
+      }
+      out.lidos = lidos; out.cortado = cortado; out.ms = Math.round(performance.now() - t0);
+      return out;
+    },
     // v1.50: SONDA DE LIMITAÇÕES — procura em TODOS os módulos do WhatsApp com assunto de limite/teto/cota/spam/denúncia/bloqueio/banimento/restrição/integridade/suspensão.
     // De cada um: o que ele exporta (nome e tipo), as chaves que o código dele cita e o resultado das funções de LEITURA de estado (is/has/can/should, sem parâmetros).
     // Nunca chama nada que envia, busca no servidor ou muda algo; nada de mensagens, contatos ou números (só nomes técnicos e liga/desliga).
