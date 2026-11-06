@@ -89,7 +89,9 @@
   const AZ_TK = Array.from(crypto.getRandomValues(new Uint8Array(12)), (x) => x.toString(16).padStart(2, '0')).join(''); // chave do painel (a ponte recusa pedidos que enviam/bloqueiam/removem sem ela)
   const PONTE = {};   // v1.47: por método da ponte: quantas chamadas, quantos erros e quanto tempo levaram (vai para o pacote de diagnóstico)
   const ponteReg = (m, ms, erro) => { const x = (PONTE[m] ||= { n: 0, erros: 0, ms: 0, max: 0 }); x.n++; if (erro) x.erros++; x.ms += ms; if (ms > x.max) x.max = ms; };
+  const RISCO_MET = new Set(['sendText', 'sendFile', 'sendContact', 'sendEspecial', 'sendStatus', 'startChat']);   // v1.50: envios contados no Risco de banimento
   const call = (method, ...args) => new Promise((res, rej) => {
+    if (RISCO_MET.has(method)) riscoReg(method, args[0]);   // v1.50: conta o que o AtendeZap envia hoje (Risco de banimento)
     const id = ++seq;
     pending.set(id, { res, rej, method, t0: performance.now() });
     window.postMessage({ __az: 1, kind: 'req', id, method, args, tk: AZ_TK }, location.origin);
@@ -1229,7 +1231,9 @@
     if (!lote.files.length && !texto) return toast('Adicione arquivos ou escreva uma mensagem.');
     if (!lote.sel.size) return toast('Marque pelo menos um grupo ou contato.');
     const total = U.loteTotal(lote.files.length, !!texto, lote.sel.size);
-    if (!await confirmar(`Enviar ${lote.files.length} arquivo(s)${texto ? ' + mensagem' : ''} para ${lote.sel.size} conversa(s)? São ${total} envios.`)) return;
+    const prev = RK.previsao(risco.est, lote.sel.size, Math.ceil(total / Math.max(1, lote.sel.size)), Date.now(), tetoLigado());   // v1.50: como o dia fica depois deste envio
+    const aviso = prev.nivel === 'verde' ? '' : `\n\n${RISCO_COR[prev.nivel][1]} — risco de banimento depois deste envio:\n${prev.motivos.map((m) => '• ' + riscoTexto(m)).join('\n')}\nVocê decide; se puder, divida em dias diferentes ou aumente o intervalo.`;
+    if (!await confirmar(`Enviar ${lote.files.length} arquivo(s)${texto ? ' + mensagem' : ''} para ${lote.sel.size} conversa(s)? São ${total} envios.${aviso}`)) return;
     const r = (lote.run = { done: 0, total, atual: '', erros: [], avisos: [], cancel: false, fim: false });
     renderPanel();
     let primeiro = true;
@@ -1894,7 +1898,31 @@
     } }, 'Testar link'))) : null;
   const gruposAjView = () => [h('div', { class: 'eh' }, h('b', null, 'Ajustes dos grupos')), vagasCard(), gruposSoCard()];
   const freteView = () => [h('div', { class: 'eh' }, h('b', null, 'Lista de frete')), freteCard()];
-  const limitesSecaoView = () => [h('div', { class: 'eh' }, h('b', null, 'Limites do WhatsApp')), limWaCard(), monitorCard()];
+  const limitesSecaoView = () => [h('div', { class: 'eh' }, h('b', null, 'Limites do WhatsApp')), riscoCard(), limWaCard(), monitorCard()];
+  // ----- v1.50: Risco de banimento — o que o AtendeZap enviou hoje × faixas de cautela + o teto do próprio WhatsApp (regras em lib/risco.js) -----
+  // Só contagens e hash dos destinos, só neste computador. Avisa; nunca bloqueia.
+  const RK = globalThis.AZRISCO;
+  const risco = { est: undefined, salvarT: null };
+  function riscoReg(metodo, destino) {
+    const fazer = () => { risco.est = RK.registrar(risco.est, metodo, destino ? hash32(String(destino)) : null, Date.now());
+      clearTimeout(risco.salvarT); risco.salvarT = setTimeout(() => chrome.storage.local.set({ riscoDia: risco.est }).catch(() => {}), 2000); };
+    if (risco.est === undefined) chrome.storage.local.get('riscoDia').then((d) => { if (risco.est === undefined) risco.est = d.riscoDia || null; fazer(); }).catch(fazer); else fazer();
+  }
+  const tetoLigado = () => mon.atual?.valores?.wa_individual_new_chat_msg_capping_enabled === true || limW.dados?.vigia?.tetoNovas === true;
+  const RISCO_COR = { verde: ['iaok', '🟢 Tranquilo'], amarelo: ['warn', '🟡 Atenção'], vermelho: ['dan', '🔴 Cuidado'] };
+  const riscoTexto = (m) => (m.k === 'teto' ? 'o WhatsApp LIGOU o teto de mensagens para contatos novos na sua conta' : `${m.valor.toLocaleString('pt-BR')} ${RK.NOMES[m.k]} (cautela a partir de ${m.faixa.toLocaleString('pt-BR')})`);
+  function riscoCard() {
+    if (!ligado('cfgLimites')) return null;
+    if (risco.est === undefined) { chrome.storage.local.get('riscoDia').then((d) => { if (risco.est === undefined) { risco.est = d.riscoDia || null; renderPanel(); } }); }
+    const a = RK.avaliar(risco.est, Date.now(), tetoLigado()), [cls, rot] = RISCO_COR[a.nivel], v = a.valores;
+    const kv = (nome, valor, k) => h('div', { class: 'kv' }, h('span', null, nome), h('b', { class: a.motivos.some((m) => m.k === k && m.nivel === 'vermelho') ? 'dan' : null }, `${valor.toLocaleString('pt-BR')} de ${RK.FAIXAS[k][0].toLocaleString('pt-BR')}`));
+    return h('div', { class: 'sec' }, h('div', { class: 'sh' }, tile('shapes'), h('b', { class: 'grow' }, 'Risco de banimento (hoje)'), h('b', { class: cls }, rot)),
+      a.motivos.length ? h('div', { class: 'errs' + (a.nivel === 'amarelo' ? ' warn' : '') }, a.motivos.map((m) => h('small', null, riscoTexto(m)))) : null,
+      h('div', { class: 'col' }, kv('Conversas diferentes que receberam', v.destinos, 'destinos'), kv('Mensagens enviadas pelo AtendeZap', v.mensagens, 'mensagens'),
+        kv('Pico num minuto', v.porMinuto, 'porMinuto'), kv('Conversas novas iniciadas', v.iniciadas, 'iniciadas'), kv('Status publicados', v.status, 'status')),
+      h('small', { class: 'hint' }, 'Conta só o que sai pelo AtendeZap (robô, respostas rápidas, Enviar para vários, Iniciar conversa, Status), neste computador, desde a meia-noite. As faixas são cautela nossa: o WhatsApp não publica os limites. O que mais pesa para ele são denúncias e bloqueios de quem recebe, e mensagens para quem não tem você na agenda.'),
+      a.nivel !== 'verde' ? h('small', { class: 'hint' }, 'Para baixar o risco: espace os envios (Enviar para vários › intervalo maior), prefira quem já conversa com você e pare por hoje se estiver no vermelho.') : null);
+  }
   // ----- v1.49: Monitor de limitações e "o que o WhatsApp registra" (só LÊ; regras em lib/monitor.js) -----
   // A base é o que você já viu: o autoteste compara com ela a cada 30 min e avisa o que mudou. "Entendi" passa a base para o valor de agora.
   const MON = globalThis.AZMON, mon = { atual: null, base: undefined, lendo: false, erro: '' };
@@ -4242,6 +4270,8 @@
   addCheck('Conexão', 'Teto de conversas novas (anti-spam)', ({ br }) => { const v = br?.limites?.vigia; if (!v || v.tetoNovas == null) return { ok: 'skip', d: 'não consegui ler esta configuração' };
     return v.tetoNovas ? { ok: 'warn', d: `LIGADO na sua conta${v.tetoNovasLimite ? ': ' + v.tetoNovasLimite + ' mensagens' : ''} (aviso em ${v.tetoAvisoPct || '?'}%). Vá com calma em conversas novas e Enviar para vários.` } : { ok: true, d: 'desligado na sua conta' }; });
   // v1.49: o monitor de limitações também roda no autoteste (a cada 30 min) e avisa o que mudou desde que você viu.
+  addCheck('Conexão', 'Risco de banimento (envios de hoje)', () => { const a = RK.avaliar(risco.est, Date.now(), tetoLigado());
+    return a.nivel === 'verde' ? { ok: true, d: `tranquilo · ${a.valores.mensagens} mensagens para ${a.valores.destinos} conversas hoje` } : { ok: 'warn', d: `${RISCO_COR[a.nivel][1]}: ${a.motivos.map(riscoTexto).join('; ')} (Diagnóstico › Limites)` }; });
   addCheck('Conexão', 'Limitações do WhatsApp (monitor)', async ({ br }) => {
     if (!br?.ready) return { ok: 'skip', d: 'o WhatsApp ainda não está pronto' };
     let r; try { r = await monitorLer(); } catch (e) { return { ok: 'skip', d: 'não consegui ler: ' + e.message }; }

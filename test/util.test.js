@@ -1236,3 +1236,18 @@ const cifrar = (obj, senha) => { // mesmo formato do CryptoJS/OpenSSL ("Salted__
   assert.deepEqual(F.ids({ A: { x: 1, y: 2 } }), ['A.x', 'A.y']);
   console.log('funções do WhatsApp agrupadas ok');
 }
+// ---- v1.50: risco de banimento (contagens do dia) ----
+{
+  require('../lib/risco.js'); const R = globalThis.AZRISCO, t0 = new Date(2026, 10, 7, 10, 0, 0).getTime();
+  let e = null;
+  for (let i = 0; i < 3; i++) e = R.registrar(e, 'sendText', 'h' + (i % 2), t0 + i * 1000);
+  e = R.registrar(e, 'sendStatus', null, t0); e = R.registrar(e, 'startChat', null, t0); e = R.registrar(e, 'labels', 'x', t0);
+  assert.deepEqual(R.valores(e), { destinos: 2, mensagens: 3, porMinuto: 3, iniciadas: 1, status: 1 });
+  assert.equal(R.avaliar(e, t0).nivel, 'verde');
+  e = R.registrar(e, 'sendFile', 'h9', t0 + 60000); assert.equal(e.porMinuto, 3); assert.equal(e.noMinuto, 1);          // minuto novo recomeça; o pico fica
+  assert.equal(R.avaliar(e, t0, true).nivel, 'vermelho');                                                                 // teto ligado = vermelho sempre
+  assert.equal(R.avaliar(e, t0 + 86400000).valores.mensagens, 0);                                                         // outro dia = zerado
+  const p = R.previsao(e, 200, 2, t0); assert.equal(p.nivel, 'amarelo'); assert.deepEqual(p.motivos.map((m) => [m.k, m.nivel]), [['destinos', 'amarelo'], ['mensagens', 'amarelo']]);   // 203 conversas, 404 mensagens
+  assert.equal(R.previsao(e, 400, 1, t0).nivel, 'vermelho');
+  console.log('risco de banimento ok');
+}

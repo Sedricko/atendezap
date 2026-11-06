@@ -1655,6 +1655,12 @@ async def main():
         mon2 = await page.evaluate(PBTXT + ".includes('Nada mudou desde que você viu')")
         await page.evaluate("() => { WPP.conn.getABProps = window.__abOrig; }")
         res['monitor'] = {'primeira_leitura': mon0, 'avisou': mon1, 'autoteste': mon_auto, 'entendi': mon2, 'registra': await page.evaluate(PBTXT + ".includes('O que o WhatsApp registra')")}
+        # v1.50: Risco de banimento — o card conta o que o AtendeZap já enviou nesta rodada do teste (robô, respostas, Enviar para vários…)
+        rc = page.locator('#az-panel .sec', has_text='Risco de banimento (hoje)')
+        rtxt = (await rc.inner_text()) if await rc.count() else ''
+        import re as _re; mm = _re.search(r'Mensagens enviadas pelo AtendeZap\s*(\d+)', rtxt)
+        res['risco_card'] = {'existe': bool(rtxt), 'contou': bool(mm) and int(mm.group(1)) > 0, 'semaforo': any(s in rtxt for s in ['Tranquilo', 'Atenção', 'Cuidado'])}
+        if rtxt: await rc.screenshot(path=f'{OUT}/previa-risco.png')
         # v1.48: Limpar conversas antigas — conta por faixa, protege fixada/não lida, apaga individual (limpa com estrela e apaga) e, no grupo, só para mim
         await page.evaluate("""() => { const now = Date.now(), d = (n) => Math.floor((now - n * 864e5) / 1000), mk = (id, t, x = {}) => ({ id: { _serialized: id }, t, formattedTitle: 'Contato ' + id.slice(9, 13), unreadCount: 0, labels: [], ...x });
           window.__lpOrig = [WPP.chat.list, WPP.chat.getMessages]; window.__msgsG = [{ id: { _serialized: 'g1' }, t: d(40) }, { id: { _serialized: 'g2' }, t: d(40), star: true }, { id: { _serialized: 'g3' }, t: d(2) }];
@@ -1841,6 +1847,7 @@ async def main():
             'rb_F_G_H_textos': lambda v: v == [1, 1, 0],
             'rb_sugestao': lambda v: v[0] == 0 and len(v[1]) == 1 and v[1][0][0] == 'responder',
             'rb_sug_manual_tudo': lambda v: v == 2,
+            'risco_card': lambda v: v == {'existe': True, 'contou': True, 'semaforo': True},   # v1.50
             'monitor': lambda v: v == {'primeira_leitura': True, 'avisou': True, 'autoteste': True, 'entendi': True, 'registra': True},   # v1.49
             'lab_funcoes': lambda v: v['itens'] and v['mudou_ao_ligar'] and v['voltou'] and v['sem_teto'],   # v1.49
             'lp_limpeza': lambda v: v == {'botoes': ['Apagar as 2', 'Apagar as 2', 'Apagar as 2', 'Apagar as 1', 'Apagar as 1'], 'apagou': [['limpar', '5511900000001@c.us', True], ['apagarConversa', '5511900000001@c.us']], 'contou': True, 'grupo': [[['g1'], False]], 'aviso_escondido': True},   # v1.48 (v1.48.1: um lote só e sem a pilha de avisos)
@@ -1945,7 +1952,7 @@ async def main():
             'ac_pc_desconectado': lambda v: v == {'banner': True, 'motivo': True, 'respostas_na_barra': 0},
             'ac_pc_volta': lambda v: v == {'conectou': True, 'conectar': True, 'respostas_na_barra': 1, 'mantem_escolha': True, 'sem_novo_aviso': True},
             'ac_todos_config': lambda v: v == {'cartoes': ['Posição do painel', 'Acesso da equipe', 'Assistente de IA (Gemini)', 'Partes do painel'], 'abas': [], 'mais_chave': True},
-            'ac_todos_barra': lambda v: v == {'icones': ['Atendimento', 'Grupos', 'Ferramentas', 'Privacidade', 'Diagnóstico', 'Configurações'], 'abas': {'Atendimento': ['Respostas', 'Aguardando', 'Assinatura', 'Atendente IA', 'Memória IA', 'Lista de frete', 'Resumo 🧪'], 'Grupos': ['Pedidos', 'Conjuntos', 'Ajustes'], 'Ferramentas': ['Iniciar conversa', 'Enviar para vários', 'Fixadas', 'Contato 🧪', 'Exportar 🧪', 'Backup'], 'Privacidade': ['Ocultas', 'Apagar 🧪', 'Recuperar 🧪', 'Limpar 🧪'], 'Diagnóstico': ['Saúde', 'Limites', 'Avaliação 🧪', 'Envios à IA', 'Laboratório 🧪'], 'Configurações': []}, 'cartoes': {'Ajustes dos grupos': ['Vagas nos grupos', 'Grupos só na aba Grupos'], 'Lista de frete': ['Lista de frete (planilha Google)'], 'Limites': ['Limites do WhatsApp', 'Monitor de limitações']}},
+            'ac_todos_barra': lambda v: v == {'icones': ['Atendimento', 'Grupos', 'Ferramentas', 'Privacidade', 'Diagnóstico', 'Configurações'], 'abas': {'Atendimento': ['Respostas', 'Aguardando', 'Assinatura', 'Atendente IA', 'Memória IA', 'Lista de frete', 'Resumo 🧪'], 'Grupos': ['Pedidos', 'Conjuntos', 'Ajustes'], 'Ferramentas': ['Iniciar conversa', 'Enviar para vários', 'Fixadas', 'Contato 🧪', 'Exportar 🧪', 'Backup'], 'Privacidade': ['Ocultas', 'Apagar 🧪', 'Recuperar 🧪', 'Limpar 🧪'], 'Diagnóstico': ['Saúde', 'Limites', 'Avaliação 🧪', 'Envios à IA', 'Laboratório 🧪'], 'Configurações': []}, 'cartoes': {'Ajustes dos grupos': ['Vagas nos grupos', 'Grupos só na aba Grupos'], 'Lista de frete': ['Lista de frete (planilha Google)'], 'Limites': ['Risco de banimento (hoje)', 'Limites do WhatsApp', 'Monitor de limitações']}},
             'ac_todos_diag': lambda v: v == {'laboratorio': True, 'avancado': True}, 'ac_todos_robo': lambda v: v == {'audio': True, 'automatico_livre': True},
             'ac_vazio_tela': lambda v: v == {'cartoes': ['Acesso da equipe'], 'sem_diag_nem_backup': True, 'aberto': True, 'aviso': True, 'respostas_na_barra': 0, 'config_na_barra': 1},
             'ac_vazio_libera': lambda v: v == {'cartoes': ['Posição do painel', 'Acesso da equipe'], 'respostas_na_barra': 1, 'aviso_sumiu': True},
