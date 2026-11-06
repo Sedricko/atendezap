@@ -676,6 +676,13 @@ async def main():
         await page.screenshot(path=f'{OUT}/rb-atendente.png')
         await page.locator('#az-panel .card', has_text='Sugestão de resposta').locator('.gbtn', has_text='Enviar').click(); await page.wait_for_timeout(4500)
         res['rb_sugestao_enviada'] = await textos(J)
+        # v1.47.4: robô DESLIGADO e sugestão com 2 mensagens: o seu clique em Enviar manda as duas (a parada no meio vale só para o robô)
+        K = '5511999990039@c.us'
+        await sw.evaluate("chrome.storage.local.get('atendCfg').then(d => chrome.storage.local.set({ atendCfg: { ...d.atendCfg, modo: 'desligado' }, atendSug: [{ id: '%s', nome: 'Cliente K', acao: 'responder', mensagens: ['Primeira parte', 'Segunda parte'], t: Date.now() }] }))" % K); await page.wait_for_timeout(900)
+        await ir(page, 'Respostas rápidas'); await page.locator('#az-panel .hubtabs .ht', has_text='Atendente IA').click(); await page.wait_for_timeout(600)
+        await page.locator('#az-panel .card', has_text='Cliente K').locator('.gbtn', has_text='Enviar').click(); await page.wait_for_timeout(9000)
+        res['rb_sug_manual_tudo'] = len(await textos(K))
+        await sw.evaluate("chrome.storage.local.get('atendCfg').then(d => chrome.storage.local.set({ atendCfg: { ...d.atendCfg, modo: 'sugerir' } }))"); await page.wait_for_timeout(700)
         # J) treinar conversando: a IA responde sem enviar nada; corrigir a resposta alimenta o treino
         await sub_atend(page, 'Treino'); await page.locator('#az-panel .gbtn', has_text='Treinar conversando').click(); await page.wait_for_timeout(500)
         await page.locator('#az-panel textarea[placeholder^="Escreva como se fosse o cliente"]').fill('Boa tarde, vocês atendem o Rio?'); await page.locator('#az-panel .gbtn', has_text='Enviar como cliente').click(); await page.wait_for_timeout(1800)
@@ -1786,6 +1793,7 @@ async def main():
             'rb_grupo': lambda v: v == 0, 'rb_voce_assumiu': lambda v: v == 0, 'rb_executou': lambda v: len(v) == 1,
             'rb_F_G_H_textos': lambda v: v == [1, 1, 0],
             'rb_sugestao': lambda v: v[0] == 0 and len(v[1]) == 1 and v[1][0][0] == 'responder',
+            'rb_sug_manual_tudo': lambda v: v == 2,
             'rb_sugestao_enviada': lambda v: len(v) == 1 and 'Posso ajudar' in v[0], 'rb_exemplo': lambda v: bool(v) and len(v) == 1,
             'rb_sem_aceite': lambda v: v == 'desligado', 'rb_desligado_sem_ia': lambda v: v == 0,
             'rc_resposta': lambda v: len(v) == 1 and 'Tem sim' in v[0], 'rc_prompt': lambda v: v == [True, False, False],

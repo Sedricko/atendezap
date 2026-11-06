@@ -2684,7 +2684,7 @@
             h('button', { class: r.modo === 'substituir' ? 'on' : '', onclick: () => { r.modo = 'substituir'; renderPanel(); } }, 'Substituir')),
           h('div', { class: 'center' },
             h('button', { class: 'gbtn out', onclick: () => { view.restore = null; renderPanel(); } }, 'Cancelar'),
-            h('button', { class: 'gbtn', onclick: doRestore }, 'Restaurar')),
+            h('button', { class: 'gbtn', onclick: (e) => comEspera(e.currentTarget, 'Restaurando…', doRestore) }, 'Restaurar')),
         ] : [
           h('p', { class: 'hint' }, 'Escolha um arquivo .json do AtendeZap. Você poderá escolher o que restaurar.'),
           h('div', { class: 'center' }, h('label', { class: 'gbtn out' }, 'Escolher arquivo…',
@@ -2902,6 +2902,12 @@
   const atendBruta = () => ({ ...ATEND0, ...(S.atendCfg || {}), exp: { ...ATEND0.exp, ...(S.atendCfg?.exp || {}) } }); // o que a pessoa SALVOU
   const atendC = () => AC.limitarRobo(atendBruta(), acessoEf()); // o que VALE: já com os limites do administrador (o salvo nunca é alterado)
   // chamada à ponte COM tempo limite: se o WhatsApp parar de responder, o robô segue em frente em vez de ficar preso naquela conversa para sempre
+  // Botão que espera uma resposta: desliga e mostra o que está fazendo (o 2º clique é ignorado); volta ao normal no fim, mesmo se der erro.
+  // Sem renderPanel: o que a pessoa digitou na tela (ex.: o convite) não se perde se a ação falhar.
+  async function comEspera(btn, texto, fn) {
+    if (btn.disabled) return; const antes = btn.textContent; btn.disabled = true; btn.textContent = texto; btn.setAttribute('aria-busy', 'true');
+    try { return await fn(); } finally { if (btn.isConnected) { btn.disabled = false; btn.textContent = antes; btn.removeAttribute('aria-busy'); } }
+  }
   const callT = (ms, method, ...args) => Promise.race([call(method, ...args), new Promise((_, rej) => setTimeout(() => rej(new Error('o WhatsApp não respondeu a tempo (' + method + ')')), ms))]);
   const atend = { transc: new Map(), transcOk: 0, transcErro: 0, transcUlt: '', bloqueado: null, semTrava: false, foraEscopo: 0, escopoCache: new Map(), escopoLog: new Map(), purgouEm: 0, envioT: new Map(), ultEvento: 0, recebidos: 0, ultErro: null, avisouErro: 0, ultBatida: 0, lacunaMin: 0, timers: new Map(), busy: new Set(), enviando: new Map(), sync: null, teste: { txt: '', res: null, ocupado: false } };
   const atendAtivo = () => ligado('atendente') && atendC().modo !== 'desligado' && !!atendC().aceito && iaPronta() && !atend.bloqueado; // bloqueado = outro computador está com o robô
@@ -3106,12 +3112,12 @@
     if (c.modo === 'automatico' && c.msgHumano?.trim() && !dec.erroIA) await atendFalar(id, [c.msgHumano.trim()], c, true); // avisa o cliente uma vez
   }
   // Envia como uma pessoa: "digitando…" proporcional ao texto e pausa entre as mensagens. Na 1ª resposta do dia se identifica como assistente virtual.
-  async function atendFalar(id, textos, c, semContar) {
+  async function atendFalar(id, textos, c, semContar, manual) {
     const agora = Date.now(), ritmo = IA.ritmoDe(c);
     atend.enviando.set(id, agora + 120000);
     try {
       for (let i = 0; i < textos.length; i++) {
-        if (i > 0 && (!atendAtivo() || (S.atendEst?.pausas?.[id] || 0) > Date.now())) break;   // desligou ou pausou no meio: para as próximas
+        if (i > 0 && !manual && (!atendAtivo() || (S.atendEst?.pausas?.[id] || 0) > Date.now())) break;   // robô: desligou ou pausou no meio, para as próximas (o seu clique em Enviar manda tudo)
         let t = textos[i];
         if (i === 0 && c.identificar && !((S.atendEst?.identificado?.[id] || 0) > agora - 86400000)) {
           t = `${String(c.prefixo || '🤖 Assistente virtual:').trim()} ${t}`;
@@ -3137,7 +3143,7 @@
         atend.enviando.set(it.id, Date.now() + 180000);
         try { await runReply(r, it.id); } finally { atend.enviando.set(it.id, Date.now() + 8000); }
         atendEst((e) => IA.registrarEnvio(e, it.id));
-      } else await atendFalar(it.id, it.mensagens, atendC());
+      } else await atendFalar(it.id, it.mensagens, atendC(), false, true);
       atendLog(it.id, it.nome, 'enviou sugestão', it.mensagens[0] || '/' + it.atalho);
     } catch (e) { return toast('Não consegui enviar: ' + e.message); }
     atendSugTirar(it.id);
@@ -3526,8 +3532,8 @@
     const ef = acessoEf();
     if (!acessoConectado()) return h('div', { class: 'sec' }, h('div', { class: 'sh' }, tile('users'), h('b', { class: 'grow' }, 'Acesso da equipe')),
       h('p', { class: 'hint' }, ef.login ? 'Para usar o AtendeZap, cole abaixo o convite que o administrador enviou para você (um texto que começa com AZ1.). Depois de conectar, as demais partes aparecem.' : 'Se o administrador enviou um convite (um texto que começa com AZ1.), cole aqui. Sem convite, a extensão funciona livremente, como sempre.'),
-      h('div', { class: 'rowf' }, h('input', { class: 'in grow', placeholder: 'Cole o convite (AZ1.…)', autocomplete: 'off', 'aria-label': 'Convite do administrador', onkeydown: (e) => { if (e.key === 'Enter') acessoConectar(e.target.value); } }),
-        h('button', { class: 'gbtn sm', onclick: (e) => acessoConectar(e.target.closest('.rowf').querySelector('input').value) }, 'Conectar')));
+      h('div', { class: 'rowf' }, h('input', { class: 'in grow', placeholder: 'Cole o convite (AZ1.…)', autocomplete: 'off', 'aria-label': 'Convite do administrador', onkeydown: (e) => { if (e.key === 'Enter') e.target.closest('.rowf').querySelector('button').click(); } }),
+        h('button', { class: 'gbtn sm', onclick: (e) => { const b = e.currentTarget; comEspera(b, 'Conectando…', () => acessoConectar(b.closest('.rowf').querySelector('input').value)); } }, 'Conectar')));
     const ago = ef.idadeMin == null ? 'nunca' : ef.idadeMin < 1 ? 'agora há pouco' : `há ${ef.idadeMin} min`, L = ef.limites;
     return h('div', { class: 'sec' }, h('div', { class: 'sh' }, tile('users'), h('b', { class: 'grow' }, 'Acesso da equipe')),
       h('p', null, h('b', null, ef.nome || 'Sua conta'), ` · perfil ${ef.perfil || '—'}`),
@@ -3537,7 +3543,7 @@
       (L.roboModoMax || L.roboMaxPorContatoDia || L.roboMaxPorHora || L.chavesMax || L.retencaoMaxDias) ? h('small', { class: 'hint' }, 'Limites do administrador: ' + [L.roboModoMax && `robô até "${L.roboModoMax}"`, L.roboMaxPorContatoDia && `${L.roboMaxPorContatoDia} respostas/contato/dia`, L.roboMaxPorHora && `${L.roboMaxPorHora}/hora`, L.chavesMax && `${L.chavesMax} chave(s) da IA`, L.retencaoMaxDias && `dados por até ${L.retencaoMaxDias} dias`].filter(Boolean).join(' · ') + '.') : null,
       ef.global.coletarSaude ? h('label', { class: 'chk' }, h('input', { type: 'checkbox', checked: S.acessoCfg?.saude === true, onchange: async (e) => { S.acessoCfg = { ...S.acessoCfg, saude: e.target.checked }; await save('acessoCfg'); if (e.target.checked) acessoEnviarSaude(true); renderPanel(); } }), 'Enviar o resumo técnico de saúde ao administrador')
         : h('small', { class: 'hint' }, 'O administrador não pediu nenhuma informação sua.'),
-      h('div', { class: 'rowf' }, h('button', { class: 'obtn', onclick: () => acessoConsultar(true) }, 'Atualizar agora'), ef.global.coletarSaude ? h('button', { class: 'obtn', onclick: acessoVerEnvio }, 'Ver o que é enviado') : null, h('button', { class: 'obtn', onclick: acessoDesconectar }, 'Desconectar')));
+      h('div', { class: 'rowf' }, h('button', { class: 'obtn', onclick: (e) => comEspera(e.currentTarget, 'Atualizando…', () => acessoConsultar(true)) }, 'Atualizar agora'), ef.global.coletarSaude ? h('button', { class: 'obtn', onclick: acessoVerEnvio }, 'Ver o que é enviado') : null, h('button', { class: 'obtn', onclick: acessoDesconectar }, 'Desconectar')));
   }
   // ===== Privacidade e retenção (v1.28) =====
   const semChave = (o, k) => { const x = { ...(o || {}) }; delete x[k]; return x; };
@@ -3646,7 +3652,7 @@
           h('small', null, it.acao === 'humano' ? `Chamou você: ${it.motivo}` : it.acao === 'executar' ? `Sugere executar /${it.atalho}` : 'Sugestão de resposta:'),
           it.mensagens?.map((m) => h('small', { class: 'iaprop' }, m)),
           h('div', { class: 'rowf' },
-            it.acao !== 'humano' ? h('button', { class: 'gbtn sm', onclick: async (e) => { if (e.currentTarget.disabled) return; e.currentTarget.disabled = true; await atendSugEnviar(it); } }, 'Enviar') : null,   // clique duplo não envia duas vezes
+            it.acao !== 'humano' ? h('button', { class: 'gbtn sm', onclick: (e) => comEspera(e.currentTarget, 'Enviando…', () => atendSugEnviar(it)) }, 'Enviar') : null,   // clique duplo não envia duas vezes
             it.acao === 'responder' ? h('button', { class: 'obtn', onclick: () => atendSugCampo(it) }, 'Colocar no campo') : null,
             h('button', { class: 'obtn', onclick: () => atendSugTirar(it.id) }, it.acao === 'humano' ? 'Já resolvi' : 'Descartar'),
             h('button', { class: 'obtn', title: 'O robô nunca mais atende este contato', onclick: () => atendNunca(it.id, it.nome) }, 'Nunca atender'))))))
