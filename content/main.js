@@ -778,7 +778,7 @@
 
   // ---------- Painel lateral recolhível ----------
   const view = { diagOnly: false, diagClosed: new Set(), restore: null, bkSel: null, editing: null, q: '', modo: 'tudo', tipo: '', cat: '', closed: new Set(), menu: null, prev: null, addMenu: false, addGroup: 'msg' };
-  const SECTIONS = [['replies', 'zap', 'Respostas rápidas'], ['atendente', 'zap', 'Atendente IA'], ['memoria', 'zap', 'Memória IA'], ['fila', 'clock', 'Aguardando resposta'], ['sig', 'pen', 'Assinatura'], ['frete', 'truck', 'Lista de frete'], ['pedidos', 'users', 'Pedidos de grupos'], ['unicos', 'users', 'Conjuntos de grupos'], ['gruposAj', 'users', 'Ajustes dos grupos'], ['start', 'chat', 'Iniciar conversa'], ['lote', 'layers', 'Enviar para vários'], ['pins', 'pin', 'Conversas fixadas'], ['resumo', 'layers', 'Resumo do que perdi'], ['contato', 'users', 'Contato do cliente'], ['exportar', 'download', 'Exportar conversa'], ['backup', 'save', 'Backup'], ['ocultas', 'eyeoff', 'Conversas ocultas'], ['apagar', 'trash', 'Apagar mensagens'], ['recuperar', 'eye', 'Recuperar apagadas'], ['diag', 'pulse', 'Diagnóstico'], ['limites', 'pulse', 'Limites do WhatsApp'], ['iaenvios', 'pulse', 'Envios à IA'], ['avaliacao', 'pulse', 'Avaliação do atendimento'], ['lab', 'flask', 'Laboratório'], ['config', 'gear', 'Configurações']];
+  const SECTIONS = [['replies', 'zap', 'Respostas rápidas'], ['atendente', 'zap', 'Atendente IA'], ['memoria', 'zap', 'Memória IA'], ['fila', 'clock', 'Aguardando resposta'], ['sig', 'pen', 'Assinatura'], ['frete', 'truck', 'Lista de frete'], ['pedidos', 'users', 'Pedidos de grupos'], ['unicos', 'users', 'Conjuntos de grupos'], ['gruposAj', 'users', 'Ajustes dos grupos'], ['start', 'chat', 'Iniciar conversa'], ['lote', 'layers', 'Enviar para vários'], ['pins', 'pin', 'Conversas fixadas'], ['resumo', 'layers', 'Resumo do que perdi'], ['contato', 'users', 'Contato do cliente'], ['exportar', 'download', 'Exportar conversa'], ['backup', 'save', 'Backup'], ['ocultas', 'eyeoff', 'Conversas ocultas'], ['apagar', 'trash', 'Apagar mensagens'], ['recuperar', 'eye', 'Recuperar apagadas'], ['limpeza', 'trash', 'Limpar conversas'], ['diag', 'pulse', 'Diagnóstico'], ['limites', 'pulse', 'Limites do WhatsApp'], ['iaenvios', 'pulse', 'Envios à IA'], ['avaliacao', 'pulse', 'Avaliação do atendimento'], ['lab', 'flask', 'Laboratório'], ['config', 'gear', 'Configurações']];
   // Barra do painel em grupos: atendimento | envio | conversas | sistema
   const visiveis = () => SECTIONS.filter(([k]) => ligado(k));
   const GRUPO = { respostas: 0, grupos: 1, ferramentas: 1, privacidade: 2, diagnostico: 3, config: 3 }; // separadores: Atendimento | Grupos + Ferramentas | Privacidade | Diagnóstico + Configurações
@@ -789,11 +789,11 @@
     respostas: { icone: 'zap', titulo: 'Atendimento', abas: [['replies', 'Respostas'], ['fila', 'Aguardando'], ['sig', 'Assinatura'], ['atendente', 'Atendente IA'], ['memoria', 'Memória IA'], ['frete', 'Lista de frete'], ['resumo', 'Resumo']] },
     grupos: { icone: 'users', titulo: 'Grupos', abas: [['pedidos', 'Pedidos'], ['unicos', 'Conjuntos'], ['gruposAj', 'Ajustes']] },
     ferramentas: { icone: 'wrench', titulo: 'Ferramentas', abas: [['start', 'Iniciar conversa'], ['lote', 'Enviar para vários'], ['pins', 'Fixadas'], ['contato', 'Contato'], ['exportar', 'Exportar'], ['backup', 'Backup']] },
-    privacidade: { icone: 'lock', titulo: 'Privacidade', abas: [['ocultas', 'Ocultas'], ['apagar', 'Apagar'], ['recuperar', 'Recuperar']] },
+    privacidade: { icone: 'lock', titulo: 'Privacidade', abas: [['ocultas', 'Ocultas'], ['apagar', 'Apagar'], ['recuperar', 'Recuperar'], ['limpeza', 'Limpar']] },
     diagnostico: { icone: 'pulse', titulo: 'Diagnóstico', abas: [['diag', 'Saúde'], ['limites', 'Limites'], ['avaliacao', 'Avaliação'], ['iaenvios', 'Envios à IA'], ['lab', 'Laboratório']] },
     config: { icone: 'gear', titulo: 'Configurações', abas: [['config', 'Geral']] },
   };
-  const HUB_DE = { replies: 'respostas', fila: 'respostas', sig: 'respostas', atendente: 'respostas', memoria: 'respostas', frete: 'respostas', resumo: 'respostas', pedidos: 'grupos', unicos: 'grupos', gruposAj: 'grupos', start: 'ferramentas', lote: 'ferramentas', pins: 'ferramentas', contato: 'ferramentas', exportar: 'ferramentas', backup: 'ferramentas', ocultas: 'privacidade', apagar: 'privacidade', recuperar: 'privacidade', diag: 'diagnostico', limites: 'diagnostico', iaenvios: 'diagnostico', avaliacao: 'diagnostico', lab: 'diagnostico', config: 'config' };
+  const HUB_DE = { replies: 'respostas', fila: 'respostas', sig: 'respostas', atendente: 'respostas', memoria: 'respostas', frete: 'respostas', resumo: 'respostas', pedidos: 'grupos', unicos: 'grupos', gruposAj: 'grupos', start: 'ferramentas', lote: 'ferramentas', pins: 'ferramentas', contato: 'ferramentas', exportar: 'ferramentas', backup: 'ferramentas', ocultas: 'privacidade', apagar: 'privacidade', recuperar: 'privacidade', limpeza: 'privacidade', diag: 'diagnostico', limites: 'diagnostico', iaenvios: 'diagnostico', avaliacao: 'diagnostico', lab: 'diagnostico', config: 'config' };
   const emTeste = (k) => MODULOS.some((m) => m[0] === k && m[3] === 'teste');
   const railKey = (k) => HUB_DE[k] || k;
   const abasDe = (hub) => HUBS[hub].abas.filter(([k]) => ligado(k));
@@ -868,7 +868,7 @@
       return;
     }
     if (!ligado(ui.sec)) ui.sec = visiveis()[0][0];
-    const body = { memoria: memoriaView, atendente: atendView, config: configView, replies: view.editing ? editorView : repliesView, sig: sigView, start: startView, lote: loteView, pedidos: pedidosView, unicos: unicosView, fila: filaView, pins: pinsView, ocultas: ocultasView, apagar: apagarView, recuperar: recuperarView, lab: () => [h('div', { class: 'eh' }, h('b', null, 'Laboratório')), labView()], gruposAj: gruposAjView, frete: freteView, limites: limitesSecaoView, resumo: resumoView, avaliacao: avaliacaoView, iaenvios: iaEnviosView, contato: contatoView, exportar: exportarView, backup: backupView, diag: diagView }[ui.sec]();
+    const body = { memoria: memoriaView, atendente: atendView, config: configView, replies: view.editing ? editorView : repliesView, sig: sigView, start: startView, lote: loteView, pedidos: pedidosView, unicos: unicosView, fila: filaView, pins: pinsView, ocultas: ocultasView, apagar: apagarView, recuperar: recuperarView, limpeza: limpezaView, lab: () => [h('div', { class: 'eh' }, h('b', null, 'Laboratório')), labView()], gruposAj: gruposAjView, frete: freteView, limites: limitesSecaoView, resumo: resumoView, avaliacao: avaliacaoView, iaenvios: iaEnviosView, contato: contatoView, exportar: exportarView, backup: backupView, diag: diagView }[ui.sec]();
     panelRoot.prepend(h('div', { class: 'panel ' + lado, style: lado === 'topo' ? '' : `width:${painelW()}px` },
       h('div', { class: 'ph' },
         h('button', { class: 'tb close', 'data-tip': 'Recolher (Alt+Z)', onclick: closePanel }, icon(LADOS[lado][2], 20)),
@@ -1540,6 +1540,7 @@
     ['resumo', 'Resumo do que perdi', 'A IA lê as mensagens NÃO LIDAS das conversas individuais e diz, em poucas palavras, o que cada pessoa quer e o que fazer primeiro. Só resume: não responde a ninguém. Fica em Atendimento › Resumo.', 'teste'],
     ['ligacao', 'Ligação → mensagem automática', 'Quando alguém LIGAR e você não falou com a pessoa, manda UMA mensagem curta pedindo que escreva. Nunca atende nem recusa a chamada, nunca em grupo. Fica em Atendimento › Aguardando; vem desligada.', 'teste'],
     ['avaliacao', 'Avaliação do atendimento', 'Confere o que você respondeu nas conversas contra a memória aprendida, mostra quem ficou sem resposta e o tempo de resposta. Sem IA e sem nota para ninguém. Fica em Diagnóstico › Avaliação.', 'teste'],
+    ['limpeza', 'Limpar conversas', 'Mostra quantas conversas estão paradas há mais de 30, 60, 90, 180 ou 360 dias e apaga de uma vez (fixadas, com etiqueta e não lidas ficam). Nos grupos, apaga só PARA VOCÊ as mensagens antigas. Fica em Privacidade › Limpar.', 'teste'],
   ];
 
   // ----- Pedidos para entrar nos grupos (v1.12) -----
@@ -1847,7 +1848,7 @@
     ];
   }
 
-  const MOD_ICONE = { replies: 'zap', fila: 'clock', sig: 'pen', start: 'chat', lote: 'layers', pins: 'pin', ocultas: 'eyeoff', apagar: 'trash', recuperar: 'eye', backup: 'save', lab: 'flask', exportar: 'download', contato: 'users', escuta: 'zap', resumo: 'layers', avaliacao: 'pulse', ligacao: 'clock', cargas: 'truck', pedidos: 'users', vagas: 'users' };
+  const MOD_ICONE = { replies: 'zap', fila: 'clock', sig: 'pen', start: 'chat', lote: 'layers', pins: 'pin', ocultas: 'eyeoff', apagar: 'trash', recuperar: 'eye', limpeza: 'trash', backup: 'save', lab: 'flask', exportar: 'download', contato: 'users', escuta: 'zap', resumo: 'layers', avaliacao: 'pulse', ligacao: 'clock', cargas: 'truck', pedidos: 'users', vagas: 'users' };
   const limW = { dados: null, lendo: false };
   function limitesView() {
     if (!limW.dados && !limW.lendo && S.ready) {
@@ -2207,6 +2208,66 @@
       return recuperarCfgSalvar({ ligado: true, aceitou: true });
     }
     return recuperarCfgSalvar({ ligado: !!on });
+  }
+  // ----- Limpar conversas antigas (v1.48 🧪) -----
+  // Individuais: conta por tempo parado (30…360 dias) e apaga de uma vez; fixadas, com etiqueta e não lidas nunca entram (regras em lib/limpeza.js).
+  // Grupos: apaga SÓ PARA VOCÊ as mensagens com mais de N dias (as com estrela ficam) e nunca sai do grupo.
+  const limp = { lista: null, lendo: false, erro: '', rodando: null, cancelar: false, diasG: 30, selG: new Set(), contagem: {} };
+  const LP = globalThis.AZLIMP;
+  function limpCarregar() {
+    if (limp.lendo) return; limp.lendo = true; limp.erro = '';
+    call('limpezaListar').then((l) => { limp.lista = l || []; }).catch((e) => { limp.erro = e.message; limp.lista = []; }).finally(() => { limp.lendo = false; renderPanel(); });
+  }
+  async function limpRodar(rotulo, itens, fazer) {
+    limp.rodando = { rotulo, feitas: 0, total: itens.length, erros: 0 }; limp.cancelar = false; renderPanel();
+    for (const it of itens) {
+      if (limp.cancelar) break;
+      try { await fazer(it); } catch (e) { limp.rodando.erros++; logErr('limpeza', e.message); }
+      limp.rodando.feitas++; renderSeguro(); await sleep(350);
+    }
+    const r = limp.rodando; limp.rodando = null; limp.lista = null; limp.contagem = {};
+    toast(`${r.rotulo}: ${r.feitas} de ${r.total} feitas${r.erros ? ` (${r.erros} com erro)` : ''}${limp.cancelar ? ' — você parou.' : '.'}`, 8000); renderPanel();
+  }
+  async function limpApagarFaixa(dias) {
+    const cands = LP.candidatas(limp.lista, dias, Date.now(), S.pins || []);
+    if (!cands.length) return;
+    const nomes = cands.slice(0, 8).map((c) => `• ${c.nome || 'sem nome'} (${c.dias} dias)`).join('\n') + (cands.length > 8 ? `\n… e mais ${cands.length - 8}` : '');
+    if (!await confirmar(`Apagar ${cands.length} conversa(s) paradas há mais de ${dias} dias?\n\n${nomes}\n\nIsto apaga também no celular e NÃO tem volta. Fixadas, com etiqueta e não lidas ficam. Se a conversa tiver mensagem com estrela, ela fica só com essas mensagens.`)) return;
+    await limpRodar('Conversas apagadas', cands, (c) => call('limpezaApagar', c.id));
+  }
+  async function limpContarGrupos() {
+    const ids = [...limp.selG]; if (!ids.length) return toast('Marque pelo menos um grupo.');
+    await limpRodar('Grupos conferidos', ids, async (id) => { limp.contagem[id] = { ...(await call('limpezaGrupoVelhas', id, limp.diasG)), dias: limp.diasG }; });
+  }
+  async function limpApagarGrupos() {
+    const alvo = Object.entries(limp.contagem).filter(([, c]) => c.velhas?.length && c.dias === limp.diasG), n = alvo.reduce((s, [, c]) => s + c.velhas.length, 0);
+    if (!n) return toast('Nenhuma mensagem antiga nos grupos conferidos.');
+    if (!await confirmar(`Apagar ${n.toLocaleString('pt-BR')} mensagem(ns) com mais de ${limp.diasG} dias em ${alvo.length} grupo(s)?\n\nSó para VOCÊ: os outros participantes continuam vendo. Você não sai de nenhum grupo. As mensagens com estrela ficam. Não tem volta.`)) return;
+    await limpRodar('Grupos limpos', alvo, ([id, c]) => call('limpezaGrupoApagar', id, c.velhas));
+  }
+  function limpezaView() {
+    const topo = h('div', { class: 'eh' }, h('b', null, 'Limpar conversas 🧪'));
+    if (!S.ready) return [topo, h('p', { class: 'hint' }, 'Aguardando o WhatsApp…')];
+    if (!limp.lista && !limp.lendo && !limp.rodando) setTimeout(limpCarregar, 0);
+    const r = limp.rodando;
+    const progresso = r ? h('div', { class: 'sec' }, h('div', { class: 'sh' }, h('b', { class: 'grow' }, `${r.rotulo}… ${r.feitas} de ${r.total}`), h('button', { class: 'obtn', onclick: () => { limp.cancelar = true; } }, 'Parar')),
+      h('div', { class: 'prog' }, h('i', { style: `width:${Math.round((r.feitas / Math.max(1, r.total)) * 100)}%` }))) : null;
+    if (!limp.lista) return [topo, progresso, h('p', { class: 'hint' }, limp.lendo ? 'Lendo a lista de conversas…' : '')];
+    const c = LP.contar(limp.lista, Date.now(), S.pins || []), P = c.protegidas, grupos = limp.lista.filter((x) => x.grupo).sort((a, b) => String(a.nome).localeCompare(String(b.nome), 'pt-BR'));
+    const individuais = h('div', { class: 'sec' }, h('div', { class: 'sh' }, tile('trash'), h('b', { class: 'grow' }, 'Conversas individuais paradas'), h('button', { class: 'ib', title: 'Ler de novo', disabled: !!r, onclick: () => { limp.lista = null; renderPanel(); } }, '↻')),
+      h('p', { class: 'hint' }, `${c.total.toLocaleString('pt-BR')} conversas individuais. Tempo parado = desde a última mensagem.`),
+      h('div', { class: 'col' }, LP.FAIXAS.map((d) => h('div', { class: 'kv' }, h('span', null, `Mais de ${d} dias`), h('b', null, `${c.faixas[d].toLocaleString('pt-BR')} conversa(s) `),
+        h('button', { class: 'obtn', disabled: !!r || !c.faixas[d], onclick: () => limpApagarFaixa(d) }, c.faixas[d] ? `Apagar as ${c.faixas[d].toLocaleString('pt-BR')}` : 'Nada a apagar')))),
+      h('small', { class: 'hint' }, `Protegidas (nunca entram): ${P.fixada} fixada(s) · ${P.etiqueta} com etiqueta · ${P['não lida']} não lida(s). Conversa com mensagem com estrela fica, só com essas mensagens. Apagar vale também no celular e não tem volta.`));
+    const gruposSec = h('div', { class: 'sec' }, h('div', { class: 'sh' }, tile('users'), h('b', { class: 'grow' }, 'Grupos: apagar mensagens antigas (só para você)')),
+      h('p', { class: 'hint' }, 'Apaga as mensagens com mais de N dias e mantém as mais novas. Só PARA VOCÊ: os outros continuam vendo. Você nunca sai do grupo. Só alcança o que este computador tem carregado.'),
+      h('div', { class: 'seg' }, LP.FAIXAS.map((d) => h('button', { class: limp.diasG === d ? 'on' : '', disabled: !!r, onclick: () => { limp.diasG = d; renderPanel(); } }, `${d} dias`))),
+      h('div', { class: 'rowf' }, h('button', { class: 'obtn', disabled: !!r, onclick: () => { limp.selG = limp.selG.size === grupos.length ? new Set() : new Set(grupos.map((g) => g.id)); renderPanel(); } }, limp.selG.size === grupos.length ? 'Desmarcar todos' : `Marcar todos (${grupos.length})`),
+        h('button', { class: 'gbtn sm', disabled: !!r || !limp.selG.size, onclick: limpContarGrupos }, `Contar nos ${limp.selG.size} marcado(s)`),
+        h('button', { class: 'gbtn sm', disabled: !!r || !Object.values(limp.contagem).some((x) => x.velhas?.length && x.dias === limp.diasG), onclick: limpApagarGrupos }, 'Apagar as antigas')),
+      h('div', { class: 'col' }, grupos.map((g) => { const k = limp.contagem[g.id], cont = k && k.dias === limp.diasG ? ` — ${k.velhas.length.toLocaleString('pt-BR')} de ${k.total.toLocaleString('pt-BR')} com mais de ${k.dias} dias` : '';
+        return h('label', { class: 'chk' }, h('input', { type: 'checkbox', checked: limp.selG.has(g.id), disabled: !!r, onchange: (e) => { e.target.checked ? limp.selG.add(g.id) : limp.selG.delete(g.id); renderPanel(); } }), (g.nome || 'Grupo') + cont); })));
+    return [topo, progresso, limp.erro ? h('small', { class: 'dan' }, 'Não consegui ler a lista: ' + limp.erro) : null, individuais, grupos.length ? gruposSec : null];
   }
   function recuperarView() {
     if (!rec.carregado) recuperarCarregar();
@@ -4568,6 +4629,7 @@ ${hist ? `<h2>Histórico de autotestes</h2><table><tr><td><b>Quando</b></td><td>
     AUTO.busy = true;
     try {
       const res = await runChecks(motivo);
+      desempGravar().catch(() => {});   // v1.48: o resumo do dia para comparar
       // v1.47.5: com o WhatsApp ainda abrindo, os testes falham por demora e o aviso "O WhatsApp mudou algo" saía à toa (pacote de 06/11, 08:03).
       // Espera 1 min e testa de novo (até 3 vezes) antes de avisar ou gravar no histórico.
       if (res.carregando && res.results.some((r) => !['ok', 'skip'].includes(stOf(r.ok))) && tentativa < 3) { setTimeout(() => autoDiag(motivo, tentativa + 1), 60000); return; }
@@ -4866,6 +4928,24 @@ ${hist ? `<h2>Histórico de autotestes</h2><table><tr><td><b>Quando</b></td><td>
       })(),
       hist.length ? hist.slice(0, 4).map(entrada) : h('p', { class: 'hint' }, inv?.base ? `Nada mudou desde ${dd(inv.base)}.` : 'Primeira leitura guardada agora; as novidades aparecem a partir da próxima.'));
   }
+  // v1.48: Desempenho ao vivo. Tudo medido neste computador; um resumo por dia (7 dias) para comparar o antes e o depois de cada mudança.
+  const desempAgora = () => ({ ponte: AZDIAG.resumirPonte(PONTE, 99), pct: U.perfLinhas(PERF, performance.now() - PERF_T0)?.pct ?? null, memMB: performance.memory ? Math.round(performance.memory.usedJSHeapSize / 1048576) : null });
+  const hojeISO = () => new Date().toLocaleDateString('sv-SE');
+  async function desempGravar() { const dh = (await chrome.storage.local.get('desempHist')).desempHist || []; await chrome.storage.local.set({ desempHist: AZDIAG.registrarDia(dh, AZDIAG.fotoDesempenho(desempAgora()), hojeISO()) }); }
+  function desempenhoCard(hist) {
+    const d = AZDIAG.desempenho(desempAgora(), hist, hojeISO()), L = AZDIAG.DESEMP_LIM;
+    const tempo = (ms) => (ms >= 60000 ? (ms / 60000).toFixed(1) + ' min' : ms >= 1000 ? (ms / 1000).toFixed(1) + ' s' : ms + ' ms').replace('.', ',');
+    const kv = (nome, valor, aviso) => h('div', { class: 'kv' }, h('span', null, nome), h('b', { class: aviso ? 'dan' : null }, (aviso ? '⚠ ' : '') + valor));
+    return h('div', { class: 'sec' }, h('div', { class: 'sh' }, tile('pulse'), h('b', { class: 'grow' }, 'Desempenho')),
+      h('div', { class: 'col' },
+        kv('Peso do AtendeZap na página', d.pct == null ? '—' : String(d.pct).replace('.', ',') + '%', d.avisos.pct),
+        kv('Memória da aba do WhatsApp', d.memMB == null ? '—' : d.memMB.toLocaleString('pt-BR') + ' MB', d.avisos.mem),
+        d.avisos.mem ? h('small', { class: 'dan' }, `Passou de ${L.memMB} MB: feche e abra a aba do WhatsApp para liberar memória.`) : null,
+        h('p', { class: 'hint grp' }, 'Chamadas ao WhatsApp mais lentas' + (d.ontem ? ` (antes = ${d.ontem.split('-').reverse().join('/')})` : '')),
+        d.lentas.length ? d.lentas.map((x) => kv(`${METHOD_FEAT[x.metodo] || x.metodo} · ${x.n.toLocaleString('pt-BR')}×`, `média ${tempo(x.mediaMs)} · pior ${tempo(x.maxMs)}${x.antes != null ? ' · antes ' + tempo(x.antes) : ''}`, x.aviso))
+          : h('small', { class: 'hint' }, 'Ainda sem chamadas suficientes para medir.'),
+        h('small', { class: 'hint' }, `Medido neste computador desde que o WhatsApp abriu. Aviso: peso acima de ${L.pct}%, memória acima de ${L.memMB} MB ou chamada com média acima de ${L.mediaMs / 1000} s. Um resumo por dia fica guardado por 7 dias (só tempos).`)));
+  }
   function diagView() {
     const out = h('div', { class: 'col' }, h('p', { class: 'hint' }, 'Analisando o WhatsApp Web (inclui testes ao vivo, leva alguns segundos)…'));
     (async () => {
@@ -4876,7 +4956,7 @@ ${hist ? `<h2>Histórico de autotestes</h2><table><tr><td><b>Quando</b></td><td>
       results.forEach((r) => n[stOf(r.ok)]++);
       const grupos = [...new Set(results.map((r) => r.grupo))];
       const estado = (await chrome.storage.local.get('diagEstado')).diagEstado || {};
-      const hist = estado.historico || [];
+      const hist = estado.historico || [], dHist = (await chrome.storage.local.get('desempHist')).desempHist || [];
       out.replaceChildren(...h('div', null,
         h('div', { class: 'dsum' },
           h('span', { class: 'ok' }, `✔ ${n.ok}`), h('span', { class: 'warn' }, `⚠ ${n.warn}`), h('span', { class: 'bad' }, `✖ ${n.bad}`), n.skip ? h('span', { class: 'skip', title: 'Não testados: precisam de uma conversa aberta' }, `○ ${n.skip}`) : null,
@@ -4902,6 +4982,7 @@ ${hist ? `<h2>Histórico de autotestes</h2><table><tr><td><b>Quando</b></td><td>
             const ruins = ALL.filter((f) => ['warn', 'bad'].includes(saude[f].st)), bons = ALL.filter((f) => saude[f].st === 'ok').length, sem = ALL.filter((f) => saude[f].st === 'skip').length;
             return [ruins.length ? h('div', { class: 'saude' }, ruins.map(tile)) : null, h('small', { class: ruins.length ? 'mut' : 'iaok' }, `✔ ${bons} função(ões) funcionando${sem ? ` · ○ ${sem} sem teste (abra uma conversa)` : ''}${ruins.length ? '' : ' — nada a corrigir'}`)];
           })()),
+        desempenhoCard(dHist),
         iaDiagCard(),
         novidadesCard(res.inv),
         grupos.map((g) => {

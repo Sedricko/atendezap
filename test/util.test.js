@@ -830,7 +830,7 @@ const cifrar = (obj, senha) => { // mesmo formato do CryptoJS/OpenSSL ("Salted__
   assert.equal(A.liberado(A.avaliar(ac, est(A.normalizar({ recursos: { replies: 'ligado' } })), T0, true), 'replies', undefined), true);
   // NADA VEM LIBERADO DE FÁBRICA: perfil vazio = só o Acesso da equipe; o administrador libera item a item
   const vz = A.avaliar(ac, est(A.normalizar({})), T0);
-  assert.equal(A.RECURSOS.length, 32); for (const k of A.RECURSOS) assert.equal(A.liberado(vz, k, undefined), false, k); for (const k of A.RECURSOS) assert.equal(A.liberado(vz, k, true), false, k + ' (mesmo se a pessoa quiser)');
+  assert.equal(A.RECURSOS.length, 33); for (const k of A.RECURSOS) assert.equal(A.liberado(vz, k, undefined), false, k); for (const k of A.RECURSOS) assert.equal(A.liberado(vz, k, true), false, k + ' (mesmo se a pessoa quiser)');
   for (const k of ['diag', 'cfgPosicao', 'cfgIA', 'cfgPartes', 'cfgLimites']) assert.ok(A.RECURSOS.includes(k), k);                      // as partes da tela de Configurações e o Diagnóstico são controladas
   assert.equal(A.estado(vz, 'replies'), 'bloqueado'); assert.equal(A.estado(livre, 'replies'), 'livre'); assert.equal(A.estado(livre, 'diag'), 'livre'); assert.equal(A.estado(vz, 'config'), 'livre'); assert.equal(A.estado(des, 'replies'), 'bloqueado'); assert.equal(A.estado(lg, 'cfgIA'), 'bloqueado');
   assert.equal(A.estado(A.avaliar(ac, est(A.normalizar({ recursos: { cfgIA: 'desligado' } })), T0), 'cfgIA'), 'desligado');
@@ -1187,4 +1187,19 @@ const cifrar = (obj, senha) => { // mesmo formato do CryptoJS/OpenSSL ("Salted__
   const msgs = [{ id: 'a', t: d(40) }, { id: 'b', t: d(40), star: true }, { id: 'c', t: d(10) }, { id: 'd', t: 0 }];
   assert.deepEqual(L.velhasDoGrupo(msgs, 30, agora), ['a']);                                                     // a com estrela e as novas ficam
   console.log('limpar conversas antigas ok');
+}
+// ---- v1.48: desempenho ao vivo e comparação com o dia anterior ----
+{
+  require('../lib/diagnostico.js'); const G = globalThis.AZDIAG;
+  const ponte = [{ metodo: 'applyPins', n: 1568, erros: 0, mediaMs: 5003, maxMs: 277939 }, { metodo: 'chatInfo', n: 30, erros: 0, mediaMs: 539, maxMs: 4010 }, { metodo: 'raro', n: 2, erros: 0, mediaMs: 9000, maxMs: 9000 }];
+  let hist = G.registrarDia([], G.fotoDesempenho({ ponte, pct: 0.3, memMB: 522 }), '2026-11-06');
+  const hoje = [{ metodo: 'applyPins', n: 400, erros: 0, mediaMs: 40, maxMs: 300 }, ...ponte.slice(1)];
+  const d = G.desempenho({ ponte: hoje, pct: 6, memMB: 900 }, hist, '2026-11-07');
+  assert.equal(d.ontem, '2026-11-06'); assert.deepEqual(d.lentas.map((x) => [x.metodo, x.antes, x.aviso]), [['chatInfo', 539, false], ['applyPins', 5003, false]]);   // com menos de 3 chamadas não entra
+  assert.deepEqual(d.avisos, { pct: true, mem: true });
+  assert.equal(G.desempenho({ ponte }, hist, '2026-11-06').ontem, null);                                          // o mesmo dia não é "ontem"
+  assert.equal(G.desempenho({ ponte }, [], '2026-11-07').lentas[0].aviso, true);                                   // média acima de 2 s = aviso
+  for (let i = 1; i <= 9; i++) hist = G.registrarDia(hist, { pct: i }, `2026-11-${String(10 + i)}`);
+  assert.equal(hist.length, 7); assert.equal(hist[0].dia, '2026-11-19'); hist = G.registrarDia(hist, { pct: 99 }, '2026-11-19'); assert.equal(hist.length, 7); assert.equal(hist[0].pct, 99);   // um por dia, 7 dias
+  console.log('desempenho ao vivo ok');
 }

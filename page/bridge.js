@@ -224,7 +224,7 @@
   // página que o WhatsApp, então um script que ESCUTE as mensagens da página ainda consegue ver a chave; isto barra pedidos soltos, não é um cofre.
   const SENSIVEIS = new Set(['sendText', 'sendFile', 'sendContact', 'sendStatus', 'removeStatus', 'block', 'enviarConvite', 'enviarConvites', 'pedidosPlano', 'padronizar', 'sendEspecial', 'removerDuplicados',
     'apagarParaTodos', 'minhasMsgs', 'recuperarAtivo', 'exportarLer', 'exportarMidia', 'contatoAparelho', 'conversasParaTreino', 'naoLidas', 'ligacaoAtivo', 'ligacaoContexto',
-    'sendActive', 'historicoChat', 'baixarAudio', 'aguardando', 'votosEnquete']);   // v1.47.3: também enviam ou leem conversa/mídia   // v1.42: tudo que apaga, lê conversas ou baixa mídia só obedece ao painel (com a chave dele)
+    'sendActive', 'historicoChat', 'baixarAudio', 'aguardando', 'votosEnquete', 'limpezaListar', 'limpezaApagar', 'limpezaGrupoVelhas', 'limpezaGrupoApagar']);   // v1.47.3: também enviam ou leem conversa/mídia   // v1.42: tudo que apaga, lê conversas ou baixa mídia só obedece ao painel (com a chave dele)
   let tkOk = null, externas = 0, recusadas = 0; const auditoria = [], pinSemChat = new Map();
   const api = {
     ready: () => isReady(),
@@ -414,12 +414,35 @@
         const c = await WPP.chat.find(toWid(id)).catch(() => null); if (!c) pinSemChat.set(id, Date.now() + 600000); return c;
       };
       for (const id of removed) { const c = await achar(id); if (c) delete c.__x_pin; }
+      // v1.48: se as fixadas já estão na ordem certa, não regrava. Cada regravação faz o WhatsApp reorganizar a lista INTEIRA (antes, a cada 20 s).
+      const cs = (await Promise.all(ids.map(achar))).filter(Boolean);
+      if (!removed.length && cs.every((c, i) => c.pin > 0 && (i === 0 || cs[i - 1].pin > c.pin))) return true;
       const base = Date.now();
-      for (const [i, id] of ids.entries()) {
-        const c = await achar(id);
-        if (c) c.pin = base + ids.length - i;
-      }
+      cs.forEach((c, i) => { c.pin = base + cs.length - i; });
       return true;
+    },
+    // ---- Limpar conversas antigas (v1.48) ----
+    // Só a data da última mensagem, não lidas, fixada e quantas etiquetas: nada de conteúdo.
+    limpezaListar: async () => (await WPP.chat.list()).map((c) => { const id = sid(c.id) || ''; return { id, nome: info(c).name || '', grupo: id.endsWith('@g.us'), t: c.t || 0, unread: c.unreadCount || 0, pin: !!c.pin, labels: (c.labels || []).length }; }),
+    // Conversa individual: limpa mantendo as mensagens com estrela; se não sobrou nenhuma, apaga a conversa. Grupo NUNCA passa por aqui.
+    limpezaApagar: async (id) => {
+      if (!/@(c\.us|lid)$/.test(String(id))) throw new Error('só conversa individual');
+      await WPP.chat.clear(id, true);
+      const resto = await WPP.chat.getMessages(id, { count: -1 }).catch(() => []);
+      if ((resto || []).some((m) => m?.star)) return { ficou: 'estrela' };
+      await WPP.chat.delete(id); return { apagou: true };
+    },
+    // Grupo: ids das mensagens com mais de N dias (as com estrela ficam). Só o que este computador tem carregado.
+    limpezaGrupoVelhas: async (id, dias) => {
+      if (!String(id).endsWith('@g.us')) throw new Error('só grupo');
+      const msgs = await WPP.chat.getMessages(id, { count: -1 }), lim = Date.now() - dias * 864e5;
+      return { total: msgs.length, velhas: msgs.filter((m) => m?.t > 0 && m.t * 1000 <= lim && !m.star).map((m) => m.id?._serialized).filter(Boolean) };
+    },
+    // Apaga SÓ PARA VOCÊ (revoke = false): os outros participantes continuam vendo. Nunca sai do grupo.
+    limpezaGrupoApagar: async (id, ids) => {
+      if (!String(id).endsWith('@g.us')) throw new Error('só grupo');
+      let n = 0; for (let i = 0; i < ids.length; i += 50) { const lote = ids.slice(i, i + 50); await WPP.chat.deleteMessage(id, lote, false, false); n += lote.length; await sleep(300); }
+      return { n };
     },
     // ---- Pedidos para entrar no grupo (v1.12) ----
     // gruposLista: grupos (id + nome) para montar os conjuntos "sem duplicar".

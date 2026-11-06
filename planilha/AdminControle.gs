@@ -46,7 +46,7 @@ var ADM_GRUPOS = [
   ['▸ ATENDIMENTO', 'Responder clientes: respostas, fila de espera, assinatura, o robô (Atendente IA), a transcrição de áudios e a Lista de frete', ['replies', 'fila', 'sig', 'atendente', 'memoria', 'iaAudio', 'escuta', 'resumo', 'ligacao', 'cargas']],
   ['▸ GRUPOS', 'Tudo de grupos: pedidos para entrar, vagas e "grupos só na aba Grupos"', ['pedidos', 'unicos', 'vagas', 'gruposSo']],
   ['▸ FERRAMENTAS', 'Iniciar conversa, enviar para vários, fixar conversas, exportar conversa e backup', ['start', 'lote', 'pins', 'contato', 'exportar', 'backup']],
-  ['▸ PRIVACIDADE', 'Ocultar conversas, apagar as suas mensagens para todos e recuperar o que os contatos apagarem', ['ocultas', 'apagar', 'recuperar']],
+  ['▸ PRIVACIDADE', 'Ocultar conversas, apagar as suas mensagens para todos e recuperar o que os contatos apagarem', ['ocultas', 'apagar', 'recuperar', 'limpeza']],
   ['▸ DIAGNÓSTICO', 'Saúde das funções, limites do WhatsApp, Laboratório (recursos escondidos) e arquivos para suporte (o autoteste roda mesmo com a aba escondida)', ['diag', 'cfgLimites', 'avaliacao', 'iaenvios', 'lab', 'diagAvancado']],
   ['▸ CONFIGURAÇÕES', 'Os cartões da tela de Configurações: posição do painel, partes do painel e a chave do Gemini (o "Acesso da equipe" sempre aparece)', ['cfgPosicao', 'cfgPartes', 'cfgIA']],
   ['▸ LIMITES (números; vazio = sem teto)', 'Tetos que valem por cima do que a pessoa configurou', ['limite:roboModoMax', 'limite:roboMaxPorContatoDia', 'limite:roboMaxPorHora', 'limite:chavesMax', 'limite:retencaoMaxDias']]
@@ -70,7 +70,8 @@ var ADM_RECURSOS = [
   ['cfgLimites', 'Diagnóstico › Limites do WhatsApp (só leitura)'], ['exportar', '[Em teste] Ferramentas › Exportar conversa: mensagens e mídia de um intervalo de data e hora, em um arquivo .zip'],
   ['contato', '[Em teste] Ferramentas › Contato: dados do contato aberto e o aparelho provável dele (Android, iPhone ou Web)'], ['resumo', '[Em teste] Atendimento › Resumo: a IA resume as mensagens não lidas das conversas individuais e sugere o que fazer primeiro (só resume, não responde a ninguém)'], ['ligacao', '[Em teste] Atendimento › Aguardando: responde com UMA mensagem curta quem ligar e não foi atendido (nunca em grupo, nunca atende nem recusa a chamada; a pessoa liga lá dentro)'], ['avaliacao', '[Em teste] Diagnóstico › Avaliação: confere o que a pessoa respondeu contra a memória aprendida, quem ficou sem resposta e o tempo de resposta (sem IA, sem nota para ninguém)'],
   ['escuta', '[Em teste] Atendimento › Memória IA › Banco de conhecimento: lê as conversas de tempos em tempos e guarda o conhecimento (sem dados pessoais); a pessoa liga lá dentro e a IA só propõe, ela aprova'],
-  ['memoria', 'Atendimento › Memória IA (o que a IA aprendeu; a escuta automática fica aqui dentro)'], ['unicos', 'Grupos › Conjuntos de grupos (sem duplicar quem já está em grupo igual)'], ['iaenvios', 'Diagnóstico › Envios à IA (quantos pedidos foram à IA, tempo e erros)']
+  ['memoria', 'Atendimento › Memória IA (o que a IA aprendeu; a escuta automática fica aqui dentro)'], ['unicos', 'Grupos › Conjuntos de grupos (sem duplicar quem já está em grupo igual)'], ['iaenvios', 'Diagnóstico › Envios à IA (quantos pedidos foram à IA, tempo e erros)'],
+  ['limpeza', '[Em teste] Privacidade › Limpar conversas: apaga as conversas paradas há mais de 30 a 360 dias (fixadas, com etiqueta e não lidas ficam) e, nos grupos, só PARA A PESSOA as mensagens antigas']
 ];
 // Limites (valor vazio = sem teto). [chave, descrição]
 var ADM_LIMITES = [
@@ -92,7 +93,7 @@ var ADM_PERFIS_EXEMPLO = {
   atendente: ['', 'bloqueado', 'ligado', 'ligado'], vagas: ['', 'ligado', 'ligado', 'ligado'], pedidos: ['', 'desligado', 'desligado', 'ligado'], cargas: ['', 'ligado', 'ligado', 'ligado'],
   iaAudio: ['', 'bloqueado', 'desligado', 'ligado'], diagAvancado: ['', 'bloqueado', 'bloqueado', 'ligado'],
   diag: ['', 'bloqueado', 'bloqueado', 'ligado'], cfgPosicao: ['', 'ligado', 'ligado', 'ligado'], cfgIA: ['', 'bloqueado', 'ligado', 'ligado'], cfgPartes: ['', 'bloqueado', 'bloqueado', 'ligado'], cfgLimites: ['', 'bloqueado', 'bloqueado', 'ligado'],
-  memoria: ['', 'bloqueado', 'ligado', 'ligado'], unicos: ['', 'desligado', 'desligado', 'ligado'], iaenvios: ['', 'bloqueado', 'bloqueado', 'ligado'],
+  memoria: ['', 'bloqueado', 'ligado', 'ligado'], unicos: ['', 'desligado', 'desligado', 'ligado'], iaenvios: ['', 'bloqueado', 'bloqueado', 'ligado'], limpeza: ['', 'bloqueado', 'bloqueado', 'ligado'],
   'limite:roboModoMax': ['', 'desligado', 'sugerir', 'automatico'], 'limite:roboMaxPorContatoDia': ['', '', '15', ''], 'limite:roboMaxPorHora': ['', '', '40', ''], 'limite:chavesMax': ['', '1', '2', '6'], 'limite:retencaoMaxDias': ['', '90', '90', '']
 };
 var ADM_NOMES_PERFIS = ['Novo', 'Básico', 'Com robô', 'Administrador'];   // "Novo" fica em branco: quem entra sem perfil (ou com perfil que não existe) só vê o "Acesso da equipe"

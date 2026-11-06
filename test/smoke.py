@@ -101,7 +101,7 @@ WPP.whatsapp.Cmd = { sendRevokeMsgs: async (chat, { list }) => { for (const m of
 ABA_DE = {'Respostas rápidas': ('Atendimento', 'Respostas'), 'Aguardando resposta': ('Atendimento', 'Aguardando'), 'Assinatura': ('Atendimento', 'Assinatura'), 'Atendente IA': ('Atendimento', 'Atendente IA'), 'Memória IA': ('Atendimento', 'Memória IA'), 'Lista de frete': ('Atendimento', 'Lista de frete'),
           'Pedidos': ('Grupos', 'Pedidos'), 'Conjuntos': ('Grupos', 'Conjuntos'), 'Sem duplicar': ('Grupos', 'Conjuntos'), 'Ajustes dos grupos': ('Grupos', 'Ajustes'),
           'Iniciar conversa': ('Ferramentas', 'Iniciar conversa'), 'Enviar para vários': ('Ferramentas', 'Enviar para vários'), 'Conversas fixadas': ('Ferramentas', 'Fixadas'), 'Exportar conversa': ('Ferramentas', 'Exportar'), 'Contato do cliente': ('Ferramentas', 'Contato'), 'Resumo do que perdi': ('Atendimento', 'Resumo'), 'Avaliação do atendimento': ('Diagnóstico', 'Avaliação'), 'Envios à IA': ('Diagnóstico', 'Envios à IA'), 'Backup': ('Ferramentas', 'Backup'),
-          'Conversas ocultas': ('Privacidade', 'Ocultas'), 'Apagar mensagens': ('Privacidade', 'Apagar'), 'Recuperar apagadas': ('Privacidade', 'Recuperar'),
+          'Conversas ocultas': ('Privacidade', 'Ocultas'), 'Apagar mensagens': ('Privacidade', 'Apagar'), 'Recuperar apagadas': ('Privacidade', 'Recuperar'), 'Limpar conversas': ('Privacidade', 'Limpar'),
           'Diagnóstico': ('Diagnóstico', 'Saúde'), 'Limites': ('Diagnóstico', 'Limites'), 'Laboratório': ('Diagnóstico', 'Laboratório'), 'Configurações': ('Configurações', None)}
 async def ir(page, nome):
     rail, aba = ABA_DE.get(nome, (nome, None))
@@ -1173,7 +1173,7 @@ async def main():
         res['ac_desligado_extras'] = {'cartoes': (await page.evaluate(TELA))['cartoes'], 'diag_na_barra': await page.locator('#az-panel .tb[data-tip^="Diagnóstico"]').count()}
         await sw.evaluate("chrome.storage.local.set({ acessoExigir: false, acessoCfg: {}, acessoEstado: null, acessoAplicado: {}, modulos: {}, atendCfg: {}, atendEst: {}, atendLog: [], atendSug: [] }); self.__admin = {}"); await page.wait_for_timeout(1200)
         # v1.35.1: perfil ADMINISTRADOR com os 21 recursos ligados — TUDO o que a planilha oferece tem de aparecer e funcionar na extensão (era o caso do Laboratório que não aparecia)
-        TODOS = {k: 'ligado' for k in ['replies', 'fila', 'sig', 'start', 'lote', 'pins', 'ocultas', 'apagar', 'recuperar', 'exportar', 'contato', 'escuta', 'resumo', 'ligacao', 'avaliacao', 'backup', 'lab', 'gruposSo', 'atendente', 'vagas', 'pedidos', 'cargas', 'iaAudio', 'diagAvancado', 'diag', 'cfgPosicao', 'cfgIA', 'cfgPartes', 'cfgLimites', 'memoria', 'unicos', 'iaenvios']}
+        TODOS = {k: 'ligado' for k in ['replies', 'fila', 'sig', 'start', 'lote', 'pins', 'ocultas', 'apagar', 'recuperar', 'exportar', 'contato', 'escuta', 'resumo', 'ligacao', 'avaliacao', 'backup', 'lab', 'gruposSo', 'atendente', 'vagas', 'pedidos', 'cargas', 'iaAudio', 'diagAvancado', 'diag', 'cfgPosicao', 'cfgIA', 'cfgPartes', 'cfgLimites', 'memoria', 'unicos', 'iaenvios', 'limpeza']}
         await sw.evaluate("chrome.storage.local.set({ acessoExigir: true, acessoCfg: {}, acessoEstado: null, acessoAplicado: {}, modulos: {}, atendCfg: %s, atendEst: {}, atendLog: [], atendSug: [] }); self.__adminLog = []" % json.dumps(cfgA)); await admin({'recursos': TODOS, 'limites': {'roboModoMax': 'automatico', 'chavesMax': '6'}, 'global': G1}); await page.wait_for_timeout(1500)
         await conectar(conv(ADM, COD)); await page.wait_for_timeout(1200); await ir(page, 'Configurações'); await page.wait_for_timeout(800)
         res['ac_todos_config'] = await page.evaluate("""(() => { const r = document.querySelector('#az-panel').shadowRoot; return { cartoes: [...r.querySelectorAll('.pb .sec')].map((x) => (x.querySelector('.sh b') || {}).innerText), abas: [...r.querySelectorAll('.hubtabs .ht')].map((b) => b.innerText.replace(/\\d+$/, '').trim()), mais_chave: r.querySelector('.pb').innerText.includes('+ Adicionar outra chave') }; })()""")
@@ -1627,6 +1627,28 @@ async def main():
         await ir(page, 'Limites'); await page.wait_for_timeout(700)
         res['limites_card'] = await page.evaluate("(()=>{const s=[...document.querySelector('#az-panel').shadowRoot.querySelectorAll('.sec')].find(x=>x.innerText.includes('Limites do WhatsApp')); return s? s.innerText.replace(/\\n/g,' | ') : null})()")
         await page.screenshot(path=f'{OUT}/w-config.png')
+        await page.locator('#az-panel .sec', has_text='O que o WhatsApp controla').screenshot(path=f'{OUT}/previa-limites.png')   # v1.47.5: prévia para o Johon
+        await ir(page, 'Diagnóstico'); await page.wait_for_timeout(3000)
+        card = page.locator('#az-panel .sec', has_text='Chamadas ao WhatsApp mais lentas')
+        res['desempenho_card'] = (await card.inner_text()).replace('\n', ' | ') if await card.count() else None
+        if await card.count(): await card.screenshot(path=f'{OUT}/previa-desempenho.png')
+        # v1.48: Limpar conversas antigas — conta por faixa, protege fixada/não lida, apaga individual (limpa com estrela e apaga) e, no grupo, só para mim
+        await page.evaluate("""() => { const now = Date.now(), d = (n) => Math.floor((now - n * 864e5) / 1000), mk = (id, t, x = {}) => ({ id: { _serialized: id }, t, formattedTitle: 'Contato ' + id.slice(9, 13), unreadCount: 0, labels: [], ...x });
+          window.__lpOrig = [WPP.chat.list, WPP.chat.getMessages]; window.__msgsG = [{ id: { _serialized: 'g1' }, t: d(40) }, { id: { _serialized: 'g2' }, t: d(40), star: true }, { id: { _serialized: 'g3' }, t: d(2) }];
+          WPP.chat.list = async () => [mk('5511900000001@c.us', d(400)), mk('5511900000002@c.us', d(100)), mk('5511900000003@c.us', d(5)), mk('5511900000004@c.us', d(400), { pin: 5 }), mk('5511900000005@c.us', d(400), { unreadCount: 2 }), mk('120000000000000001@g.us', d(1), { formattedTitle: 'Grupo Velho' })];
+          WPP.chat.clear = async (id, k) => { L('limpar', id, k); }; WPP.chat.delete = async (id) => { L('apagarConversa', id); };
+          WPP.chat.getMessages = async (id) => (String(id).endsWith('@g.us') ? window.__msgsG : []); }""")
+        await ir(page, 'Limpar conversas'); await page.wait_for_timeout(1500)
+        await page.screenshot(path=f'{OUT}/previa-limpeza.png')
+        botoes = await page.locator('#az-panel .kv button').all_inner_texts()
+        await dlg_next(page); await page.locator('#az-panel .kv button', has_text='Apagar as 1').first.click(); await page.wait_for_timeout(2500)
+        lpl = await page.evaluate("window.__log.filter((l) => ['limpar', 'apagarConversa'].includes(l[0])).map((l) => l.slice(0, 3))")
+        await page.locator('#az-panel label.chk', has_text='Grupo Velho').click(); await page.wait_for_timeout(300)
+        await page.locator('#az-panel .gbtn', has_text='Contar nos 1').click(); await page.wait_for_timeout(1800)
+        contou = await page.evaluate(PBTXT + ".includes('1 de 3 com mais de 30 dias')")
+        await dlg_next(page); await page.locator('#az-panel .gbtn', has_text='Apagar as antigas').click(); await page.wait_for_timeout(2500)
+        res['lp_limpeza'] = {'botoes': botoes, 'apagou': lpl, 'contou': contou, 'grupo': await page.evaluate("window.__log.filter((l) => l[0] === 'del' && Array.isArray(l[1])).map((l) => [l[1], l[2]])")}
+        await page.evaluate("() => { [WPP.chat.list, WPP.chat.getMessages] = window.__lpOrig; }")
         dicas = await page.evaluate("[...document.querySelector('#az-panel').shadowRoot.querySelectorAll('.ph .tb')].map(b=>b.dataset.tip)")
         await ir(page, 'Diagnóstico'); await page.wait_for_timeout(400)   # com o Laboratório desligado, a aba some do Diagnóstico
         res['modulos_off'] = [dicas, await page.locator('#az-panel .hubtabs .ht', has_text='Laboratório').count(), await sw.evaluate("chrome.storage.local.get('modulos').then(d=>d.modulos)")]
@@ -1794,6 +1816,8 @@ async def main():
             'rb_F_G_H_textos': lambda v: v == [1, 1, 0],
             'rb_sugestao': lambda v: v[0] == 0 and len(v[1]) == 1 and v[1][0][0] == 'responder',
             'rb_sug_manual_tudo': lambda v: v == 2,
+            'lp_limpeza': lambda v: v == {'botoes': ['Apagar as 2', 'Apagar as 2', 'Apagar as 2', 'Apagar as 1', 'Apagar as 1'], 'apagou': [['limpar', '5511900000001@c.us', True], ['apagarConversa', '5511900000001@c.us']], 'contou': True, 'grupo': [[['g1'], False]]},   # v1.48
+            'desempenho_card': lambda v: bool(v) and 'Peso do AtendeZap na página' in v and 'Memória da aba do WhatsApp' in v and 'mais lentas' in v,   # v1.48
             'limites_card': lambda v: bool(v) and 'O que o WhatsApp controla na sua conta' in v and 'desligado (sem teto)' in v and 'sem teto' in v and '30 dias' in v,   # v1.47.5
             'rb_sugestao_enviada': lambda v: len(v) == 1 and 'Posso ajudar' in v[0], 'rb_exemplo': lambda v: bool(v) and len(v) == 1,
             'rb_sem_aceite': lambda v: v == 'desligado', 'rb_desligado_sem_ia': lambda v: v == 0,
@@ -1894,7 +1918,7 @@ async def main():
             'ac_pc_desconectado': lambda v: v == {'banner': True, 'motivo': True, 'respostas_na_barra': 0},
             'ac_pc_volta': lambda v: v == {'conectou': True, 'conectar': True, 'respostas_na_barra': 1, 'mantem_escolha': True, 'sem_novo_aviso': True},
             'ac_todos_config': lambda v: v == {'cartoes': ['Posição do painel', 'Acesso da equipe', 'Assistente de IA (Gemini)', 'Partes do painel'], 'abas': [], 'mais_chave': True},
-            'ac_todos_barra': lambda v: v == {'icones': ['Atendimento', 'Grupos', 'Ferramentas', 'Privacidade', 'Diagnóstico', 'Configurações'], 'abas': {'Atendimento': ['Respostas', 'Aguardando', 'Assinatura', 'Atendente IA', 'Memória IA', 'Lista de frete', 'Resumo 🧪'], 'Grupos': ['Pedidos', 'Conjuntos', 'Ajustes'], 'Ferramentas': ['Iniciar conversa', 'Enviar para vários', 'Fixadas', 'Contato 🧪', 'Exportar 🧪', 'Backup'], 'Privacidade': ['Ocultas', 'Apagar 🧪', 'Recuperar 🧪'], 'Diagnóstico': ['Saúde', 'Limites', 'Avaliação 🧪', 'Envios à IA', 'Laboratório 🧪'], 'Configurações': []}, 'cartoes': {'Ajustes dos grupos': ['Vagas nos grupos', 'Grupos só na aba Grupos'], 'Lista de frete': ['Lista de frete (planilha Google)'], 'Limites': ['Limites do WhatsApp']}},
+            'ac_todos_barra': lambda v: v == {'icones': ['Atendimento', 'Grupos', 'Ferramentas', 'Privacidade', 'Diagnóstico', 'Configurações'], 'abas': {'Atendimento': ['Respostas', 'Aguardando', 'Assinatura', 'Atendente IA', 'Memória IA', 'Lista de frete', 'Resumo 🧪'], 'Grupos': ['Pedidos', 'Conjuntos', 'Ajustes'], 'Ferramentas': ['Iniciar conversa', 'Enviar para vários', 'Fixadas', 'Contato 🧪', 'Exportar 🧪', 'Backup'], 'Privacidade': ['Ocultas', 'Apagar 🧪', 'Recuperar 🧪', 'Limpar 🧪'], 'Diagnóstico': ['Saúde', 'Limites', 'Avaliação 🧪', 'Envios à IA', 'Laboratório 🧪'], 'Configurações': []}, 'cartoes': {'Ajustes dos grupos': ['Vagas nos grupos', 'Grupos só na aba Grupos'], 'Lista de frete': ['Lista de frete (planilha Google)'], 'Limites': ['Limites do WhatsApp']}},
             'ac_todos_diag': lambda v: v == {'laboratorio': True, 'avancado': True}, 'ac_todos_robo': lambda v: v == {'audio': True, 'automatico_livre': True},
             'ac_vazio_tela': lambda v: v == {'cartoes': ['Acesso da equipe'], 'sem_diag_nem_backup': True, 'aberto': True, 'aviso': True, 'respostas_na_barra': 0, 'config_na_barra': 1},
             'ac_vazio_libera': lambda v: v == {'cartoes': ['Posição do painel', 'Acesso da equipe'], 'respostas_na_barra': 1, 'aviso_sumiu': True},
