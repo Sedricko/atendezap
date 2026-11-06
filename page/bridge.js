@@ -1099,6 +1099,8 @@
     }),
     ping: () => Date.now(),
     labList: () => ({ ...labEstado(), recursos: recursosInternos() }),
+    // v1.49: monitor de limitações — as chaves (o painel escolhe as de limite) e os nomes dos módulos de telemetria. Só nomes e valores do WhatsApp.
+    monitorLer: () => ({ recursos: recursosInternos(), eventos: moduleIds().filter((n) => n.endsWith('WamEvent')) }),
     labSet: (nome, valor) => {
       if (valor === null || valor === undefined) delete labOverrides[nome];
       else labOverrides[nome] = valor;

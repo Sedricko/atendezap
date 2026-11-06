@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "AtendeZap - Atendimento para WhatsApp Web",
-  "version": "1.48.1",
+  "version": "1.49.0",
   "description": "Respostas rápidas com mídia e ações, assinatura automática, iniciar conversa, chats fixados, abas e backup automático.",
   "background": {
     "service_worker": "background.js"
@@ -50,6 +50,8 @@
         "lib/diagnostico.js",
         "lib/iaregistro.js",
         "lib/limpeza.js",
+        "lib/monitor.js",
+        "lib/funcoes.js",
         "content/main.js"
       ],
       "css": [

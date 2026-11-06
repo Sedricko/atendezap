@@ -1203,3 +1203,36 @@ const cifrar = (obj, senha) => { // mesmo formato do CryptoJS/OpenSSL ("Salted__
   assert.equal(hist.length, 7); assert.equal(hist[0].dia, '2026-11-19'); hist = G.registrarDia(hist, { pct: 99 }, '2026-11-19'); assert.equal(hist.length, 7); assert.equal(hist[0].pct, 99);   // um por dia, 7 dias
   console.log('desempenho ao vivo ok');
 }
+// ---- v1.49: monitor de limitações e o que o WhatsApp registra ----
+{
+  require('../lib/monitor.js'); const M = globalThis.AZMON;
+  const rec = [{ nome: 'wa_individual_new_chat_msg_capping_enabled', valor: false }, { nome: 'group_size_limit', valor: 1024 }, { nome: 'channels_qpl_logging', valor: true }, { nome: 'xyz_max_items', valor: 5 }, { nome: 'status_likes_sending_enabled', valor: true }, { nome: 'ai_upload_size_limit_mb', valor: 40 }];
+  const a = M.extrair(rec);
+  assert.deepEqual(Object.keys(a).sort(), ['group_size_limit', 'wa_individual_new_chat_msg_capping_enabled', 'xyz_max_items']);   // telemetria, IA e recurso comum ficam de fora
+  assert.deepEqual(M.comparar(null, a), []);                                                                                       // primeira leitura não é mudança
+  const b = { ...a, wa_individual_new_chat_msg_capping_enabled: true, nova_rate_limit: 3 }; delete b.xyz_max_items;
+  const m = M.comparar(a, b);
+  assert.deepEqual(m.map((x) => [x.k, x.tipo, x.grupo]), [['wa_individual_new_chat_msg_capping_enabled', 'mudou', 'antispam'], ['nova_rate_limit', 'nova', 'outras'], ['xyz_max_items', 'sumiu', 'outras']]);   // anti-spam primeiro
+  assert.equal(m[0].nome, 'Teto de mensagens para contatos novos'); assert.equal(m[0].antes, false); assert.equal(m[0].agora, true);
+  const ev = M.eventos(['WAWebSpamReportPerfWamEvent', 'WAWebCallWamEvent', 'WAWebFooWamEvent', 'WAWebChatList.react']);
+  assert.deepEqual(ev, ['SpamReportPerf', 'Call', 'Foo']);
+  assert.deepEqual(M.porAssunto(ev), { 'Denúncia, bloqueio e anti-spam': ['SpamReportPerf'], 'Ligações': ['Call'], Outros: ['Foo'] });
+  assert.deepEqual(M.eventosNovos(['Call'], ev), ['SpamReportPerf', 'Foo']); assert.deepEqual(M.eventosNovos(null, ev), []);
+  console.log('monitor de limitações ok');
+}
+// ---- v1.49: funções do WhatsApp agrupadas pelas funções-porteiro ----
+{
+  require('../lib/funcoes.js'); const F = globalThis.AZFUN;
+  const portoes = { StatusGatingUtils: { isStatusLikesSendEnabled: [true, ['web_status_likes_send_v2_enabled', 'web_status_likes_poster_counter_enabled']], statusQuickReplyEmojis: [null, ['status_reaction_emojis']], isStatusLikesSendEnabledNoExposure: [true, ['web_status_likes_poster_counter_enabled', 'web_status_likes_send_v2_enabled']] },
+    IndividualNewChatMessageCappingLimitGatingUtils: { isCappingEnabled: [false, ['wa_individual_new_chat_msg_capping_enabled']] }, PollGatingUtils: { isPollAddOptionEnabled: [false, ['poll_add_option_enabled']], isPollX: [false, ['nao_existe']] } };
+  const rec = [{ nome: 'web_status_likes_send_v2_enabled', valor: true }, { nome: 'web_status_likes_poster_counter_enabled', valor: false }, { nome: 'status_reaction_emojis', valor: '❤' },
+    { nome: 'wa_individual_new_chat_msg_capping_enabled', valor: false }, { nome: 'poll_add_option_enabled', valor: false }];
+  const l = F.agrupar(portoes, rec, ['PollGatingUtils.isPollAddOptionEnabled']);
+  assert.deepEqual(l.map((x) => [x.id, x.area, x.nome, x.chaves.length, x.novo]), [['PollGatingUtils.isPollAddOptionEnabled', 'Enquetes', 'Poll add option', 1, true], ['StatusGatingUtils.isStatusLikesSendEnabled', 'Status', 'Status likes send', 2, false]]);   // nova primeiro; sem o teto (anti-spam), sem a que não é is*, sem a de chave inexistente
+  assert.deepEqual(l[1].tambem, ['StatusGatingUtils.isStatusLikesSendEnabledNoExposure']);                                       // mesmas chaves = mesma função
+  const v = Object.fromEntries(rec.map((r) => [r.nome, r.valor]));
+  assert.equal(F.estado(l[1], (k) => v[k]), 'parcial'); assert.equal(F.estado(l[0], (k) => v[k]), 'desligado'); assert.equal(F.estado(l[1], () => true), 'ligado');
+  assert.equal(F.nome('isURLPreviewEnabled'), 'Url preview');
+  assert.deepEqual(F.ids({ A: { x: 1, y: 2 } }), ['A.x', 'A.y']);
+  console.log('funções do WhatsApp agrupadas ok');
+}

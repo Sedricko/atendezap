@@ -310,6 +310,15 @@ async def main():
         res['lab_valor'] = await page.evaluate("WPP.loader.loadModule('WAWebABProps').getABPropConfigValue('poll_add_option_enabled')")
         res['lab_ls'] = await page.evaluate("localStorage.getItem('az-lab')")
         res['lab_junto'] = res['lab_ls']   # a entrada liga a chave e as 3 irmãs de uma vez
+        # v1.49: aba Funções do WhatsApp — lista montada pelas funções-porteiro; um botão liga as dependências juntas e desliga de volta
+        await page.locator('#az-panel .fchip', has_text='Funções do WhatsApp').click(); await page.wait_for_timeout(500)
+        fn_itens = await page.locator('#az-panel .labr').count(); ls0 = await page.evaluate("localStorage.getItem('az-lab')")
+        fn_primeira = (await page.locator('#az-panel .labr').first.inner_text()).split('\n')[0] if fn_itens else None
+        if fn_itens: await page.locator('#az-panel .labr').first.locator('label.tog').click(); await page.wait_for_timeout(500)
+        ls1 = await page.evaluate("localStorage.getItem('az-lab')")
+        if fn_itens: await page.locator('#az-panel .labr').first.locator('label.tog').click(); await page.wait_for_timeout(500)
+        res['lab_funcoes'] = {'itens': fn_itens > 0, 'mudou_ao_ligar': ls1 != ls0, 'voltou': await page.evaluate("localStorage.getItem('az-lab')") == ls0, 'sem_teto': not await page.evaluate(PBTXT + ".includes('capping')"), 'primeira': fn_primeira}
+        await page.locator('#az-panel .fchip', has_text='Para testar').click(); await page.wait_for_timeout(300)   # volta à aba em que os testes seguintes esperam estar
         await page.locator('#az-panel .fchip', has_text='Funcionando').click(); await page.wait_for_timeout(300)
         # rolagem preservada ao ligar uma opção do fim da lista + descrição + marcação de teste
         vp = page.viewport_size; await page.set_viewport_size({'width': vp['width'], 'height': 380}); await page.wait_for_timeout(200)
@@ -1632,6 +1641,20 @@ async def main():
         card = page.locator('#az-panel .sec', has_text='Chamadas ao WhatsApp mais lentas')
         res['desempenho_card'] = (await card.inner_text()).replace('\n', ' | ') if await card.count() else None
         if await card.count(): await card.screenshot(path=f'{OUT}/previa-desempenho.png')
+        # v1.49: monitor de limitações — 1ª leitura = visto; o WhatsApp liga o teto de contatos novos → aviso no card e no autoteste; "Entendi" zera
+        await ir(page, 'Limites'); await page.wait_for_timeout(1500)
+        mon0 = await page.evaluate(PBTXT + ".includes('Monitor de limitações') && " + PBTXT + ".includes('Nada mudou desde que você viu')")
+        await page.evaluate("() => { window.__abOrig = WPP.conn.getABProps; WPP.conn.getABProps = () => window.__abOrig().map((p) => (p.name === 'wa_individual_new_chat_msg_capping_enabled' ? { ...p, configValue: true } : p)); }")
+        await page.locator('#az-panel .sec', has_text='Monitor de limitações').locator('.ib').click(); await page.wait_for_timeout(1500)
+        mon1 = await page.evaluate(PBTXT + ".includes('Teto de mensagens para contatos novos: desligado → ligado')")
+        await page.screenshot(path=f'{OUT}/previa-monitor.png')
+        await ir(page, 'Diagnóstico'); await page.wait_for_timeout(3500)
+        mon_auto = await page.evaluate(PBTXT + ".includes('mudou desde que você viu: Teto de mensagens para contatos novos')")
+        await ir(page, 'Limites'); await page.wait_for_timeout(1200)
+        await page.locator('#az-panel .gbtn', has_text='Entendi').click(); await page.wait_for_timeout(800)
+        mon2 = await page.evaluate(PBTXT + ".includes('Nada mudou desde que você viu')")
+        await page.evaluate("() => { WPP.conn.getABProps = window.__abOrig; }")
+        res['monitor'] = {'primeira_leitura': mon0, 'avisou': mon1, 'autoteste': mon_auto, 'entendi': mon2, 'registra': await page.evaluate(PBTXT + ".includes('O que o WhatsApp registra')")}
         # v1.48: Limpar conversas antigas — conta por faixa, protege fixada/não lida, apaga individual (limpa com estrela e apaga) e, no grupo, só para mim
         await page.evaluate("""() => { const now = Date.now(), d = (n) => Math.floor((now - n * 864e5) / 1000), mk = (id, t, x = {}) => ({ id: { _serialized: id }, t, formattedTitle: 'Contato ' + id.slice(9, 13), unreadCount: 0, labels: [], ...x });
           window.__lpOrig = [WPP.chat.list, WPP.chat.getMessages]; window.__msgsG = [{ id: { _serialized: 'g1' }, t: d(40) }, { id: { _serialized: 'g2' }, t: d(40), star: true }, { id: { _serialized: 'g3' }, t: d(2) }];
@@ -1818,6 +1841,8 @@ async def main():
             'rb_F_G_H_textos': lambda v: v == [1, 1, 0],
             'rb_sugestao': lambda v: v[0] == 0 and len(v[1]) == 1 and v[1][0][0] == 'responder',
             'rb_sug_manual_tudo': lambda v: v == 2,
+            'monitor': lambda v: v == {'primeira_leitura': True, 'avisou': True, 'autoteste': True, 'entendi': True, 'registra': True},   # v1.49
+            'lab_funcoes': lambda v: v['itens'] and v['mudou_ao_ligar'] and v['voltou'] and v['sem_teto'],   # v1.49
             'lp_limpeza': lambda v: v == {'botoes': ['Apagar as 2', 'Apagar as 2', 'Apagar as 2', 'Apagar as 1', 'Apagar as 1'], 'apagou': [['limpar', '5511900000001@c.us', True], ['apagarConversa', '5511900000001@c.us']], 'contou': True, 'grupo': [[['g1'], False]], 'aviso_escondido': True},   # v1.48 (v1.48.1: um lote só e sem a pilha de avisos)
             'desempenho_card': lambda v: bool(v) and 'Peso do AtendeZap na página' in v and 'Memória da aba do WhatsApp' in v and 'mais lentas' in v.lower() and 'composing' not in v,   # v1.48
             'limites_card': lambda v: bool(v) and 'o que o whatsapp controla na sua conta' in v.lower() and 'desligado (sem teto)' in v and 'sem teto' in v and '30 dias' in v,   # v1.47.5

@@ -1894,7 +1894,42 @@
     } }, 'Testar link'))) : null;
   const gruposAjView = () => [h('div', { class: 'eh' }, h('b', null, 'Ajustes dos grupos')), vagasCard(), gruposSoCard()];
   const freteView = () => [h('div', { class: 'eh' }, h('b', null, 'Lista de frete')), freteCard()];
-  const limitesSecaoView = () => [h('div', { class: 'eh' }, h('b', null, 'Limites do WhatsApp')), limWaCard()];
+  const limitesSecaoView = () => [h('div', { class: 'eh' }, h('b', null, 'Limites do WhatsApp')), limWaCard(), monitorCard()];
+  // ----- v1.49: Monitor de limitações e "o que o WhatsApp registra" (só LÊ; regras em lib/monitor.js) -----
+  // A base é o que você já viu: o autoteste compara com ela a cada 30 min e avisa o que mudou. "Entendi" passa a base para o valor de agora.
+  const MON = globalThis.AZMON, mon = { atual: null, base: undefined, lendo: false, erro: '' };
+  async function monitorLer() {
+    const r = await call('monitorLer');
+    mon.atual = { valores: MON.extrair(r.recursos), eventos: MON.eventos(r.eventos), t: Date.now() };
+    if (mon.base === undefined) mon.base = (await chrome.storage.local.get('monitorBase')).monitorBase || null;
+    if (!mon.base) { mon.base = mon.atual; await chrome.storage.local.set({ monitorBase: mon.base }); }   // primeira leitura: guarda como já visto
+    return { mudancas: MON.comparar(mon.base.valores, mon.atual.valores), novos: MON.eventosNovos(mon.base.eventos, mon.atual.eventos) };
+  }
+  async function monitorVisto() { mon.base = mon.atual; await chrome.storage.local.set({ monitorBase: mon.base }); toast('Marcado como visto: o monitor avisa só o que mudar daqui em diante.'); renderPanel(); }
+  const fmtValor = (v) => (v === undefined ? '—' : v === true ? 'ligado' : v === false ? 'desligado' : v === -1 ? 'sem teto' : typeof v === 'number' ? v.toLocaleString('pt-BR') : String(v));
+  function monitorCard() {
+    if (!ligado('cfgLimites')) return null;
+    if (!mon.atual && !mon.lendo && S.ready) { mon.lendo = true; monitorLer().catch((e) => { mon.erro = e.message; }).finally(() => { mon.lendo = false; renderPanel(); }); }
+    const topo = h('div', { class: 'sh' }, tile('shapes'), h('b', { class: 'grow' }, 'Monitor de limitações'), h('button', { class: 'ib', title: 'Ler de novo', onclick: () => { mon.atual = null; renderPanel(); } }, '↻'));
+    if (!mon.atual) return h('div', { class: 'sec' }, topo, h('p', { class: 'hint' }, mon.erro ? 'Não consegui ler: ' + mon.erro : 'Lendo…'));
+    const mud = MON.comparar(mon.base?.valores, mon.atual.valores), novos = MON.eventosNovos(mon.base?.eventos, mon.atual.eventos), v = mon.atual.valores;
+    const kv = (nome, valor, extra, aviso) => h('div', { class: 'kv' }, h('span', null, nome, extra ? h('small', { class: 'hint' }, ' — ' + extra) : null), h('b', { class: aviso ? 'dan' : null }, valor));
+    const mudouK = new Set(mud.map((x) => x.k));
+    const grupos = ['antispam', 'envio', 'grupos'].map((g) => [h('p', { class: 'hint grp' }, MON.GRUPOS[g]),
+      MON.CATALOGO.filter((c) => c[3] === g && v[c[0]] !== undefined).map(([k, nome, explica]) => kv(nome, (mudouK.has(k) ? '⚠ ' : '') + fmtValor(v[k]), explica, mudouK.has(k)))]);
+    const ev = MON.porAssunto(mon.atual.eventos);
+    return h('div', { class: 'sec' }, topo,
+      h('p', { class: 'hint' }, `Lido do próprio WhatsApp (só leitura, para respeitar). ${Object.keys(v).length} chaves de limite acompanhadas. Visto em ${new Date(mon.base.t).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })}.`),
+      mud.length || novos.length ? h('div', { class: 'errs warn' }, h('b', null, `Mudou desde que você viu (${mud.length + novos.length})`),
+        mud.slice(0, 30).map((x) => h('small', null, `${x.nome}: ${fmtValor(x.antes)} → ${fmtValor(x.agora)}${x.tipo === 'nova' ? ' (nova)' : x.tipo === 'sumiu' ? ' (sumiu)' : ''}${x.explica ? ' — ' + x.explica : ''}`)),
+        novos.length ? h('small', null, `Registros novos do WhatsApp: ${novos.slice(0, 15).join(', ')}${novos.length > 15 ? ` e mais ${novos.length - 15}` : ''}`) : null,
+        h('div', { class: 'rowf' }, h('button', { class: 'gbtn sm', onclick: monitorVisto }, 'Entendi (marcar como visto)'))) : h('small', { class: 'iaok' }, '✔ Nada mudou desde que você viu.'),
+      grupos,
+      h('details', { class: 'tec' }, h('summary', null, `O que o WhatsApp registra: ${mon.atual.eventos.length} tipos de registro`),
+        h('small', { class: 'hint' }, 'São os módulos de telemetria do próprio programa do WhatsApp (…WamEvent). O nome diz o assunto; o que cada um mede exatamente o AtendeZap não consegue ler.'),
+        Object.entries(ev).sort((a, b) => b[1].length - a[1].length).map(([assunto, l]) => h('div', { class: 'kv' }, h('span', null, assunto, h('small', { class: 'hint' }, ' — ' + l.slice(0, 6).join(', ') + (l.length > 6 ? '…' : ''))), h('b', null, String(l.length))))),
+      h('small', { class: 'hint' }, 'Passar dos limites anti-spam põe o número da empresa em risco de banimento: o AtendeZap mostra, nunca muda.'));
+  }
   function configView() {
     const lado = LADOS[ui.lado] ? ui.lado : 'direita';
     const alternar = async (k, v) => { if (acessoEf().conectado && (acessoEf().recursos[k] === 'obrigatorio' || acessoEf().desativado)) return toast('O administrador não permite mudar isto.'); S.mods = { ...S.mods, [k]: v }; await save('modulos'); recuperarSincronizar(); renderHead(); renderPanel(); };
@@ -4206,6 +4241,14 @@
   // v1.47.5: o WhatsApp tem pronto um teto de mensagens para contatos novos; hoje vem DESLIGADO. Se ligar na sua conta, fica ⚠ aqui (e no histórico).
   addCheck('Conexão', 'Teto de conversas novas (anti-spam)', ({ br }) => { const v = br?.limites?.vigia; if (!v || v.tetoNovas == null) return { ok: 'skip', d: 'não consegui ler esta configuração' };
     return v.tetoNovas ? { ok: 'warn', d: `LIGADO na sua conta${v.tetoNovasLimite ? ': ' + v.tetoNovasLimite + ' mensagens' : ''} (aviso em ${v.tetoAvisoPct || '?'}%). Vá com calma em conversas novas e Enviar para vários.` } : { ok: true, d: 'desligado na sua conta' }; });
+  // v1.49: o monitor de limitações também roda no autoteste (a cada 30 min) e avisa o que mudou desde que você viu.
+  addCheck('Conexão', 'Limitações do WhatsApp (monitor)', async ({ br }) => {
+    if (!br?.ready) return { ok: 'skip', d: 'o WhatsApp ainda não está pronto' };
+    let r; try { r = await monitorLer(); } catch (e) { return { ok: 'skip', d: 'não consegui ler: ' + e.message }; }
+    const imp = r.mudancas.filter((x) => x.grupo !== 'outras'), outras = r.mudancas.length - imp.length;
+    if (imp.length) return { ok: 'warn', d: `mudou desde que você viu: ${imp.slice(0, 3).map((x) => `${x.nome} ${fmtValor(x.antes)} → ${fmtValor(x.agora)}`).join('; ')}${imp.length > 3 ? '…' : ''} (Diagnóstico › Limites)` };
+    return { ok: true, d: `${Object.keys(mon.atual.valores).length} limites acompanhados${outras ? ` · ${outras} ajuste(s) técnico(s) mudaram` : ''}${r.novos.length ? ` · ${r.novos.length} registro(s) novo(s) do WhatsApp` : ''}` };
+  });
   addCheck('Tela do WhatsApp', 'Abas da lista (Todas/Grupos)', () => {
     const a = abaAtual();
     return a ? { ok: true, d: `aba atual: ${a} · ${descAbas()}` } : { ok: 'warn', d: `não identifiquei a aba ativa (fixadas por aba valem em todas): ${descAbas()}` };
@@ -4738,7 +4781,10 @@ ${hist ? `<h2>Histórico de autotestes</h2><table><tr><td><b>Quando</b></td><td>
   const lab = { dados: null, filtro: 'desligados', q: '', aba: 'funciona', refs: null, refsLendo: false, pacoteBusy: false };
   // v1.16 — "o que cada chave controla": lê o texto dos módulos do WhatsApp e acha onde o nome de cada chave aparece
   const salvarRefs = async (r, versao) => {
-    lab.refs = { versao, t: new Date().toISOString(), stats: r.stats, nomes: Object.fromEntries(Object.entries(r.nomes).map(([k, v]) => [k, v.map((n) => n.replace(/^WAWeb/, ''))])) };
+    // v1.49: guarda também as funções-porteiro que leem alguma chave (para a aba Funções) e quais são novas desde a leitura anterior
+    const portoes = Object.fromEntries(Object.entries(r.portoes || {}).map(([m, fns]) => [m, Object.fromEntries(Object.entries(fns).filter(([, p]) => p?.[1]?.length))]).filter(([, fns]) => Object.keys(fns).length));
+    const antes = lab.refs?.portoes ? new Set(AZFUN.ids(lab.refs.portoes)) : null, novas = antes ? AZFUN.ids(portoes).filter((i) => !antes.has(i)) : (lab.refs?.novas || []);
+    lab.refs = { versao, t: new Date().toISOString(), stats: r.stats, nomes: Object.fromEntries(Object.entries(r.nomes).map(([k, v]) => [k, v.map((n) => n.replace(/^WAWeb/, ''))])), portoes, novas };
     await chrome.storage.local.set({ refCache: lab.refs });
   };
   async function lerCodigoWA() {
@@ -4794,6 +4840,31 @@ ${hist ? `<h2>Histórico de autotestes</h2><table><tr><td><b>Quando</b></td><td>
       if (est) { lab.dados = { ...lab.dados, ...est }; lab.mudou = true; }
     } catch (e) { toast('Não foi possível alterar o pacote: ' + e.message); }
     lab.pacoteBusy = false; renderPanel();
+  }
+  // v1.49: aba "Funções do WhatsApp" — agrupadas pelas funções-porteiro do código (regras em lib/funcoes.js)
+  function labFuncoes(d, ov) {
+    if (!lab.refs?.portoes) return h('div', { class: 'labwarn' }, h('p', null, 'Para montar a lista, o AtendeZap precisa ler o código do WhatsApp uma vez (alguns segundos).'),
+      h('button', { class: 'gbtn sm', disabled: lab.refsLendo, onclick: lerCodigoWA }, lab.refsLendo ? 'Lendo o código…' : '🧩 Ler o código do WhatsApp'));
+    const orig = new Map((d.recursos || []).map((r) => [r.nome, r.valor])), valorDe = (k) => (Object.prototype.hasOwnProperty.call(ov, k) ? ov[k] : orig.get(k));
+    const todas = AZFUN.agrupar(lab.refs.portoes, d.recursos, lab.refs.novas || []), q = lab.q.toLowerCase(), areas = [...new Set(todas.map((x) => x.area))];
+    const lista = todas.filter((x) => (!lab.area || x.area === lab.area) && (!q || x.nome.toLowerCase().includes(q) || x.chaves.some((k) => k.includes(q)) || x.id.toLowerCase().includes(q)));
+    const nNovas = todas.filter((x) => x.novo).length;
+    return [h('input', { class: 'in sm lbq', placeholder: 'Buscar função (ex: status, poll, pin)', value: lab.q, oninput: (e) => { lab.q = e.target.value; renderPanel(); const el = panelRoot.querySelector('.lbq'); el?.focus(); el?.setSelectionRange(lab.q.length, lab.q.length); } }),
+      h('div', { class: 'fchips' }, h('button', { class: 'fchip' + (!lab.area ? ' on' : ''), onclick: () => { lab.area = ''; renderPanel(); } }, `Todas (${todas.length})`),
+        areas.map((a) => h('button', { class: 'fchip' + (lab.area === a ? ' on' : ''), onclick: () => { lab.area = a; renderPanel(); } }, `${a} (${todas.filter((x) => x.area === a).length})`))),
+      nNovas ? h('small', { class: 'iaok' }, `🆕 ${nNovas} função(ões) nova(s) desde a leitura anterior do código.`) : null,
+      h('div', { class: 'col' }, lista.slice(0, 150).map((x) => {
+        const st = AZFUN.estado(x, valorDe), mexeu = x.chaves.some((k) => Object.prototype.hasOwnProperty.call(ov, k));
+        return h('div', { class: 'labr' + (mexeu ? ' alt' : '') },
+          h('div', { class: 'grow' }, h('b', null, (x.novo ? '🆕 ' : '') + x.nome), h('small', { class: 'hint' }, ` · ${x.area}`),
+            h('small', null, `${st === 'ligado' ? 'ligada' : st === 'parcial' ? 'parte ligada' : 'desligada'} agora${x.resultado === true || x.resultado === false ? ` · o WhatsApp respondeu: ${x.resultado ? 'ligada' : 'desligada'}` : ''}`),
+            h('small', { class: 'mut' }, `🔗 Depende de ${x.chaves.length}: ${x.chaves.join(', ')}`),
+            h('details', { class: 'tec' }, h('summary', null, 'detalhes técnicos'), h('code', null, x.id), x.tambem.length ? h('small', null, 'Mesmas chaves: ' + x.tambem.join(', ')) : null)),
+          h('label', { class: 'tog', title: 'Liga ou desliga todas as chaves desta função' },
+            h('input', { type: 'checkbox', checked: st === 'ligado', onchange: (e) => labToggle(x.chaves[0], orig.get(x.chaves[0]), e.target.checked, x.chaves.slice(1)) }), h('i')));
+      })),
+      lista.length > 150 ? h('p', { class: 'hint' }, `Mostrando 150 de ${lista.length}. Use a busca ou escolha um assunto.`) : null,
+      h('p', { class: 'hint' }, 'Ligar muda só este navegador. Se o servidor do WhatsApp não liberar para a sua conta, o recurso não aparece ou some ao reabrir. "Voltar ao normal" desfaz tudo.')];
   }
   function labView() {
     if (!lab.dados) { loadLab(); return [h('p', { class: 'hint' }, 'Lendo as chaves de recurso do WhatsApp…')]; }
@@ -4900,6 +4971,7 @@ ${hist ? `<h2>Histórico de autotestes</h2><table><tr><td><b>Quando</b></td><td>
         chip('paratestar', `🆕 Para testar (${listaDe('paratestar').length})`, 'aba'),
         chip('testando', `⏳ Testando (${listaDe('testando').length})`, 'aba'),
         listaDe('nativo').length ? chip('nativo', `◎ Já nativos (${listaDe('nativo').length})`, 'aba') : null,
+        chip('funcoes', `🧩 Funções do WhatsApp${lab.refs?.portoes ? ` (${AZFUN.agrupar(lab.refs.portoes, d.recursos).length})` : ''}`, 'aba'),
         chip('todas', '🔎 Avançado: todas as chaves', 'aba')),
       // interruptor único do pacote (v1.18): em vez de ligar um por um, liga/desliga tudo o que já apareceu na sua conta
       lab.aba === 'funciona' && pacoteLista.length ? h('div', { class: 'labwarn ok pacote' },
@@ -4912,10 +4984,11 @@ ${hist ? `<h2>Histórico de autotestes</h2><table><tr><td><b>Quando</b></td><td>
         testando: 'Ligados e esperando você testar: depois de recarregar, marque ✔ ou ✖.',
         funciona: 'Apareceram na sua conta. Use o interruptor do pacote (ou ligue um a um) e deixe ligados para continuar usando.',
         nativo: 'Já existem no seu WhatsApp sem o Laboratório: ficam fora das outras abas. Só para desfazer se marcou errado.',
+        funcoes: 'Cada item é uma função do próprio código do WhatsApp com as chaves de que ela depende: um botão liga ou desliga todas juntas. O nome é o do WhatsApp (em inglês). 🆕 = apareceu desde a última leitura do código. Limites e anti-spam não entram.',
         todas: 'Avançado: todas as chaves liga/desliga do WhatsApp (as testadas que não aparecem ficam só aqui, com a marca do teste). Para quem quer procurar por nome.' }[lab.aba] || ''),
       lab.aba === 'todas' ? [busca, h('div', { class: 'fchips' }, chip('desligados', 'Desligadas'), chip('alterados', 'Alteradas'),
         h('button', { class: 'fchip' + (lab.internas ? ' on' : ''), title: 'Chaves de registro, travas, migração, experimentos e as que só servem de par para outra', onclick: () => { lab.internas = !lab.internas; renderPanel(); } }, 'Mostrar internas'))] : null,
-      lista.length ? h('div', { class: 'col' }, lista.map(([r, rot]) => linha(r, rot)))
+      lab.aba === 'funcoes' ? labFuncoes(d, ov) : lista.length ? h('div', { class: 'col' }, lista.map(([r, rot]) => linha(r, rot)))
         : h('p', { class: 'empty' }, { paratestar: 'Você já testou todas as sugestões. Peça novas ao Claude mandando o mapa.', funciona: 'Nenhum marcado como ✔ Apareceu ainda.',
           testando: 'Nada ligado esperando teste.' }[lab.aba] || 'Nada encontrado.'),
       lab.aba === 'todas' ? h('p', { class: 'hint' }, 'Mostrando até 200. Use a busca para achar outras.') : null,

@@ -1,4 +1,4 @@
-AtendeZap — extensão para WhatsApp Web (Chrome/Edge) · v1.48.1
+AtendeZap — extensão para WhatsApp Web (Chrome/Edge) · v1.49.0
 
 COMO INSTALAR
  1. Descompacte a pasta "atendezap" num lugar fixo (não apague depois). Precisa de Chrome/Edge 111 ou mais novo.
