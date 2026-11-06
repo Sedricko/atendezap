@@ -4,6 +4,9 @@
 > Para o estado ATUAL e as regras, leia `SKILL.md`. Consulte este arquivo só para achar o motivo de uma decisão antiga.
 
 
+## v1.48.1 (06/11/2026) — sem pilha de avisos ao limpar grupos
+Pacote 1.48.0 de 06/11 18:39: applyPins média 11 ms (era 5.003 ms), máx 58 ms (era 278 s); saúde 54/54. Foto: avisos "Mensagem apagada para mim — Desfazer" empilhados sobre o painel durante Limpar › Grupos (grupo com 12.761 antigas). Causa e correção: ver SKILL.md.
+
 ## v1.48.0 (06/11/2026) — Limpar conversas e Desempenho
 Pedido do Johon: apagar conversas paradas há 30–360 dias de uma vez (protegidas: fixadas, etiqueta, não lidas, estrela) e, nos grupos, só as mensagens antigas. Defeito pego pelo smoke e corrigido antes da entrega: contar os grupos zerava a própria contagem. Vagas NÃO mudaram: já guardavam 30 s por grupo (custo de 3 ms).
 
