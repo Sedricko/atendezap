@@ -4,6 +4,9 @@
 > Para o estado ATUAL e as regras, leia `SKILL.md`. Consulte este arquivo só para achar o motivo de uma decisão antiga.
 
 
+## v1.47.4 (06/11/2026) — auditoria do próprio código
+Revisão do diff 33c1c03..36bbd13 por mim e por um revisor independente: 7 achados, 5 corrigidos, 2 mantidos por decisão do Johon ("desligado" esconde também os cartões sem botão de religar; vazio = bloqueado nas linhas novas). Detalhes: `docs/AUDITORIA-v1.47.4.md`.
+
 ## v1.47.3 (02/11/2026) — revisão completa
 Quatro revisões paralelas (ponte, acesso/planilha, bibliotecas, painel); cada achado conferido no código antes de corrigir. Detalhes e o que ficou de fora: `docs/REVISAO.md`. Testes novos no fim de `test/util.test.js` e `test/admin.test.js`.
 

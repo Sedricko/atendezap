@@ -1169,3 +1169,4 @@ const cifrar = (obj, senha) => { // mesmo formato do CryptoJS/OpenSSL ("Salted__
   assert.equal(A.avaliar(ac, { config: A.normalizar({}), t: agora + 365 * 864e5 }, agora).valido, false);               // relógio adiantado não estica a validade offline
   console.log('revisão completa v1.47.3 ok');
 }
+{ const IA = globalThis.AZIA; assert.equal(IA.mascarar('pedido 2024-1234, NF 1234-5678'), 'pedido 2024-1234, NF 1234-5678'); console.log('máscara não come códigos ok'); }   // v1.47.4

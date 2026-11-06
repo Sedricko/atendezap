@@ -85,8 +85,9 @@ async function iaTratar(m) {
     const { iaChaveEstado = {} } = await chrome.storage.local.get('iaChaveEstado'), estado = { ...iaChaveEstado }, agora = Date.now(), fila = E.ordemChaves(chaves, estado, agora);
     const porChave = { ...(uso.chaves || {}) }, tentativas = [], eventos = [];
     let r = null, usouReserva = false, falhaPrincipal = null, chaveNum = 0;
+    const tentados = new Set();
     for (const k of fila) {
-      const id = E.idChave(k), cab = { 'x-goog-api-key': k }; usouReserva = false; falhaPrincipal = null;
+      const id = E.idChave(k), cab = { 'x-goog-api-key': k }; usouReserva = false; falhaPrincipal = null; tentados.add(id);
       r = await tentar(principal, cab);
       if (!r.ok && temReserva && E.usaReserva(r.info.tipo)) { // o principal falhou por motivo do Google/rede/cota: tenta o reserva na hora, com a mesma chave
         falhaPrincipal = r.info; const r2 = await tentar(reserva, cab);
@@ -102,7 +103,7 @@ async function iaTratar(m) {
     // v1.47.3: lê de novo AGORA (outra chamada à IA pode ter gravado enquanto esta esperava) e soma só o que ESTA chamada fez
     const { iaUso: fresco = {}, iaChaveEstado: estFresco = {} } = await chrome.storage.local.get(['iaUso', 'iaChaveEstado']), u = fresco.data === hoje ? fresco : { data: hoje, n: 0, tokens: 0, lat: [], falhas: {}, reserva: 0 };
     const chavesNovo = { ...(u.chaves || {}) }; for (const [id, x] of Object.entries(porChave)) { const a = (uso.chaves || {})[id] || {}; chavesNovo[id] = { n: (chavesNovo[id]?.n || 0) + (x.n - (a.n || 0)), f: (chavesNovo[id]?.f || 0) + (x.f - (a.f || 0)) }; }
-    const estadoNovo = { ...estFresco }; for (const k of fila) { const id = E.idChave(k); if (estado[id]) estadoNovo[id] = estado[id]; else if (iaChaveEstado[id] && !estado[id]) delete estadoNovo[id]; }
+    const estadoNovo = { ...estFresco }; for (const id of tentados) { if (estado[id]) estadoNovo[id] = estado[id]; else delete estadoNovo[id]; }   // só as chaves que ESTA chamada tentou: as outras ficam como a outra chamada deixou
     const novo = { data: hoje, n: (u.n || 0) + (r.ok ? 1 : 0), tokens: (u.tokens || 0) + (r.ok ? r.tokens : 0), lat: r.ok ? [...(u.lat || []).slice(-19), r.ms] : (u.lat || []), falhas: { ...(u.falhas || {}) }, reserva: (u.reserva || 0) + (usouReserva ? 1 : 0), chaves: chavesNovo };
     for (const f of eventos) novo.falhas[f.tipo] = (novo.falhas[f.tipo] || 0) + 1;
     await chrome.storage.local.set({ iaUso: novo, iaChaveEstado: estadoNovo });

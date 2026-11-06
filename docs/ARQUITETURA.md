@@ -1,6 +1,6 @@
 # Mapa do content/main.js (gerado por tools/mapa_main.py)
 
-`content/main.js` tem 4933 linhas e é UM bloco só (tudo depende das mesmas variáveis: `S`, `h`, `call`, `toast`, `renderPanel`). Não foi dividido de propósito: dividir sem poder testar no WhatsApp de verdade tem risco alto e valor baixo. Os marcadores `// ----- … -----` são irregulares (o primeiro cobre muita coisa): use também a busca por nome da função.
+`content/main.js` tem 4941 linhas e é UM bloco só (tudo depende das mesmas variáveis: `S`, `h`, `call`, `toast`, `renderPanel`). Não foi dividido de propósito: dividir sem poder testar no WhatsApp de verdade tem risco alto e valor baixo. Os marcadores `// ----- … -----` são irregulares (o primeiro cobre muita coisa): use também a busca por nome da função.
 
 ## Por seção
 
@@ -30,11 +30,11 @@
 - **Envios à IA (v1.45): transparência** — linhas 2401–2414: `iaEnviosView`
 - **Começar aqui (v1.45): primeira configuração guiada, só mostra o que falta e some quando ac** — linhas 2415–2431: `comecarCard`
 - **Exportar conversa (v1.42)** — linhas 2432–2494: `expF`, `expAtalho`, `exportarExecutar`, `exportarView`
-- **Backup** — linhas 2495–2539: `fmt`, `doBackup`, `checkBackup`, `readBackup`, `doRestore`
-- **Importar do waTidy (v1.13; escolher o que importar na v1.14)** — linhas 2540–2694: `wtEscolher`, `wtPlanejar`, `wtRefazer`, `wtImportar`, `wtCard`, `backupView`
-- **Diagnóstico** — linhas 2695–3897: `describe`, `chavesDe`, `iaPronta`, `iaPedir`, `iaContexto`, `iaEnviar`, `iaAplicar`, `iaDesfazer`, `iaPainel`, `iaTestar`, `salvarChaves`, `chavesBloco`, `iaCard`, `mdLeve` …
-- **Escuta automática e banco de conhecimento (v1.43)** — linhas 3898–4543: `conhecCfg`, `conhecScriptOk`, `conhecSalvar`, `conhecLigar`, `conhecEscutar`, `memChave`, `memAprovarAuto`, `conhecDesfeita`, `conhecDesfazerAuto`, `conhecAprovacao`, `conhecConsolidar`, `conhecEsquecer`, `conhecCard`, `memoriaView` …
-- **Autodiagnóstico** — linhas 4544–4933: `autoDiag`, `renderAlerta`, `vigiaConexao`, `salvarRefs`, `lerCodigoWA`, `loadLab`, `ehBool`, `comoBool`, `labToggle`, `labPacote`, `labView`, `novidadesCard`, `diagView`
+- **Backup** — linhas 2495–2541: `fmt`, `doBackup`, `checkBackup`, `readBackup`, `doRestore`
+- **Importar do waTidy (v1.13; escolher o que importar na v1.14)** — linhas 2542–2696: `wtEscolher`, `wtPlanejar`, `wtRefazer`, `wtImportar`, `wtCard`, `backupView`
+- **Diagnóstico** — linhas 2697–3905: `describe`, `chavesDe`, `iaPronta`, `iaPedir`, `iaContexto`, `iaEnviar`, `iaAplicar`, `iaDesfazer`, `iaPainel`, `iaTestar`, `salvarChaves`, `chavesBloco`, `iaCard`, `mdLeve` …
+- **Escuta automática e banco de conhecimento (v1.43)** — linhas 3906–4551: `conhecCfg`, `conhecScriptOk`, `conhecSalvar`, `conhecLigar`, `conhecEscutar`, `memChave`, `memAprovarAuto`, `conhecDesfeita`, `conhecDesfazerAuto`, `conhecAprovacao`, `conhecConsolidar`, `conhecEsquecer`, `conhecCard`, `memoriaView` …
+- **Autodiagnóstico** — linhas 4552–4941: `autoDiag`, `renderAlerta`, `vigiaConexao`, `salvarRefs`, `lerCodigoWA`, `loadLab`, `ehBool`, `comoBool`, `labToggle`, `labPacote`, `labView`, `novidadesCard`, `diagView`
 
 ## Onde mexer para…
 
@@ -49,4 +49,4 @@
 
 ## Prefixos de teste já usados em test/smoke.py (antes de criar um novo, confira)
 
-`ac_` (32), `ap_` (3), `au_` (3), `av_` (1), `bk_` (1), `cc_` (1), `ch_` (4), `ct_` (1), `dg_` (5), `dl_` (1), `es_` (11), `ex_` (6), `fl_` (8), `gs_` (19), `ia_` (8), `ie_` (1), `inv_` (1), `lg_` (2), `lm_` (8), `nv_` (1), `perm_` (1), `pv_` (3), `rb_` (21), `rc_` (14), `rcp_` (8), `refs_` (1), `rel_` (1), `rs_` (8), `rsu_` (1), `sc_` (4), `tm_` (1), `tp_` (8), `tr_` (3), `va_` (1)
+`ac_` (32), `ap_` (3), `au_` (3), `av_` (1), `bk_` (1), `cc_` (1), `ch_` (4), `ct_` (1), `dg_` (5), `dl_` (1), `es_` (11), `ex_` (6), `fl_` (8), `gs_` (19), `ia_` (8), `ie_` (1), `inv_` (1), `lg_` (2), `lm_` (8), `nv_` (1), `perm_` (1), `pv_` (3), `rb_` (22), `rc_` (14), `rcp_` (8), `refs_` (1), `rel_` (1), `rs_` (8), `rsu_` (1), `sc_` (4), `tm_` (1), `tp_` (8), `tr_` (3), `va_` (1)
