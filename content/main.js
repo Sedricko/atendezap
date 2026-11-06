@@ -2218,14 +2218,14 @@
     if (limp.lendo) return; limp.lendo = true; limp.erro = '';
     call('limpezaListar').then((l) => { limp.lista = l || []; }).catch((e) => { limp.erro = e.message; limp.lista = []; }).finally(() => { limp.lendo = false; renderPanel(); });
   }
-  async function limpRodar(rotulo, itens, fazer) {
+  async function limpRodar(rotulo, itens, fazer, apaga = true) {
     limp.rodando = { rotulo, feitas: 0, total: itens.length, erros: 0 }; limp.cancelar = false; renderPanel();
     for (const it of itens) {
       if (limp.cancelar) break;
       try { await fazer(it); } catch (e) { limp.rodando.erros++; logErr('limpeza', e.message); }
       limp.rodando.feitas++; renderSeguro(); await sleep(350);
     }
-    const r = limp.rodando; limp.rodando = null; limp.lista = null; limp.contagem = {};
+    const r = limp.rodando; limp.rodando = null; if (apaga) { limp.lista = null; limp.contagem = {}; }   // contar não zera a contagem que acabou de fazer
     toast(`${r.rotulo}: ${r.feitas} de ${r.total} feitas${r.erros ? ` (${r.erros} com erro)` : ''}${limp.cancelar ? ' — você parou.' : '.'}`, 8000); renderPanel();
   }
   async function limpApagarFaixa(dias) {
@@ -2237,7 +2237,7 @@
   }
   async function limpContarGrupos() {
     const ids = [...limp.selG]; if (!ids.length) return toast('Marque pelo menos um grupo.');
-    await limpRodar('Grupos conferidos', ids, async (id) => { limp.contagem[id] = { ...(await call('limpezaGrupoVelhas', id, limp.diasG)), dias: limp.diasG }; });
+    await limpRodar('Grupos conferidos', ids, async (id) => { limp.contagem[id] = { ...(await call('limpezaGrupoVelhas', id, limp.diasG)), dias: limp.diasG }; }, false);
   }
   async function limpApagarGrupos() {
     const alvo = Object.entries(limp.contagem).filter(([, c]) => c.velhas?.length && c.dias === limp.diasG), n = alvo.reduce((s, [, c]) => s + c.velhas.length, 0);
