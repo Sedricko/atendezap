@@ -1170,3 +1170,21 @@ const cifrar = (obj, senha) => { // mesmo formato do CryptoJS/OpenSSL ("Salted__
   console.log('revisão completa v1.47.3 ok');
 }
 { const IA = globalThis.AZIA; assert.equal(IA.mascarar('pedido 2024-1234, NF 1234-5678'), 'pedido 2024-1234, NF 1234-5678'); console.log('máscara não come códigos ok'); }   // v1.47.4
+// ---- v1.48: limpar conversas antigas ----
+{
+  require('../lib/limpeza.js'); const L = globalThis.AZLIMP, agora = Date.UTC(2026, 10, 6, 12), d = (n) => Math.floor((agora - n * 864e5) / 1000);
+  const chats = [
+    { id: '551@c.us', t: d(400) }, { id: '552@c.us', t: d(100) }, { id: '553@c.us', t: d(31) }, { id: '554@c.us', t: d(5) },
+    { id: '555@c.us', t: d(200), pin: 1 }, { id: '556@c.us', t: d(200), labels: 2 }, { id: '557@c.us', t: d(200), unread: 3 }, { id: '558@c.us', t: d(200), unread: -1 },
+    { id: '559@c.us', t: d(200) }, { id: '120@g.us', grupo: true, t: d(400) }, { id: 'status@broadcast', t: d(400) }, { id: '5510@c.us', t: 0 },
+  ];
+  const r = L.contar(chats, agora, ['559@c.us']);
+  assert.deepEqual(r.faixas, { 30: 3, 60: 2, 90: 2, 180: 1, 360: 1 });                                         // 551 (400 d), 552 (100 d), 553 (31 d); 559 é fixada do AtendeZap
+  assert.deepEqual(r.protegidas, { fixada: 2, etiqueta: 1, 'não lida': 2 });                                     // "marcar como não lida" (-1) também protege
+  assert.equal(r.total, 9);                                                                                       // grupo, status e sem data ficam de fora
+  assert.deepEqual(L.candidatas(chats, 90, agora, ['559@c.us']).map((c) => [c.id, c.dias]), [['551@c.us', 400], ['552@c.us', 100]]);   // mais antigas primeiro
+  assert.deepEqual(L.candidatas(chats, 360, agora), [{ id: '551@c.us', nome: '', dias: 400 }]);
+  const msgs = [{ id: 'a', t: d(40) }, { id: 'b', t: d(40), star: true }, { id: 'c', t: d(10) }, { id: 'd', t: 0 }];
+  assert.deepEqual(L.velhasDoGrupo(msgs, 30, agora), ['a']);                                                     // a com estrela e as novas ficam
+  console.log('limpar conversas antigas ok');
+}
