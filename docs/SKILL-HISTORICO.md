@@ -4,6 +4,9 @@
 > Para o estado ATUAL e as regras, leia `SKILL.md`. Consulte este arquivo só para achar o motivo de uma decisão antiga.
 
 
+## v1.49.0 (06/11/2026) — monitor de limitações e funções agrupadas
+Pedido do Johon: saber o que o programa do WhatsApp monitora e controla, monitorar as limitações e juntar cada função com as suas dependências num botão só. Pacote 06/11 21:39 (1.48.0): 54/54. O Laboratório já tinha 24 sugestões curadas com "liga junto"; faltava o automático pelas funções-porteiro.
+
 ## v1.48.1 (06/11/2026) — sem pilha de avisos ao limpar grupos
 Pacote 1.48.0 de 06/11 18:39: applyPins média 11 ms (era 5.003 ms), máx 58 ms (era 278 s); saúde 54/54. Foto: avisos "Mensagem apagada para mim — Desfazer" empilhados sobre o painel durante Limpar › Grupos (grupo com 12.761 antigas). Causa e correção: ver SKILL.md.
 
