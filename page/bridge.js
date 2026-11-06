@@ -225,7 +225,7 @@
   const SENSIVEIS = new Set(['sendText', 'sendFile', 'sendContact', 'sendStatus', 'removeStatus', 'block', 'enviarConvite', 'enviarConvites', 'pedidosPlano', 'padronizar', 'sendEspecial', 'removerDuplicados',
     'apagarParaTodos', 'minhasMsgs', 'recuperarAtivo', 'exportarLer', 'exportarMidia', 'contatoAparelho', 'conversasParaTreino', 'naoLidas', 'ligacaoAtivo', 'ligacaoContexto',
     'sendActive', 'historicoChat', 'baixarAudio', 'aguardando', 'votosEnquete']);   // v1.47.3: também enviam ou leem conversa/mídia   // v1.42: tudo que apaga, lê conversas ou baixa mídia só obedece ao painel (com a chave dele)
-  let tkOk = null, externas = 0, recusadas = 0; const auditoria = [];
+  let tkOk = null, externas = 0, recusadas = 0; const auditoria = [], pinSemChat = new Map();
   const api = {
     ready: () => isReady(),
     auditoria: () => ({ externas, recusadas, ultimas: auditoria.slice(-30) }),
@@ -378,11 +378,16 @@
     limitesWA: () => {
       const mapa = new Map(recursosInternos().map((r) => [r.nome, r.valor]));
       const n = (k) => { const v = mapa.get(k); return typeof v === 'number' ? v : (v != null && v !== '' && !Number.isNaN(+v) ? +v : null); };
-      const dias = n('scheduled_messages_window_duration_max_seconds');
+      const dias = n('scheduled_messages_window_duration_max_seconds'), hist = n('group_history_new_user_threshold_secs');
+      const b = (k) => { const v = mapa.get(k); return v === true || v === 'true' ? true : v === false || v === 'false' ? false : null; };
       return { membrosGrupo: n('group_size_limit'), statusMidiaMB: n('default_status_media_limit_mb'), statusVideoSeg: n('status_video_max_duration'),
         midiaMB: n('default_media_limit_mb'), videoMB: n('default_video_limit_mb'), msgsFixadas: n('pinned_messages_m2_pin_max'), selecaoMidias: n('media_picker_select_limit'),
         editarMin: n('message_edit_window_duration_seconds') ? Math.round(n('message_edit_window_duration_seconds') / 60) : null, opcoesEnquete: n('poll_option_count'),
-        descGrupo: n('group_description_length'), assuntoGrupo: n('group_max_subject'), agendarDias: dias ? Math.round(dias / 86400) : null };
+        descGrupo: n('group_description_length'), assuntoGrupo: n('group_max_subject'), agendarDias: dias ? Math.round(dias / 86400) : null,
+        // v1.47.5: o que o WhatsApp controla/observa NA SUA CONTA (só leitura, para respeitar; nunca para burlar)
+        vigia: { tetoNovas: b('wa_individual_new_chat_msg_capping_enabled'), tetoNovasLimite: n('wa_individual_new_chat_msg_capping_limit'), tetoConversasLimite: n('wa_individual_new_chat_thread_capping_limit'),
+          tetoAvisoPct: n('new_chat_msg_capping_first_warning_threshold_percentage'), transmissao: n('smba_business_broadcast_recipient_limit'), transmissaoPremium: n('smbi_premium_broadcast_max_recipient_limit'),
+          denunciaAntes: b('enable_spam_reporting_pre_logging'), desconhecido: b('unknown_user_persistence_logging_enabled'), historicoGrupoDias: hist ? Math.round(hist / 86400) : null } };
     },
     // Tema do próprio WhatsApp ('dark' | 'light' | 'system'); fica salvo e a wa-js recarrega a página.
     setTheme: async (t) => { await WPP.conn.setTheme(t); return true; },
@@ -400,11 +405,18 @@
     block: async (id) => { await (WPP.blocklist?.blockContact || WPP.contact.blockContact)(id); return true; },
     // Fixar do AtendeZap (mesmo mecanismo do original): chat.pin = timestamp só neste navegador,
     // sem limite de 3 e sem ir ao servidor. Quem está mais acima na lista recebe o maior valor.
+    // v1.47.5: roda a cada 20 s. Antes procurava cada fixada no servidor (média de 5 s, pico de 4,6 min no pacote de 06/11).
+    // Agora usa a memória do WhatsApp (na hora); só pergunta ao servidor o que não está lá, e uma conversa que não existe mais só é perguntada de novo em 10 min.
     applyPins: async (ids, removed = []) => {
-      for (const id of removed) { const c = await WPP.chat.find(toWid(id)).catch(() => null); if (c) delete c.__x_pin; }
+      const achar = async (id) => {
+        try { const c = WPP.whatsapp.ChatStore?.get?.(toWid(id)); if (c) return c; } catch { /* sem a memória: vai ao servidor */ }
+        if ((pinSemChat.get(id) || 0) > Date.now()) return null;
+        const c = await WPP.chat.find(toWid(id)).catch(() => null); if (!c) pinSemChat.set(id, Date.now() + 600000); return c;
+      };
+      for (const id of removed) { const c = await achar(id); if (c) delete c.__x_pin; }
       const base = Date.now();
       for (const [i, id] of ids.entries()) {
-        const c = await WPP.chat.find(toWid(id)).catch(() => null);
+        const c = await achar(id);
         if (c) c.pin = base + ids.length - i;
       }
       return true;

@@ -1858,8 +1858,13 @@
     const L = [['Membros por grupo', d.membrosGrupo, ''], ['Foto/vídeo no status', d.statusMidiaMB, ' MB'], ['Duração do vídeo no status', d.statusVideoSeg, ' s'],
       ['Arquivo comum', d.midiaMB, ' MB'], ['Vídeo', d.videoMB, ' MB'], ['Mensagens fixadas por conversa', d.msgsFixadas, ''], ['Editar mensagem enviada', d.editarMin, ' min'],
       ['Opções de enquete', d.opcoesEnquete, ''], ['Mídias por seleção', d.selecaoMidias, ''], ['Agendar mensagem (até)', d.agendarDias, ' dias']];
-    const ok = L.filter(([, v]) => v != null);
-    return ok.length ? h('div', { class: 'col' }, ok.map(([n, v, u]) => h('div', { class: 'kv' }, h('span', null, n), h('b', null, `${typeof v === 'number' ? v.toLocaleString('pt-BR') : v}${u}`))))
+    const ok = L.filter(([, v]) => v != null), kv = ([n, v, u]) => h('div', { class: 'kv' }, h('span', null, n), h('b', null, `${typeof v === 'number' ? v.toLocaleString('pt-BR') : v}${u}`));
+    const vg = d.vigia || {}, sn = (v) => (v == null ? null : v ? 'ligado' : 'desligado'), teto = (v) => (v == null ? null : v < 0 ? 'sem teto' : v);
+    const V = [['Teto de mensagens para contatos novos', vg.tetoNovas == null ? null : vg.tetoNovas ? `LIGADO${vg.tetoNovasLimite ? ' · ' + vg.tetoNovasLimite : ''}` : 'desligado (sem teto)', ''],
+      ['Aviso ao chegar em', vg.tetoNovas ? vg.tetoAvisoPct : null, '% do teto'], ['Transmissão (Business): destinatários', teto(vg.transmissao), ''], ['Transmissão paga: destinatários', vg.transmissaoPremium, ''],
+      ['Registra quando alguém abre "denunciar"', sn(vg.denunciaAntes), ''], ['Registra conversa com quem não é contato', sn(vg.desconhecido), ''], ['Quem entra no grupo recebe o histórico de', vg.historicoGrupoDias, ' dias']].filter(([, v]) => v != null);
+    return ok.length ? h('div', { class: 'col' }, ok.map(kv),
+      V.length ? [h('p', { class: 'hint grp' }, 'O que o WhatsApp controla na sua conta'), ...V.map(kv), h('small', { class: 'hint' }, 'Só leitura, para você respeitar: passar dos limites anti-spam põe o número da empresa em risco de banimento. Se o teto de contatos novos ligar, o autoteste avisa.')] : null)
       : h('p', { class: 'hint' }, 'Não consegui ler os limites agora.');
   }
   // v1.39 — cartões que moravam em Configurações e agora ficam no assunto deles (as chaves da planilha são as mesmas)
@@ -4118,6 +4123,9 @@
     }), null, funcs);
   }
   // A extensão (ou o WhatsApp) pode quebrar o layout: rodapé tem que estar embaixo e as mensagens com altura
+  // v1.47.5: o WhatsApp tem pronto um teto de mensagens para contatos novos; hoje vem DESLIGADO. Se ligar na sua conta, fica ⚠ aqui (e no histórico).
+  addCheck('Conexão', 'Teto de conversas novas (anti-spam)', ({ br }) => { const v = br?.limites?.vigia; if (!v || v.tetoNovas == null) return { ok: 'skip', d: 'não consegui ler esta configuração' };
+    return v.tetoNovas ? { ok: 'warn', d: `LIGADO na sua conta${v.tetoNovasLimite ? ': ' + v.tetoNovasLimite + ' mensagens' : ''} (aviso em ${v.tetoAvisoPct || '?'}%). Vá com calma em conversas novas e Enviar para vários.` } : { ok: true, d: 'desligado na sua conta' }; });
   addCheck('Tela do WhatsApp', 'Abas da lista (Todas/Grupos)', () => {
     const a = abaAtual();
     return a ? { ok: true, d: `aba atual: ${a} · ${descAbas()}` } : { ok: 'warn', d: `não identifiquei a aba ativa (fixadas por aba valem em todas): ${descAbas()}` };
@@ -4376,7 +4384,8 @@
     const ordenado = { resumo: data.resumo, ...data }; // o resumo é a primeira coisa do arquivo
     // relatório sem números: ids de conversa/grupo/lid viram # (a versão do WhatsApp continua legível)
     const limpo = JSON.parse(JSON.stringify(ordenado).replace(/\d{6,}(?=@|_)/g, '#'));
-    return { results, saude, data: limpo, report: JSON.stringify(limpo), inv: { hist: invHist, base: invBase } };
+    const carregando = !document.getElementById('side') || /demoraram demais|não respondeu/.test((probe?.erro || '') + (br?.erro || ''));   // o WhatsApp ainda está abrindo
+    return { results, saude, data: limpo, report: JSON.stringify(limpo), inv: { hist: invHist, base: invBase }, carregando };
   }
 
   // Relatório legível (.html) que também carrega os dados técnicos em JSON no final.
@@ -4553,12 +4562,15 @@ ${hist ? `<h2>Histórico de autotestes</h2><table><tr><td><b>Quando</b></td><td>
   // Roda sozinho: ao conectar, na 1ª conversa aberta, a cada 30 min, quando o WhatsApp muda de versão e após erros seguidos.
   // Guarda um histórico curto (diagEstado.historico) e mostra um aviso quando alguma função fica ✖.
   const AUTO = { busy: false, ultimo: null, errosDesde: 0, primeiraConversa: false };
-  async function autoDiag(motivo) {
+  async function autoDiag(motivo, tentativa = 0) {
     const estado = (await chrome.storage.local.get('diagEstado')).diagEstado || {};
     if (estado.auto === false || AUTO.busy) return;
     AUTO.busy = true;
     try {
       const res = await runChecks(motivo);
+      // v1.47.5: com o WhatsApp ainda abrindo, os testes falham por demora e o aviso "O WhatsApp mudou algo" saía à toa (pacote de 06/11, 08:03).
+      // Espera 1 min e testa de novo (até 3 vezes) antes de avisar ou gravar no histórico.
+      if (res.carregando && res.results.some((r) => !['ok', 'skip'].includes(stOf(r.ok))) && tentativa < 3) { setTimeout(() => autoDiag(motivo, tentativa + 1), 60000); return; }
       AUTO.ultimo = res;
       AUTO.errosDesde = 0;
       const n = { ok: 0, warn: 0, bad: 0, skip: 0 };

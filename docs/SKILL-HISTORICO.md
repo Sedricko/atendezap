@@ -4,6 +4,9 @@
 > Para o estado ATUAL e as regras, leia `SKILL.md`. Consulte este arquivo só para achar o motivo de uma decisão antiga.
 
 
+## v1.47.5 (06/11/2026) — diagnóstico mais fundo
+Pacote de 06/11 (instalada 1.47.3): saúde 53/53; às 08:03 o autoteste rodou com o WhatsApp abrindo e acusou 13 ⚠ + 1 ✖ à toa. `applyPins` 1.568 chamadas, média 5 s, máx 278 s. Mapa: 2.959 chaves, 12.612 módulos; teto de conversas novas desligado, transmissão sem teto. Correções e card novo: ver SKILL.md.
+
 ## v1.47.4 (06/11/2026) — auditoria do próprio código
 Revisão do diff 33c1c03..36bbd13 por mim e por um revisor independente: 7 achados, 5 corrigidos, 2 mantidos por decisão do Johon ("desligado" esconde também os cartões sem botão de religar; vazio = bloqueado nas linhas novas). Detalhes: `docs/AUDITORIA-v1.47.4.md`.
 
