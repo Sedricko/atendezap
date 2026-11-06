@@ -4,6 +4,9 @@
 > Para o estado ATUAL e as regras, leia `SKILL.md`. Consulte este arquivo só para achar o motivo de uma decisão antiga.
 
 
+## v1.48.0 (06/11/2026) — Limpar conversas e Desempenho
+Pedido do Johon: apagar conversas paradas há 30–360 dias de uma vez (protegidas: fixadas, etiqueta, não lidas, estrela) e, nos grupos, só as mensagens antigas. Defeito pego pelo smoke e corrigido antes da entrega: contar os grupos zerava a própria contagem. Vagas NÃO mudaram: já guardavam 30 s por grupo (custo de 3 ms).
+
 ## v1.47.5 (06/11/2026) — diagnóstico mais fundo
 Pacote de 06/11 (instalada 1.47.3): saúde 53/53; às 08:03 o autoteste rodou com o WhatsApp abrindo e acusou 13 ⚠ + 1 ✖ à toa. `applyPins` 1.568 chamadas, média 5 s, máx 278 s. Mapa: 2.959 chaves, 12.612 módulos; teto de conversas novas desligado, transmissão sem teto. Correções e card novo: ver SKILL.md.
 

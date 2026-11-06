@@ -45,6 +45,8 @@ Grau: ✅ confirmada no seu WhatsApp (autoteste ✔ real e/ou uso real) · 🟡 
 | Ocultas | Privacidade › Ocultas | `ocultas` | 🟡 |
 | Apagar para todos, a qualquer tempo | Privacidade › Apagar | `apagar` | 🧪 (falta saber se o servidor aceita as antigas) |
 | Recuperar apagadas | Privacidade › Recuperar | `recuperar` | 🧪 (falta o teste com um contato apagando) |
+| Limpar conversas antigas (individuais por 30–360 dias parados; grupos: mensagens antigas só para você) | Privacidade › Limpar | `limpeza` | 🧪 (v1.48; regras em `lib/limpeza.js`) |
+| Desempenho ao vivo (peso, memória, chamadas mais lentas, comparação com o dia anterior) | Diagnóstico › Saúde | *(vem com `diag`)* | ✅ regra simples (v1.48) |
 | Diagnóstico (+ relatório, arquivos de suporte) | Diagnóstico › Saúde | `diag` (+ `diagAvancado`) | ✅ |
 | Limites do WhatsApp | Diagnóstico › Limites | `cfgLimites` | ✅ |
 | Laboratório (chaves escondidas) | Diagnóstico › Laboratório | `lab` | 🧪 (1 recurso testado: "1 apareceu, 0 não") |
