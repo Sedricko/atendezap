@@ -4,6 +4,9 @@
 > Para o estado ATUAL e as regras, leia `SKILL.md`. Consulte este arquivo só para achar o motivo de uma decisão antiga.
 
 
+## v1.50.0 (07/11/2026) — risco de banimento, sonda e explorador
+Pedidos do Johon: painel à esquerda por padrão; alerta de risco de banimento (prévia aprovada); ver direto no WhatsApp quando ele muda limites; uma sonda que procure por tudo e encontre outras possibilidades. O mapa de 06/11 mostrou o sistema de teto de contatos novos completo (21 módulos), desligado na conta.
+
 ## v1.49.0 (06/11/2026) — monitor de limitações e funções agrupadas
 Pedido do Johon: saber o que o programa do WhatsApp monitora e controla, monitorar as limitações e juntar cada função com as suas dependências num botão só. Pacote 06/11 21:39 (1.48.0): 54/54. O Laboratório já tinha 24 sugestões curadas com "liga junto"; faltava o automático pelas funções-porteiro.
 

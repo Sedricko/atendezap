@@ -535,4 +535,4 @@ input[type="range"] { accent-color: var(--pri2, #25d366); width: 100%; }
 .toast .tact:hover { filter: brightness(1.08); }
 
 /* v1.50: semáforo do Risco de banimento */
-.sh b.warn { color: #f59e0b; } .sh b.iaok { color: var(--pri2); } .sh b.dan { color: var(--dan); }
+.sh .risco { font-weight: 700; } .sh .risco.warn { color: #f59e0b; } .sh .risco.iaok { color: var(--pri2); } .sh .risco.dan { color: var(--dan); }

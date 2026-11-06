@@ -1916,7 +1916,7 @@
     if (risco.est === undefined) { chrome.storage.local.get('riscoDia').then((d) => { if (risco.est === undefined) { risco.est = d.riscoDia || null; renderPanel(); } }); }
     const a = RK.avaliar(risco.est, Date.now(), tetoLigado()), [cls, rot] = RISCO_COR[a.nivel], v = a.valores;
     const kv = (nome, valor, k) => h('div', { class: 'kv' }, h('span', null, nome), h('b', { class: a.motivos.some((m) => m.k === k && m.nivel === 'vermelho') ? 'dan' : null }, `${valor.toLocaleString('pt-BR')} de ${RK.FAIXAS[k][0].toLocaleString('pt-BR')}`));
-    return h('div', { class: 'sec' }, h('div', { class: 'sh' }, tile('shapes'), h('b', { class: 'grow' }, 'Risco de banimento (hoje)'), h('b', { class: cls }, rot)),
+    return h('div', { class: 'sec' }, h('div', { class: 'sh' }, tile('shapes'), h('b', { class: 'grow' }, 'Risco de banimento (hoje)'), h('span', { class: 'risco ' + cls }, rot)),
       a.motivos.length ? h('div', { class: 'errs' + (a.nivel === 'amarelo' ? ' warn' : '') }, a.motivos.map((m) => h('small', null, riscoTexto(m)))) : null,
       h('div', { class: 'col' }, kv('Conversas diferentes que receberam', v.destinos, 'destinos'), kv('Mensagens enviadas pelo AtendeZap', v.mensagens, 'mensagens'),
         kv('Pico num minuto', v.porMinuto, 'porMinuto'), kv('Conversas novas iniciadas', v.iniciadas, 'iniciadas'), kv('Status publicados', v.status, 'status')),
