@@ -120,12 +120,12 @@ s = nova(); s.abas.Usuarios.length = 1; const agora = Date.now(), min = (n) => s
 s.abas.Usuarios.push(['A', 'AAAAAAAAAAAAAAAA', 'Com robô', 'sim', '', '', '', '', '', 'ligado (automatico)', min(40), ''], ['B', 'BBBBBBBBBBBBBBBB', 'Com robô', 'sim', '', '', '', '', '', 'desligado (sugerir)', min(400), ''],
   ['C', 'CCCCCCCCCCCCCCCC', 'Com robô', 'sim', '', '', '', '', '', 'ligado (sugerir)', min(2), ''], ['D', 'DDDDDDDDDDDDDDDD', 'Com robô', 'não', '', '', '', '', '', 'ligado (automatico)', min(90), ''], ['E', 'EEEEEEEEEEEEEEEE', 'Com robô', 'sim', '', '', '', '', '', 'ligado (sugerir)', min(30), min(20)]);
 s.abas.Global[10][1] = 'dono@exemplo.com'; let v = s.run('admVigiar()');
-assert.deepEqual({ ...v }, { alertados: 1, voltaram: 0 });                                                  // só A: robô ligado, 40 min sem sinal. E já tinha sido alertado: não repete
+assert.deepEqual({ alertados: v.alertados, voltaram: v.voltaram }, { alertados: 1, voltaram: 0 });                                                  // só A: robô ligado, 40 min sem sinal. E já tinha sido alertado: não repete
 assert.deepEqual(s.emails.map((x) => x.assunto), ['AtendeZap: robô de A sem sinal']); assert.equal(s.emails[0].para, 'dono@exemplo.com'); assert.match(s.emails[0].corpo, /40 minutos|mais de 15 minutos/);
 assert.ok(s.abas.Usuarios[1][11] instanceof s.run('Date')); assert.equal(s.abas.Usuarios[2][11] || '', ''); assert.equal(s.abas.Usuarios[3][11] || '', ''); assert.equal(s.abas.Usuarios[4][11] || '', '');   // B (robô desligado), C (com sinal) e D (desativado) nunca alertam
-v = s.run('admVigiar()'); assert.deepEqual({ ...v }, { alertados: 0, voltaram: 0 }); assert.equal(s.emails.length, 1);   // não repete o alerta
-s.abas.Usuarios[1][10] = min(1); v = s.run('admVigiar()'); assert.deepEqual({ ...v }, { alertados: 0, voltaram: 1 }); assert.equal(s.emails[1].assunto, 'AtendeZap: robô de A voltou'); assert.equal(s.abas.Usuarios[1][11], '');   // voltou: limpa e avisa
-s.abas.Usuarios[5][10] = min(1); v = s.run('admVigiar()'); assert.deepEqual({ ...v }, { alertados: 0, voltaram: 1 }); assert.equal(s.emails[2].assunto, 'AtendeZap: robô de E voltou');   // E (que já estava alertado) também avisa quando volta
+v = s.run('admVigiar()'); assert.deepEqual({ alertados: v.alertados, voltaram: v.voltaram }, { alertados: 0, voltaram: 0 }); assert.equal(s.emails.length, 1);   // não repete o alerta
+s.abas.Usuarios[1][10] = min(1); v = s.run('admVigiar()'); assert.deepEqual({ alertados: v.alertados, voltaram: v.voltaram }, { alertados: 0, voltaram: 1 }); assert.equal(s.emails[1].assunto, 'AtendeZap: robô de A voltou'); assert.equal(s.abas.Usuarios[1][11], '');   // voltou: limpa e avisa
+s.abas.Usuarios[5][10] = min(1); v = s.run('admVigiar()'); assert.deepEqual({ alertados: v.alertados, voltaram: v.voltaram }, { alertados: 0, voltaram: 1 }); assert.equal(s.emails[2].assunto, 'AtendeZap: robô de E voltou');   // E (que já estava alertado) também avisa quando volta
 const mudo = carrega(); mudo.run('admPrepararPlanilha()'); mudo.abas.Usuarios.length = 1; mudo.abas.Usuarios.push(['Z', 'ZZZZZZZZZZZZZZZZ', 'x', 'sim', '', '', '', '', '', 'ligado (automatico)', mudo.data(Date.now() - 99 * 60000), '']);
 mudo.run('admVigiar()'); assert.equal(mudo.emails.length, 0); assert.ok(mudo.abas.Usuarios[1][11] instanceof mudo.run('Date'));                                                        // sem e-mail configurado: só marca
 // gatilho do vigia: liga uma vez só
@@ -314,4 +314,20 @@ for (const v of ['sim', 'Sim', 'on', 'liberado', 'não', 'NAO', 'off', 'negado',
   assert.equal(env(['=IMAGE(1)']).erro, 'pacote inválido'); assert.equal(env([]).erro, 'pacote inválido'); assert.equal(env(['x'.repeat(45001)]).erro, 'pacote inválido');
   const linhaG = sp.abas.Global.findIndex((l) => l[0] === 'coletarPacote'); assert.ok(linhaG > 0); sp.abas.Global[linhaG][1] = 'nao';
   assert.deepEqual(env(['H4sIDDDD']), { ok: true, ignorado: true }); }
+// v1.52.1: MONITOR — situação por computador (🔴/🟡/🟢 com motivos), uma linha por computador, ⚪ sem sinal, e-mail UMA vez no 🔴 e na volta
+{ const sm = nova(); sm.abas.Usuarios.push(['Ana', 'ANAMONITOR1234567A', 'Administrador', 'sim']); sm.post({ acao: 'config', codigo: 'ANAMONITOR1234567A' });
+  const sit = (d, vm = '') => sm.run(`admSituacao_(${JSON.stringify(d)}, ${JSON.stringify(vm)})`);
+  assert.equal(sit({ autoteste: { ok: 56 } }).sinal, '🟢');
+  assert.deepEqual({ ...sit({ risco: { nivel: 'amarelo' }, desempenho: { memMB: 900 }, v: '1.50.0' }, '1.52.0') }, { sinal: '🟡', motivos: ['risco de banimento amarelo hoje', 'memória alta (900 MB): fechar e abrir a aba do WhatsApp', 'extensão desatualizada (1.50.0, mínimo 1.52.0)'] });
+  assert.equal(sit({ whatsapp: { bloqueioNovos: true }, risco: { nivel: 'amarelo' } }).sinal, '🔴'); assert.match(sit({ autoteste: { bad: 2, ruins: ['Fixar', 'Status'] } }).motivos[0], /2 função\(ões\) com problema: Fixar, Status/);
+  const saude = (dados, inst = 'inst-abc') => sm.post({ acao: 'saude', codigo: 'ANAMONITOR1234567A', inst, dados: { v: '1.52.1', autoteste: { ok: 56, warn: 0, bad: 0 }, ...dados } });
+  sm.abas.Usuarios.push(['Bia', 'BIAMONITOR1234567A', 'Atendente', 'sim']); sm.post({ acao: 'config', codigo: 'BIAMONITOR1234567A', inst: 'outro-pc' });
+  saude({}); saude({ risco: { nivel: 'vermelho', mensagens: 900 } }); sm.post({ acao: 'saude', codigo: 'BIAMONITOR1234567A', inst: 'outro-pc', dados: { v: '1.52.1', autoteste: { ok: 56 } } });
+  let mo = sm.abas.Monitor; assert.equal(mo.length, 3); assert.equal(mo[1][0], '🔴'); assert.match(mo[1][4], /VERMELHO/); assert.equal(mo[2][0], '🟢');   // uma linha por computador, atualizada
+  sm.abas.Global.find((l) => l[0] === 'emailAlerta')[1] = 'dono@exemplo.com';
+  let v = sm.run('admVigiar()'); assert.equal(v.monitor.alertas, 1); assert.equal(sm.emails.at(-1).assunto, 'AtendeZap: atenção no computador de Ana'); assert.match(sm.emails.at(-1).corpo, /VERMELHO/);
+  v = sm.run('admVigiar()'); assert.equal(v.monitor.alertas, 0);                                                    // não repete o e-mail
+  saude({}); v = sm.run('admVigiar()'); assert.equal(v.monitor.voltaram, 1); assert.equal(sm.emails.at(-1).assunto, 'AtendeZap: Ana voltou ao normal');
+  sm.abas.Monitor[2][3] = sm.data(Date.now() - 3 * 3600000); v = sm.run('admVigiar()'); assert.equal(v.monitor.semSinal, 1); assert.equal(sm.abas.Monitor[2][0], '⚪'); assert.match(sm.abas.Monitor[2][4], /sem resumo há mais de 2 h/);
+  sm.post({ acao: 'pacote', codigo: 'ANAMONITOR1234567A', inst: 'inst-abc', partes: ['H4sIAAAA'] }); assert.ok(sm.abas.Monitor[1][14] instanceof Date || sm.abas.Monitor[1][14]); }
 console.log('script da planilha administrativa: todos os casos ok (preparar, convites, perfis, exceções, acesso negado, validade, saúde, limpeza, vigia, coexistência e aviso de planilha com outro uso)');

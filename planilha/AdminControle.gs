@@ -32,7 +32,10 @@
  */
 
 var ADM_VERSAO = 3;
-var ADM_ABA = { usuarios: 'Usuarios', perfis: 'Perfis', excecoes: 'Excecoes', global: 'Global', saude: 'Saude', computadores: 'Computadores', legenda: 'Legenda', equipe: 'Equipe', pacotes: 'Pacotes' };
+var ADM_ABA = { usuarios: 'Usuarios', perfis: 'Perfis', excecoes: 'Excecoes', global: 'Global', saude: 'Saude', computadores: 'Computadores', legenda: 'Legenda', equipe: 'Equipe', pacotes: 'Pacotes', monitor: 'Monitor' };
+// v1.52.1: MONITOR — uma linha por computador, atualizada a cada resumo de saúde; o vigia marca quem sumiu e manda e-mail quando fica 🔴.
+var ADM_CAB_MONITOR = ['Situação', 'Pessoa', 'Computador', 'Último resumo', 'Motivos', 'Versão', 'WhatsApp', 'Autoteste (ok / avisos / problemas)', 'Risco hoje', 'Msgs hoje', 'O WhatsApp diz', 'Pronto (s)', 'Atraso msgs (s)', 'Memória (MB)', 'Último pacote', 'Alertado'];
+var ADM_SEM_SINAL_MIN = 120;   // sem resumo há mais que isso = ⚪ sem sinal
 // v1.52.1: o pacote de diagnóstico completo, compactado (gzip + base64) e em partes de até 45 mil caracteres. Fica só o ÚLTIMO de cada computador.
 var ADM_CAB_PACOTES = ['Data', 'Pessoa', 'Computador', 'Parte', 'Total', 'Conteúdo (pacote compactado; quem lê é o Claude)'];
 // v1.52: Central da equipe. A aba Equipe NUNCA guarda telefone: só a "impressão digital" do cliente (SHA-256 com a senha da equipe, que fica nas propriedades do script, fora da planilha).
@@ -231,7 +234,53 @@ function admGuardarPacote_(nome, b, agora) {
   vals = sh.getDataRange().getValues();
   for (r = vals.length - 1; r >= 1; r--) if (String(vals[r][1]) === nome && String(vals[r][2]) === inst) sh.deleteRows(r + 1, 1);   // fica só o último deste computador
   for (i = 0; i < partes.length; i++) sh.appendRow([agora, admCel_(nome), admCel_(inst), i + 1, partes.length, admCel_(partes[i])]);
+  try { var mo = admAba_(ADM_ABA.monitor), mv = mo ? mo.getDataRange().getValues() : []; for (r = 1; r < mv.length; r++) if (String(mv[r][1]) === nome && String(mv[r][2]) === inst) mo.getRange(r + 1, 15).setValue(agora); } catch (eP) { /* sem monitor ainda */ }
   return { ok: true, partes: partes.length, caracteres: total };
+}
+// Situação de um computador a partir do resumo de saúde: 🔴 problema, 🟡 atenção, 🟢 tudo certo (com os motivos em português).
+function admSituacao_(d, versaoMinima) {
+  d = d || {}; var a = d.autoteste || {}, k = d.risco || {}, w = d.whatsapp || {}, dp = d.desempenho || {}, ver = [], ate = [];
+  if (k.nivel === 'vermelho') ver.push('risco de banimento VERMELHO hoje');
+  if (w.tetoBarrado === true) ver.push('o WhatsApp diz: BARRADO pelo teto de contatos novos');
+  if (w.bloqueioNovos === true) ver.push('o WhatsApp diz: BLOQUEADO para iniciar conversa com pessoas novas');
+  if (Number(a.bad) > 0) ver.push(a.bad + ' função(ões) com problema' + (a.ruins && a.ruins.length ? ': ' + a.ruins.join(', ') : ''));
+  if (k.nivel === 'amarelo') ate.push('risco de banimento amarelo hoje');
+  if (w.tetoAvisado === true) ate.push('o WhatsApp diz: avisado do teto de contatos novos');
+  if (Number(a.warn) > 0) ate.push(a.warn + ' aviso(s) no autoteste');
+  if (Number(dp.memMB) > 800) ate.push('memória alta (' + dp.memMB + ' MB): fechar e abrir a aba do WhatsApp');
+  if (Number(dp.prontoS) > 60) ate.push('WhatsApp demorou ' + dp.prontoS + ' s para abrir');
+  if (Number(dp.atrasoS) > 10) ate.push('mensagens chegando com ' + dp.atrasoS + ' s de atraso');
+  if (versaoMinima && d.v && admVersaoMenor_(String(d.v), String(versaoMinima))) ate.push('extensão desatualizada (' + d.v + ', mínimo ' + versaoMinima + ')');
+  return ver.length ? { sinal: '🔴', motivos: ver.concat(ate) } : ate.length ? { sinal: '🟡', motivos: ate } : { sinal: '🟢', motivos: [] };
+}
+function admVersaoMenor_(a, b) { var x = a.split('.').map(Number), y = b.split('.').map(Number), i; for (i = 0; i < 3; i++) { var df = (x[i] || 0) - (y[i] || 0); if (df) return df < 0; } return false; }
+function admMonitorAba_() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet(), sh = ss.getSheetByName(ADM_ABA.monitor);
+  if (!sh) sh = ss.insertSheet(ADM_ABA.monitor);
+  if (sh.getLastRow() === 0) { sh.getRange(1, 1, 1, ADM_CAB_MONITOR.length).setValues([ADM_CAB_MONITOR]); sh.getRange(1, 1, 1, ADM_CAB_MONITOR.length).setFontWeight('bold'); sh.setFrozenRows(1); }
+  return sh;
+}
+function admAtualizarMonitor_(nome, inst, d, agora, versaoMinima) {
+  if (!d || typeof d !== 'object') return;
+  var sh = admMonitorAba_(), vals = sh.getDataRange().getValues(), s = admSituacao_(d, versaoMinima), a = d.autoteste || {}, k = d.risco || {}, w = d.whatsapp || {}, dp = d.desempenho || {}, r, linha = -1;
+  var n = function (v) { return typeof v === 'number' && isFinite(v) ? v : ''; }, sn = function (v) { return v === true ? 'sim' : v === false ? 'não' : '—'; };
+  for (r = 1; r < vals.length; r++) if (String(vals[r][1]) === nome && String(vals[r][2]) === inst) { linha = r; break; }
+  var row = [s.sinal, admCel_(nome), admCel_(inst), agora, admCel_(s.motivos.join('; ') || 'tudo certo'), admCel_(String(d.v || '').slice(0, 14)), admCel_(String(d.wa || '').slice(0, 20)),
+    n(a.ok) + ' / ' + n(a.warn) + ' / ' + n(a.bad), admCel_(String(k.nivel || '').slice(0, 10)), n(k.mensagens), admCel_('teto barrado: ' + sn(w.tetoBarrado) + ' · avisado: ' + sn(w.tetoAvisado) + ' · bloqueio p/ novos: ' + sn(w.bloqueioNovos)),
+    n(dp.prontoS), n(dp.atrasoS), n(dp.memMB), linha > 0 ? vals[linha][14] : '', linha > 0 ? vals[linha][15] : ''];
+  if (linha > 0) sh.getRange(linha + 1, 1, 1, row.length).setValues([row]); else sh.appendRow(row);
+}
+// Vigia do Monitor (roda junto com o vigia do robô): ⚪ para quem sumiu; e-mail UMA vez quando fica 🔴 e quando volta. Devolve { alertas, voltaram, semSinal }.
+function admVigiarMonitor_(agora, email) {
+  var sh = admAba_(ADM_ABA.monitor), out = { alertas: 0, voltaram: 0, semSinal: 0 }; if (!sh || sh.getLastRow() < 2) return out;
+  var vals = sh.getRange(2, 1, sh.getLastRow() - 1, ADM_CAB_MONITOR.length).getValues(), i;
+  for (i = 0; i < vals.length; i++) {
+    var l = vals[i], ult = l[3] instanceof Date ? l[3].getTime() : 0, linha = i + 2, alertado = String(l[15] || '');
+    if (ult && agora.getTime() - ult > ADM_SEM_SINAL_MIN * 60000 && String(l[0]) !== '⚪') { sh.getRange(linha, 1).setValue('⚪'); sh.getRange(linha, 5).setValue(admCel_('sem resumo há mais de ' + Math.round(ADM_SEM_SINAL_MIN / 60) + ' h (WhatsApp ou computador fechado?) · antes: ' + l[4])); out.semSinal++; continue; }
+    if (String(l[0]) === '🔴' && !alertado) { if (email) MailApp.sendEmail(email, 'AtendeZap: atenção no computador de ' + l[1], 'Situação 🔴 de ' + l[1] + ' (' + l[2] + '):\n' + String(l[4]).split('; ').join('\n') + '\n\nVeja a aba Monitor da planilha.'); sh.getRange(linha, 16).setValue(agora); out.alertas++; }
+    else if (String(l[0]) === '🟢' && alertado) { if (email) MailApp.sendEmail(email, 'AtendeZap: ' + l[1] + ' voltou ao normal', 'O computador de ' + l[1] + ' (' + l[2] + ') voltou para 🟢.'); sh.getRange(linha, 16).setValue(''); out.voltaram++; }
+  }
+  return out;
 }
 // ---------------------------------------------------------------- v1.52: Central da equipe
 function admSegredoEquipe_() {
@@ -505,6 +554,7 @@ function doPost(e) {
     if (acao === 'saude') {
       if (cfg.global.coletarSaude !== 'sim') return admJson_({ ok: true, ignorado: true });
       admRegistrarSaude_(sh, linha + 1, nome, b.dados, agora);
+      try { admAtualizarMonitor_(nome, String(b.inst || '').replace(/[^A-Za-z0-9_-]/g, '').slice(0, 40), b.dados, agora, cfg.global.versaoMinima); } catch (eM) { /* o monitor nunca derruba o envio */ }
       return admJson_({ ok: true });
     }
     if (acao === 'pacote') {   // v1.52.1: o pacote de diagnóstico completo, em partes
@@ -668,5 +718,6 @@ function admVigiar() {
     if (email) MailApp.sendEmail(email, 'AtendeZap: robô de ' + v[ADM_U.NOME - 1] + ' voltou', 'O robô de ' + v[ADM_U.NOME - 1] + ' voltou a mandar sinal.');
     sh.getRange(q.voltou[i] + 2, ADM_U.ALERTADO).setValue('');
   }
-  return { alertados: q.alertar.length, voltaram: q.voltou.length };
+  var mon = { alertas: 0, voltaram: 0, semSinal: 0 }; try { mon = admVigiarMonitor_(agora, email); } catch (eV) { /* o monitor nunca derruba o vigia */ }   // v1.52.1
+  return { alertados: q.alertar.length, voltaram: q.voltou.length, monitor: mon };
 }
