@@ -4199,7 +4199,8 @@
     const r = await iaPedir({ op: 'gerar', json: true, temperatura: 0.2, sistema: IA.promptAprendizado(), contents: [{ role: 'user', parts: [{ text: entrada }] }] });
     memSt.aprendendo = false;
     if (r.erro) { toast(r.erro, 6000); return renderPanel(); }
-    const novas = IA.validarSugestoes(IA.extrairJson(r.texto), todos);
+    // v1.52.6: este resumo não leva respostas humanas, então "faq" e "fato" seriam respostas inventadas pela IA (regra: a IA nunca inventa). Ficam só vocabulário e dúvidas para o dono responder.
+    const novas = IA.validarSugestoes(IA.extrairJson(r.texto), todos).filter((x) => x.tipo === 'vocab' || x.tipo === 'duvida');
     novas.forEach((x) => memSugerir(x));
     toast(novas.length ? `A IA propôs ${novas.length} aprendizado(s): veja em "Para você decidir".` : 'A IA não encontrou nada novo e claro para aprender hoje.', 6000); renderPanel();
   }

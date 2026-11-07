@@ -418,7 +418,7 @@ Regras: no máximo 8 sugestões; só o que tem EVIDÊNCIA no material e é GENER
   AZIA.entradaAprendizado = ({ ocorrencias = [], humanas = [], memoria = '', resumo = null } = {}) => AZIA.mascarar([
     resumo ? `RESUMO DA DEMANDA: ${resumo.total} atendimentos; ${resumo.semCarga} sem carga; ${resumo.humano} passados para humano. Rotas mais procuradas: ${(resumo.rotas || []).slice(0, 6).map((r) => `${r.rotulo} (${r.n}${r.semCarga ? ', ' + r.semCarga + ' sem carga' : ''})`).join('; ') || '-'}. Veículos: ${(resumo.veiculos || []).slice(0, 5).map((r) => `${r.rotulo} (${r.n})`).join('; ') || '-'}.` : '',
     'PERGUNTAS QUE FORAM PARA UM HUMANO (e o motivo):', ...ocorrencias.filter((o) => o.resultado === 'humano' && o.pergunta).slice(0, 25).map((o) => `- "${limpa(o.pergunta, 160)}" (${limpa(o.motivo, 80)})`),
-    'RESPOSTAS QUE O HUMANO DEU DEPOIS:', ...humanas.slice(0, 15).map((h) => `- Pergunta: "${limpa(h.p, 160)}" → Resposta: "${limpa(h.r, 300)}"`),
+    'RESPOSTAS QUE O HUMANO DEU DEPOIS:', ...(humanas.length ? humanas.slice(0, 15).map((h) => `- Pergunta: "${limpa(h.p, 160)}" → Resposta: "${limpa(h.r, 300)}"`) : ['(nenhuma neste material: NÃO proponha "faq" nem "fato"; use só "vocab" e "duvida")']),
     'MEMÓRIA JÁ APROVADA (não repita):', memoria || '(vazia)'].filter(Boolean).join('\n')).slice(0, 9000);
   AZIA.validarSugestoes = (obj, jaTem = []) => {
     const lista = Array.isArray(obj?.sugestoes) ? obj.sugestoes : [], vistos = new Set(jaTem.map((x) => chaveTxt(x.p || x.texto)));
