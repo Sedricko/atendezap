@@ -1969,8 +1969,8 @@
     if (!mon.base) { mon.base = mon.atual; await chrome.storage.local.set({ monitorBase: mon.base }); }   // primeira leitura: guarda como já visto
     // v1.51: o que o próprio WhatsApp diz do teto + as telas de restrição carregadas (as que já estavam ao abrir o WhatsApp não contam)
     mon.teto = await call('tetoOficial').catch((e) => ({ erro: e.message }));
-    const rs = await call('restricoes').catch(() => []); if (!mon.restrBase) mon.restrBase = new Set(rs.filter((x) => x.carregada).map((x) => x.id));
-    mon.restr = rs; mon.restrNovas = rs.filter((x) => x.carregada && !mon.restrBase.has(x.id)).map((x) => x.id);
+    const rs0 = await call('restricoes').catch(() => null), rs = rs0 || []; if (rs0 && !mon.restrBase) mon.restrBase = new Set(rs.filter((x) => x.carregada).map((x) => x.id));   // a base só vale de uma leitura que deu certo (senão viraria alarme falso)
+    mon.restr = rs; mon.restrNovas = mon.restrBase ? rs.filter((x) => x.carregada && !mon.restrBase.has(x.id)).map((x) => x.id) : [];
     return { mudancas: MON.comparar(mon.base.valores, mon.atual.valores), novos: MON.eventosNovos(mon.base.eventos, mon.atual.eventos) };
   }
   // v1.50: SONDA — procura em todos os módulos com assunto de limite/anti-spam (ver sondaLimites na ponte) e compara com a sonda anterior.
@@ -2005,8 +2005,9 @@
   const fmtValor = (v) => (v === undefined ? '—' : v === true ? 'ligado' : v === false ? 'desligado' : v === -1 ? 'sem teto' : typeof v === 'number' ? v.toLocaleString('pt-BR') : String(v));
   function monitorCard() {
     if (!ligado('cfgLimites')) return null;
-    if (!mon.atual && !mon.lendo && S.ready) { mon.lendo = true; monitorLer().catch((e) => { mon.erro = e.message; }).finally(() => { mon.lendo = false; renderPanel(); }); }
-    const topo = h('div', { class: 'sh' }, tile('shapes'), h('b', { class: 'grow' }, 'Monitor de limitações'), h('button', { class: 'ib', title: 'Ler de novo', onclick: () => { mon.atual = null; renderPanel(); } }, '↻'));
+    if (!mon.atual && !mon.lendo && !mon.erro && S.ready) { mon.lendo = true;   // com erro, só lê de novo no ↻ (antes ficava em laço)
+      monitorLer().catch((e) => { mon.erro = e.message; }).finally(() => { mon.lendo = false; renderPanel(); }); }
+    const topo = h('div', { class: 'sh' }, tile('shapes'), h('b', { class: 'grow' }, 'Monitor de limitações'), h('button', { class: 'ib', title: 'Ler de novo', onclick: () => { mon.atual = null; mon.erro = ''; renderPanel(); } }, '↻'));
     if (!mon.atual) return h('div', { class: 'sec' }, topo, h('p', { class: 'hint' }, mon.erro ? 'Não consegui ler: ' + mon.erro : 'Lendo…'));
     const mud = MON.comparar(mon.base?.valores, mon.atual.valores), novos = MON.eventosNovos(mon.base?.eventos, mon.atual.eventos), v = mon.atual.valores;
     const kv = (nome, valor, extra, aviso) => h('div', { class: 'kv' }, h('span', null, nome, extra ? h('small', { class: 'hint' }, ' — ' + extra) : null), h('b', { class: aviso ? 'dan' : null }, valor));
@@ -2328,7 +2329,7 @@
   const recSync = { ult: '' };
   const recCfg = () => AZREC.normalizarCfg(S.recuperarCfg);
   const recNaoVistas = () => (rec.lista || []).filter((r) => r.apagadaEm > (Number(S.recuperarVisto) || 0)).length;   // apagadas guardadas que você ainda não viu (some ao abrir a aba)
-  const recAbrir = () => (rec.db = rec.db || new Promise((res, rej) => { try { const q = indexedDB.open('atendezap-recuperar', 1); q.onupgradeneeded = () => q.result.createObjectStore('rec', { keyPath: 'id' }); q.onsuccess = () => res(q.result); q.onerror = () => rej(q.error); } catch (e) { rej(e); } }));
+  const recAbrir = () => (rec.db = rec.db || new Promise((res, rej) => { try { const q = indexedDB.open('atendezap-recuperar', 1); q.onupgradeneeded = () => q.result.createObjectStore('rec', { keyPath: 'id' }); q.onsuccess = () => res(q.result); q.onerror = () => rej(q.error); } catch (e) { rej(e); } }).catch((e) => { rec.db = null; throw e; }));   // falhou uma vez: tenta abrir de novo na próxima
   const recReq = async (modo, fn) => { const db = await recAbrir(); return new Promise((res, rej) => { const tx = db.transaction('rec', modo), rq = fn(tx.objectStore('rec')); tx.oncomplete = () => res(rq ? rq.result : undefined); tx.onerror = tx.onabort = () => rej(tx.error); }); };
   const recTodas = async () => ((await recReq('readonly', (st) => st.getAll())) || []).sort((a, b) => b.apagadaEm - a.apagadaEm);
   const recPut = (r) => recReq('readwrite', (st) => st.put(r)), recGet = (id) => recReq('readonly', (st) => st.get(id)), recDel = (id) => recReq('readwrite', (st) => st.delete(id)), recLimpar = () => recReq('readwrite', (st) => st.clear());
@@ -2375,16 +2376,21 @@
     eqp.cache.set(h, { info: r.info || {}, t: Date.now() }); return { h, info: r.info || {} };
   }
   async function eqAoAbrir(id) {
-    const r = await eqInfo(id).catch(() => null); eqp.atual = r ? { ...r, id } : null;
+    if (eqp.pend === id) return; eqp.pend = id;   // uma consulta por vez para o mesmo cliente
+    const r = await eqInfo(id).catch(() => null); if (eqp.pend === id) eqp.pend = null;
+    if (S.active?.id !== id) return;   // trocou de conversa enquanto a planilha respondia: o aviso seria do cliente errado
+    eqp.atual = r ? { ...r, id } : null;
     const av = r?.info && EQ.aviso(r.info, S.acessoEstado?.config?.nome);
     if (av && !eqp.avisado.has(r.h + av.tipo)) { eqp.avisado.add(r.h + av.tipo); toast((av.tipo === 'outro' ? '👥 ' : '🤝 ') + av.texto, 9000); }
     if (ui.sec === 'equipe') renderSeguro();
   }
   // Quem responde primeiro vira o dono (uma consulta por cliente por abertura do WhatsApp).
   function eqEnviou(id) {
-    if (!eqAtivo() || !EQ.numeroDe(id) || eqp.marcados.has(id)) return; eqp.marcados.add(id);
+    if (!eqAtivo() || !EQ.numeroDe(id) || eqp.marcados.has(id)) return;
+    if ((lote.run && !lote.run.fim) || (atend.enviando.get(id) || 0) > Date.now()) return;   // envio para vários, robô e resposta de ligação não fazem ninguém "dono"
+    eqp.marcados.add(id);
     (async () => { const r = await eqInfo(id); if (!r?.info || r.info.dono) return;
-      const m = await acessoPost({ acao: 'equipeMarcar', codigo: S.acessoCfg.codigo, inst: acessoInst(), cliente: r.h }); if (m?.ok) eqp.cache.set(r.h, { info: m.info, t: Date.now() }); })().catch(() => {});
+      const m = await acessoPost({ acao: 'equipeMarcar', codigo: S.acessoCfg.codigo, inst: acessoInst(), cliente: r.h }); if (!m?.ok) return; eqp.cache.set(r.h, { info: m.info, t: Date.now() }); if (eqp.atual?.h === r.h) { eqp.atual = { ...eqp.atual, info: m.info }; if (ui.sec === 'equipe') renderSeguro(); } })().catch(() => {});
   }
   async function eqPassar() {
     const id = S.active?.id, eu = S.acessoEstado?.config?.nome, colega = (eqCfg()?.colegas || []).find((c) => c.nome === eqp.para);
@@ -2403,7 +2409,7 @@
     if (!acessoConectado()) return [topo, h('p', { class: 'hint' }, 'A Central da equipe usa a planilha do administrador: conecte o convite em Configurações › Acesso da equipe.')];
     if (!eqCfg()?.segredo) return [topo, h('p', { class: 'hint' }, 'O administrador ainda não liberou a Central da equipe (linha "equipeCentral" na planilha) ou falta atualizar o script da planilha. Depois, clique em Configurações › Acesso da equipe › Atualizar agora.')];
     const id = S.active?.id, ehInd = !!EQ.numeroDe(id), eu = S.acessoEstado?.config?.nome || '', colegas = (eqCfg().colegas || []).filter((c) => c.nome !== eu);
-    if (ehInd && eqp.atual?.id !== id && eqp.pend !== id) { eqp.pend = id; setTimeout(() => eqAoAbrir(id).finally(() => { if (eqp.pend === id) eqp.pend = null; }), 0); }   // v1.52.3: uma consulta por vez
+    if (ehInd && eqp.atual?.id !== id && eqp.pend !== id) setTimeout(() => eqAoAbrir(id), 0);   // eqAoAbrir faz uma consulta por vez
     // v1.52.5: sem conversa aberta (id vazio) a comparação dava "igual" e quebrava a tela inteira
     const inf = ehInd && eqp.atual?.id === id ? eqp.atual.info : null, av = inf && EQ.aviso(inf, eu);
     const dono = !ehInd ? h('p', { class: 'hint' }, 'Abra uma conversa individual (com número) para ver de quem é o cliente.')
@@ -2541,8 +2547,8 @@
     finally { ctt.carregando = false; renderPanel(); }
   }
   function contatoView() {
-    if (!ctt.carregando && !ctt.agendado && !ctt.erro && S.active?.id && S.active.id !== ctt.id) { ctt.agendado = true; setTimeout(() => { ctt.agendado = false; contatoCarregar(); }, 0); }   // DEPOIS de a tela terminar de montar (redesenhar no meio do desenho empilha dois painéis)
-    const d = ctt.dados, r = d?.resumo, CONF = { alta: 'boa', media: 'razoável', baixa: 'fraca', nenhuma: 'nenhuma' };
+    if (!ctt.carregando && !ctt.agendado && S.active?.id && S.active.id !== ctt.id) { ctt.agendado = true; setTimeout(() => { ctt.agendado = false; contatoCarregar(); }, 0); }   // DEPOIS de a tela terminar de montar (redesenhar no meio do desenho empilha dois painéis)
+    const d = ctt.dados?.id === S.active?.id ? ctt.dados : null, r = d?.resumo, CONF = { alta: 'boa', media: 'razoável', baixa: 'fraca', nenhuma: 'nenhuma' };
     return [
       h('div', { class: 'eh' }, h('b', null, 'Contato do cliente')),
       h('div', { class: 'sec' },
@@ -3037,7 +3043,7 @@
   // Aplica a proposta no editor (título e atalho só se estiverem vazios). msg = mensagem da IA que gerou a proposta (aplicação automática).
   async function iaAplicar(d, p, msg) {
     if (!msg && p.perdeMidias && !await confirmar(`Esta proposta REMOVE ${p.perdeMidias} anexo(s) (imagem, áudio ou documento) da resposta. Aplicar mesmo assim?\n(Você ainda pode desfazer antes de salvar.)`)) return;
-    ia.anterior = JSON.parse(JSON.stringify({ titulo: d.titulo, atalho: d.atalho, acoes: d.acoes }));
+    ia.anterior ||= JSON.parse(JSON.stringify({ titulo: d.titulo, atalho: d.atalho, acoes: d.acoes }));   // Desfazer volta ao SEU texto, mesmo depois de várias propostas
     if (!String(d.titulo || '').trim() && p.resposta.titulo) d.titulo = p.resposta.titulo;
     if (!String(d.atalho || '').trim() && p.resposta.atalho) d.atalho = p.resposta.atalho;
     d.acoes = p.resposta.acoes.map((a) => ({ ...a }));
