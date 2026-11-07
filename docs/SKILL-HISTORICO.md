@@ -4,6 +4,9 @@
 > Para o estado ATUAL e as regras, leia `SKILL.md`. Consulte este arquivo só para achar o motivo de uma decisão antiga.
 
 
+## v1.52.2 (07/11/2026) — planilha organizada e versão em tudo
+Pedidos: "organize a planilha para que cada função funcione como deve e seja controlada pela planilha", "informações maiores no final", "que não cresça a aba nem a coluna", "tudo que atualiza mude a versão". Lido na planilha real (sem abrir Usuarios inteira): abas fora de ordem, Página1 vazia, Global sem coletarPacote/emailAlerta vazio, Saude sem linhas e sem cabeçalho fixo, Monitor com WhatsApp e 'O WhatsApp diz' vazios (1º resumo saía antes da leitura do teto). Feito: ordem das colunas com migração automática por cabeçalho (e pela posição antiga se renomeado), organizador ao abrir, Global auto-completa, saudeDias, CLIP, versão do script = da extensão e exibida no Acesso.
+
 ## v1.52.1 (07/11/2026) — abertura leve, Modo leve, pacote e Monitor na planilha
 O Johon confirmou (teste A/B) que o WhatsApp abre mais rápido sem a extensão. Tarefas pesadas passaram a esperar o WhatsApp sossegar; Modo leve opcional sem perda de coleta. Pedido: "deixa completo na planilha, de hora em hora ou no botão; enquanto não enviar, guarda" → aba Pacotes (último por computador) + pendente reenviado; log de erros e ponte persistidos. Pedido: "constante monitoramento" → aba Monitor (🔴/🟡/🟢/⚪ com motivos) e e-mails do vigia só na virada para 🔴 e na volta para 🟢. Regras do 🔴: bloqueio para pessoas novas, teto barrado, risco vermelho, função com problema. 🟡: risco amarelo, teto avisado, aviso no autoteste, memória >800 MB, pronto >60 s, atraso das mensagens >10 s, extensão abaixo da versão mínima.
 

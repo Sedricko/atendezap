@@ -52,6 +52,7 @@ Grau: ✅ confirmada no seu WhatsApp (autoteste ✔ real e/ou uso real) · 🟡 
 | Monitor de limitações (o que mudou desde que você viu) e o que o WhatsApp registra | Diagnóstico › Limites | `cfgLimites` | ✅ só leitura (v1.49) |
 | Funções do WhatsApp agrupadas com as dependências (um botão) | Diagnóstico › Laboratório › Funções | `lab` | 🧪 (v1.49) |
 | Modo leve (vagas a cada 10 s, grupos a cada 5 min, autoteste de hora em hora) | Diagnóstico › Saúde › Desempenho / Configurações › Partes do painel | *(vem com `diag`)* | ✅ regra simples (v1.52.1) |
+| Planilha do administrador organizada sozinha (ordem das abas e colunas, Global completa, Saude limitada a `saudeDias`, versão do script no Acesso) | planilha / Configurações › Acesso da equipe | *(sempre)* | 🧪 (v1.52.2; só simulador) |
 | Pacote de diagnóstico completo na planilha (aba Pacotes, de hora em hora e no botão) e aba Monitor (🔴/🟡/🟢/⚪ + e-mail) | Diagnóstico › Saúde › Avançado / planilha | `coletarSaude` + `coletarPacote` | 🧪 (v1.52.1; só simulador) |
 | Desempenho ao vivo (peso, memória, chamadas mais lentas, comparação com o dia anterior) | Diagnóstico › Saúde | *(vem com `diag`)* | ✅ regra simples (v1.48) |
 | Diagnóstico (+ relatório, arquivos de suporte) | Diagnóstico › Saúde | `diag` (+ `diagAvancado`) | ✅ |
