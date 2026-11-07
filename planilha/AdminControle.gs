@@ -38,7 +38,7 @@ var ADM_CAB_EQUIPE = ['Cliente (impressão digital, sem telefone)', 'Dono', 'Des
 // colunas de Usuarios (1 = A)
 var ADM_U = { NOME: 1, CODIGO: 2, PERFIL: 3, ATIVO: 4, VALIDADE: 5, CONVITE: 6, ULTIMA: 7, VERSAO: 8, INST: 9, ROBO: 10, SINAL: 11, ALERTADO: 12, OBS: 13, MAXPC: 14, WHATS: 15 };
 var ADM_CAB_USUARIOS = ['Nome', 'Código', 'Perfil', 'Ativo (sim/não)', 'Validade (dd/mm/aaaa)', 'Convite (mande à pessoa)', 'Última consulta', 'Versão', 'Instalação', 'Robô', 'Último sinal', 'Alertado', 'Observações', 'Máx. computadores (vazio = 1)', 'WhatsApp do atendente (para passar cliente)'];
-var ADM_CAB_SAUDE = ['Data', 'Pessoa', 'Versão', 'WhatsApp', 'Ok', 'Avisos', 'Problemas', 'Sem teste', 'Checagens com problema', 'Robô (modo)', 'Robô ligado', 'Respondeu 24h', 'Repasses 24h', 'Ignoradas 24h', 'Falhas IA 24h', 'Pendências', 'IA (s)', 'Cliente esperou (s)', 'Falhas IA hoje', 'Resumo (JSON)'];
+var ADM_CAB_SAUDE = ['Data', 'Pessoa', 'Versão', 'WhatsApp', 'Ok', 'Avisos', 'Problemas', 'Sem teste', 'Checagens com problema', 'Robô (modo)', 'Robô ligado', 'Respondeu 24h', 'Repasses 24h', 'Ignoradas 24h', 'Falhas IA 24h', 'Pendências', 'IA (s)', 'Cliente esperou (s)', 'Falhas IA hoje', 'Resumo (JSON)', 'Pronto (s)', 'Atraso msgs (s)', 'Memória (MB)', 'Peso AtendeZap (%)', 'Chamada mais lenta', 'Risco hoje', 'Msgs hoje', 'Conversas hoje', 'O WhatsApp diz (teto/bloqueio)'];   // v1.52.1: 9 colunas novas no fim
 // Cores da aba Perfis: [fundo, texto]. Verde = ATIVO, laranja = liberado mas vem desligado, vermelho = bloqueado (e vazio, que é a mesma coisa). AMARELO é só do modo AUTOMÁTICO do robô (atenção: responde sozinho).
 var ADM_COR = { ligado: ['#ceead6', '#137333'], obrigatorio: ['#81c995', '#0d652d'], desligado: ['#fce5cd', '#b45f06'], bloqueado: ['#fad2cf', '#c5221f'], vazio: ['#fce8e6', '#c5221f'], automatico: ['#ffe599', '#7f6000'] };
 // Limites: lista de valores (texto) ou faixa [mínimo, máximo] (números). Igual ao que a extensão aceita (lib/acesso.js LIMITES; o teste confere).
@@ -504,11 +504,14 @@ function doPost(e) {
 function admRegistrarSaude_(shUsuarios, linhaUsuario, nome, d, agora) {
   if (!d || typeof d !== 'object') return;
   var txt = JSON.stringify(d); if (txt.length > 4000) return;   // resumo é pequeno; maior que isso não é o nosso formato
-  var a = d.autoteste || {}, r = d.robo || {}, t = d.tempos || {}, ia = d.ia || {}, sh = admAba_(ADM_ABA.saude), n = function (v) { return typeof v === 'number' && isFinite(v) ? v : ''; };
+  var a = d.autoteste || {}, r = d.robo || {}, t = d.tempos || {}, ia = d.ia || {}, dp = d.desempenho || {}, rk = d.risco || {}, wz = d.whatsapp || {}, sh = admAba_(ADM_ABA.saude), n = function (v) { return typeof v === 'number' && isFinite(v) ? v : ''; }, sn = function (v) { return v === true ? 'sim' : v === false ? 'não' : '—'; };
+  if (sh.getLastColumn() < ADM_CAB_SAUDE.length) sh.getRange(1, 1, 1, ADM_CAB_SAUDE.length).setValues([ADM_CAB_SAUDE]);   // v1.52.1: planilha antiga ganha as colunas novas no cabeçalho
   var falhas = []; for (var k in (ia.falhas || {})) falhas.push(String(k).slice(0, 14) + ' x' + n(ia.falhas[k]));
   var ruins = (Array.isArray(a.ruins) ? a.ruins : []).slice(0, 8).map(function (x) { return String(x).slice(0, 60); }).join('; ');
   sh.appendRow([agora, nome, admCel_(String(d.v || '').slice(0, 14)), admCel_(String(d.wa || '').slice(0, 20)), n(a.ok), n(a.warn), n(a.bad), n(a.skip), admCel_(ruins), admCel_(String(r.modo || '').slice(0, 12)), r.ativo === true ? 'sim' : 'nao',
-    n(r.respondeu24h), n(r.humano24h), n(r.ignorado24h), n(r.iaFalhou24h), n(r.pendencias), n(t.iaS), n(t.esperouS), admCel_(falhas.join(', ')), admCel_(txt)]);
+    n(r.respondeu24h), n(r.humano24h), n(r.ignorado24h), n(r.iaFalhou24h), n(r.pendencias), n(t.iaS), n(t.esperouS), admCel_(falhas.join(', ')), admCel_(txt),
+    n(dp.prontoS), n(dp.atrasoS), n(dp.memMB), n(dp.pct), admCel_(dp.lenta ? String(dp.lenta).slice(0, 30) + ' (' + n(dp.lentaMs) + ' ms)' : ''), admCel_(String(rk.nivel || '').slice(0, 10)), n(rk.mensagens), n(rk.conversas),
+    admCel_(['teto barrado: ' + sn(wz.tetoBarrado), 'avisado: ' + sn(wz.tetoAvisado), 'bloqueio p/ pessoas novas: ' + sn(wz.bloqueioNovos)].join(' · '))]);
   shUsuarios.getRange(linhaUsuario, ADM_U.ROBO, 1, 2).setValues([[(r.ativo === true ? 'ligado (' : 'desligado (') + String(r.modo || '').slice(0, 12) + ')', agora]]);
   var ultima = sh.getLastRow(); if (ultima > ADM_LIMITE_SAUDE + 500) sh.deleteRows(2, ultima - 1 - ADM_LIMITE_SAUDE);   // fica o cabeçalho + as ADM_LIMITE_SAUDE mais novas
 }

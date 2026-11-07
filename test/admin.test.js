@@ -300,4 +300,10 @@ for (const v of ['sim', 'Sim', 'on', 'liberado', 'não', 'NAO', 'off', 'negado',
   assert.match(se.post({ acao: 'equipeVer', codigo: 'JOAOEQUIPE123456AB', cliente: '5511988887777' }).erro, /cliente inválido/);   // número cru nunca é aceito
   const aba = se.abas.Equipe; assert.equal(aba.length, 2); assert.equal(aba[1][0], H); assert.equal(aba[1][1], 'Maria'); assert.equal(aba[1][4], "'=carga para SP");   // motivo vira texto, não fórmula
   assert.ok(!JSON.stringify(aba).includes('98888')); }
+// v1.52.1: a aba Saude ganha 9 colunas no fim (desempenho, risco do dia, o que o WhatsApp diz); planilha antiga ganha o cabeçalho novo
+{ const sd = nova(); sd.abas.Usuarios.push(['Ana', 'ANASAUDE123456789A', 'Administrador', 'sim']); sd.abas.Saude = [sd.abas.Saude[0].slice(0, 20)];
+  sd.post({ acao: 'config', codigo: 'ANASAUDE123456789A' });
+  sd.post({ acao: 'saude', codigo: 'ANASAUDE123456789A', dados: { v: '1.52.1', autoteste: { ok: 56 }, desempenho: { prontoS: 12.3, atrasoS: 2, memMB: 410, pct: 0.2, lenta: 'Fixar', lentaMs: 40 }, risco: { nivel: 'amarelo', mensagens: 420, conversas: 160 }, whatsapp: { tetoBarrado: false, tetoAvisado: false, bloqueioNovos: false } } });
+  const cab = sd.abas.Saude[0], l = sd.abas.Saude.at(-1);
+  assert.equal(cab.length, 29); assert.equal(cab[20], 'Pronto (s)'); assert.deepEqual(l.slice(20), [12.3, 2, 410, 0.2, 'Fixar (40 ms)', 'amarelo', 420, 160, 'teto barrado: não · avisado: não · bloqueio p/ pessoas novas: não']); }
 console.log('script da planilha administrativa: todos os casos ok (preparar, convites, perfis, exceções, acesso negado, validade, saúde, limpeza, vigia, coexistência e aviso de planilha com outro uso)');

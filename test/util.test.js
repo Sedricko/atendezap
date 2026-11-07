@@ -813,12 +813,15 @@ const cifrar = (obj, senha) => { // mesmo formato do CryptoJS/OpenSSL ("Salted__
   const s = A.montarSaude({ v: '1.34.0', wa: '2.3000.1050782664', segredo: 'x', autoteste: { ok: 46, warn: 0, bad: 2, skip: 6, ruins: ['Envio de mídia', 'Falou com +5528981130644 e joao@x.com', 'a'.repeat(200)] },
     robo: { modo: 'automatico', ativo: true, ultimaMsgMin: 3, respondeu24h: 12, humano24h: 2, ignorado24h: 4, iaFalhou24h: 1, pendencias: 1, pausas: 0, ultimas: [[3, 'respondeu', 'Maria: oi, quero carga']], conversa: 'texto secreto' },
     tempos: { iaS: 3.4, esperouS: 12, atendenteS: null }, ia: { usoHoje: 22, falhas: { instavel: 2, 'cota-dia': 1, 'Nome Invalido': 5 }, chaves: 2, reserva: true, chave: 'AIzaSECRETA' } });
-  assert.deepEqual(Object.keys(s).sort(), ['autoteste', 'ia', 'robo', 'tempos', 'v', 'wa']); assert.equal(s.v, '1.34.0'); assert.equal(s.robo.respondeu24h, 12); assert.equal(s.tempos.atendenteS, null); assert.equal(s.ia.chaves, 2);
+  assert.deepEqual(Object.keys(s).sort(), ['autoteste', 'desempenho', 'ia', 'risco', 'robo', 'tempos', 'v', 'wa', 'whatsapp']); assert.equal(s.v, '1.34.0'); assert.equal(s.robo.respondeu24h, 12); assert.equal(s.tempos.atendenteS, null); assert.equal(s.ia.chaves, 2);
   const json = JSON.stringify(s); for (const proibido of ['5528981130644', 'joao@x.com', 'secret', 'SECRETA', 'oi, quero carga', 'Maria', 'segredo', 'Nome Invalido']) assert.ok(!json.includes(proibido), proibido);
   assert.ok(s.autoteste.ruins.every((x) => x.length <= 60)); assert.equal(Object.keys(s.robo).includes('ultimas'), false); assert.deepEqual(s.ia.falhas, { instavel: 2, 'cota-dia': 1 });
   const vazio = A.montarSaude(); assert.equal(vazio.robo.modo, 'desligado'); assert.equal(vazio.v, ''); assert.equal(A.montarSaude({ robo: { modo: 'xpto', respondeu24h: -5 } }).robo.modo, 'desligado'); assert.equal(A.montarSaude({ robo: { respondeu24h: -5 } }).robo.respondeu24h, 0);
   { const g = JSON.stringify(U.BACKUP_GROUPS); assert.ok(!g.includes('acessoCfg') && !g.includes('acessoEstado') && !g.includes('acessoAplicado')); }   // o código da pessoa não vai para o arquivo de backup
-  assert.ok(A.descreverEnvio(s).join('\n').includes('NUNCA é enviado') && A.descreverEnvio(s).length === 6);
+  assert.ok(A.descreverEnvio(s).join('\n').includes('NUNCA é enviado') && A.descreverEnvio(s).length === 7);
+  { const s2 = A.montarSaude({ desempenho: { prontoS: 12.34, atrasoS: 3, memMB: 410, pct: 0.2, lenta: 'Fixar 5511999990001', lentaMs: 40 }, risco: { nivel: 'amarelo', mensagens: 420, conversas: 160 }, whatsapp: { tetoBarrado: false, bloqueioNovos: 'x' } });   // v1.52.1
+    assert.deepEqual(s2.desempenho, { prontoS: 12.3, atrasoS: 3, memMB: 410, pct: 0.2, lenta: 'Fixar …', lentaMs: 40 }); assert.deepEqual(s2.risco, { nivel: 'amarelo', mensagens: 420, conversas: 160 }); assert.deepEqual(s2.whatsapp, { tetoBarrado: false, tetoAvisado: null, bloqueioNovos: null });
+    assert.equal(A.montarSaude({ risco: { nivel: 'qualquer' } }).risco.nivel, ''); }
   // login obrigatório: sem convite e exigindo, nada funciona (menos Configurações/Diagnóstico, que o painel trata à parte); com convite, não pede login
   assert.equal(A.EXIGIR_CONVITE, true); assert.equal(A.avaliar(null, null, T0).login, false);                                          // a função pura, sem pedir, não exige
   const lg = A.avaliar(null, null, T0, true); assert.equal(lg.login, true); assert.equal(lg.conectado, false);

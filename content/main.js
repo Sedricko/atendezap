@@ -3734,7 +3734,10 @@
     return { v: acessoVersao(), wa: h0.whatsapp, autoteste: { ok: h0.ok, warn: h0.warn, bad: h0.bad, skip: h0.skip, ruins: h0.afetadas },
       robo: { modo: r.modo, ativo: r.ativoAgora, ultimaMsgMin: r.ultimoEventoMin, respondeu24h: (a.respondeu || 0) + (a['respondeu e avisou você'] || 0), humano24h: a['passou para humano'] || 0, ignorado24h: (a.ignorado || 0) + (a['fora do escopo'] || 0), iaFalhou24h: a['IA falhou'] || 0, pendencias: (S.atendSug || []).length, pausas: r.pausasAtivas, travado: !!atend.bloqueado },
       tempos: { iaS: tm.iaS, esperouS: tm.clienteEsperouS, atendenteS: tm.atendenteS },
-      ia: { usoHoje: hoje.n || 0, falhas: hoje.falhas || {}, chaves: chavesDe(S.iaCfg).filter((k) => String(k || '').trim()).length, reserva: !!S.iaCfg?.modeloReserva } };
+      ia: { usoHoje: hoje.n || 0, falhas: hoje.falhas || {}, chaves: chavesDe(S.iaCfg).filter((k) => String(k || '').trim()).length, reserva: !!S.iaCfg?.modeloReserva },
+      ...(() => { const dz = desempAgora(), l = AZDIAG.desempenho(dz, [], hojeISO()).lentas[0], rk = RK.avaliar(risco.est, Date.now(), tetoLigado()), lt = mon.teto?.leituras || {};   // v1.52.1: vai junto no resumo de saúde
+        return { desempenho: { prontoS: dz.prontoS, atrasoS: dz.atrasoS, memMB: dz.memMB, pct: dz.pct, lenta: l ? (METHOD_FEAT[l.metodo] || l.metodo) : '', lentaMs: l ? l.mediaMs : 0 },
+          risco: { nivel: rk.nivel, mensagens: rk.valores.mensagens, conversas: rk.valores.destinos }, whatsapp: { tetoBarrado: typeof lt.isUserCapped === 'boolean' ? lt.isUserCapped : null, tetoAvisado: typeof lt.isUserWarned === 'boolean' ? lt.isUserWarned : null, bloqueioNovos: typeof mon.teto?.timelock?.leituras?.isUserReachoutTimelocked === 'boolean' ? mon.teto.timelock.leituras.isUserReachoutTimelocked : null } }; })() };
   }
   async function acessoEnviarSaude(forcar) {
     const ef = acessoEf();

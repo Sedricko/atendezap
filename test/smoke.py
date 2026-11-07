@@ -1963,7 +1963,7 @@ async def main():
             'dg_grade': lambda v: v['tiles'] < 13 and len(v['linha']) == 1 and 'função(ões) funcionando' in v['linha'][0],
             'ac_convite_ruim': lambda v: v == {'texto': True, 'outro_servidor': True, 'codigo_errado': True, 'chamadas': ['CODIGOERRADO1234567']},
             'ac_conectou': lambda v: v == {'codigo': True, 'perfil': 'Com robô', 'saude': True, 'vagas': True, 'pedidos': False},
-            'ac_saude': lambda v: v == {'enviou': True, 'campos': ['autoteste', 'ia', 'robo', 'tempos', 'v', 'wa'], 'sem_arroba_nem_nome': True},
+            'ac_saude': lambda v: v == {'enviou': True, 'campos': ['autoteste', 'desempenho', 'ia', 'risco', 'robo', 'tempos', 'v', 'wa', 'whatsapp'], 'sem_arroba_nem_nome': True},
             'ac_tela': lambda v: v == {'lab': False, 'frete': [True, True], 'vagas': False, 'cartao': True, 'mais_chave': False}, 'ac_padrao_uma_vez': lambda v: v is True,
             'ac_diag': lambda v: v == {'lab': False, 'avancado': False}, 'ac_audio_some': lambda v: v is False,
             'ac_robo_limitado': lambda v: v == {'enviou': 0, 'sugestoes': ['responder'], 'salvo': 'automatico', 'botao_automatico_travado': True},
