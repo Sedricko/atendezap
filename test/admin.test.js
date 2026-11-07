@@ -362,4 +362,8 @@ for (const v of ['sim', 'Sim', 'on', 'liberado', 'não', 'NAO', 'off', 'negado',
   // versão: o script tem o MESMO número da extensão e conta qual é na resposta
   const man = JSON.parse(fs.readFileSync(path.join(__dirname, '../manifest.json'), 'utf8')); assert.equal(so.run('ADM_VERSAO'), man.version);
   assert.equal(so.post({ acao: 'config', codigo: 'ANAORGANIZA12345AB', inst: 'pc-novo1' }).versaoScript, man.version); assert.equal(so.get().versao, man.version); }
+// v1.52.3: versão do WhatsApp com 17+ caracteres chega inteira na Saude e no Monitor (limite 40)
+{ const sw = nova(); sw.abas.Usuarios.push(['Ana', 'ANAVERSAO1234567AB', 'Administrador', 'sim']); sw.post({ acao: 'config', codigo: 'ANAVERSAO1234567AB' });
+  const wa = '2.3000.1053538009.12345'; sw.post({ acao: 'saude', codigo: 'ANAVERSAO1234567AB', dados: { v: '1.52.3', wa, autoteste: { ok: 49 } } });
+  assert.equal(sw.abas.Saude.at(-1)[3], wa); assert.equal(sw.abas.Monitor[1][5], wa); }
 console.log('script da planilha administrativa: todos os casos ok (preparar, convites, perfis, exceções, acesso negado, validade, saúde, limpeza, vigia, coexistência e aviso de planilha com outro uso)');
