@@ -1713,7 +1713,14 @@ async def main():
         t_ban = await page.evaluate(PBTXT + ".includes('O WhatsApp carregou agora a tela de:') && " + PBTXT + ".includes('banimento temporário')")
         await ir(page, 'Diagnóstico'); await page.wait_for_timeout(3500)
         t_auto = await page.evaluate(PBTXT + ".includes('o WhatsApp carregou a tela de: banimento temporário')")
-        res['teto_oficial'] = {'leu': t_ok, 'restricao': t_ban, 'autoteste': t_auto, 'nao_chamou_fetch': not await page.evaluate("window.__fetchChamado")}
+        # v1.52.7: tela de restrição que entra na memória DURANTE uma leitura nossa (dependência do módulo do teto) não é alarme
+        await ir(page, 'Limites'); await page.wait_for_timeout(1200)
+        await page.evaluate("""() => { WPP.loader.moduleRequire.m['WAWebSuspendedGroupModal.react'] = 1; window.__mm['WAWebSuspendedGroupModal.react'] = { factoryFinished: false };
+          const lm = WPP.loader.loadModule; WPP.loader.loadModule = (id) => { if (id === 'WAWebIndividualNewChatMessageCappingLimitUtils') window.__mm['WAWebSuspendedGroupModal.react'].factoryFinished = true; return lm(id); }; }""")
+        await page.locator('#az-panel .sec', has_text='Monitor de limitações').locator('.ib').first.click(); await page.wait_for_timeout(1500)
+        t_nossa = await page.evaluate("window.__mm['WAWebSuspendedGroupModal.react'].factoryFinished") and not await page.evaluate(PBTXT + ".includes('SuspendedGroupModal')") and await page.evaluate(PBTXT + ".includes('banimento temporário')")
+        await page.evaluate("() => { delete WPP.loader.moduleRequire.m['WAWebSuspendedGroupModal.react']; }")
+        res['teto_oficial'] = {'leu': t_ok, 'restricao': t_ban, 'autoteste': t_auto, 'nao_chamou_fetch': not await page.evaluate("window.__fetchChamado"), 'nossa_nao_alarma': t_nossa}
         await page.evaluate("() => { WPP.loader.loadModule = window.__lmOrig; WPP.loader.__debug = window.__dbgOrig; delete WPP.loader.moduleRequire.m.WAWebIndividualNewChatMessageCappingLimitUtils; delete WPP.loader.moduleRequire.m['WAWebTempBanScreen.react']; }")
         await ir(page, 'Limites'); await page.wait_for_timeout(1200)
         # v1.50: Sonda de limitações — procura em tudo, mostra o resumo e vigia a tela (um aviso falso de teto com data-testid é detectado)
@@ -1917,7 +1924,7 @@ async def main():
             'pacote_planilha': lambda v: v['partes'] and v['formato'] == 'atendezap-pacote-1' and {'mapa.json', 'relatorio.html', 'erros.json', 'ponte.json', 'estrutura.json'} <= set(v['arquivos']),   # v1.52.1
             'modo_leve': lambda v: v == [True, False],   # v1.52.1
             'equipe': lambda v: v == {'sem_dono': True, 'passou': True, 'so_digital': True, 'avisou_cliente': True, 'dono_agora': True},   # v1.52
-            'teto_oficial': lambda v: v == {'leu': True, 'restricao': True, 'autoteste': True, 'nao_chamou_fetch': True},   # v1.51
+            'teto_oficial': lambda v: v == {'leu': True, 'restricao': True, 'autoteste': True, 'nao_chamou_fetch': True, 'nossa_nao_alarma': True},   # v1.51
             'lab_explorar': lambda v: v == {'temas': True, 'resumo': True},   # v1.50
             'mapa_explorar': lambda v: v is True,   # v1.50
             'mapa_sonda': lambda v: v is True,   # v1.50

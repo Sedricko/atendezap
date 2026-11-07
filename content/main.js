@@ -81,7 +81,7 @@
   const logErr = (onde, msg) => {
     if (!vivo()) return;   // cópia antiga da página depois de atualizar a extensão: não entra em laço de erro
     const mask = globalThis.AZIA?.mascarar || String;   // v1.52.6: erro pode citar telefone/id: já entra mascarado (vai no relatório e no pacote)
-    LOG.unshift({ t: new Date().toLocaleTimeString('pt-BR'), onde, msg: mask(String(msg)).slice(0, 300) });
+    LOG.unshift({ t: new Date().toLocaleTimeString('pt-BR'), onde, msg: mask(String(msg)).slice(0, 700) });   // 700: a lista de tentativas de apagar status cabia só pela metade
     LOG.length = Math.min(LOG.length, 30);
     clearTimeout(logErr.t); logErr.t = setTimeout(() => chrome.storage.local.set({ logErros: LOG.slice(0, 30) }).catch(() => {}), 3000);   // v1.52.1: o erro não some ao recarregar (vai no próximo pacote)
     // 3 erros desde o último autoteste => roda o autodiagnóstico (o WhatsApp pode ter mudado)
@@ -1383,14 +1383,15 @@
     renderPanel();
     let locais = 0;
     for (const id of ids) {
-      try { if (/^local/.test(await call('removeStatus', id))) locais++; lote.stSel.delete(id); } catch (e) { a.erros++; a.msg = e.message; }
+      try { const via = await call('removeStatus', id); if (/^local \(/.test(via)) locais++; else if (/^local\?/.test(via)) a.talvez = (a.talvez || 0) + 1; lote.stSel.delete(id); } catch (e) { a.erros++; a.msg = e.message; }
       a.done++; renderPanel();
       await sleep(800);
     }
     lote.apagando = null;
     const ok = a.done - a.erros;
     toast((a.erros ? `${ok} apagados, ${a.erros} falharam: ${a.msg}` : `${ok} status apagados.`) +
-      (locais ? ` (${locais} ${locais > 1 ? 'nunca tinham sido publicados: só saíram' : 'nunca tinha sido publicado: só saiu'} da lista)` : ''), a.erros || locais ? 8000 : 3500);
+      (locais ? ` (${locais} ${locais > 1 ? 'nunca tinham sido publicados: só saíram' : 'nunca tinha sido publicado: só saiu'} da lista)` : '') +
+      (a.talvez ? ` Atenção: ${a.talvez} saiu(ram) da SUA tela por um caminho que talvez não apague para os contatos — confira no celular.` : ''), a.erros || locais || a.talvez ? 9000 : 3500);   // v1.52.7
     loadMeus();
     setTimeout(async () => { // o WhatsApp às vezes recria o status: confere de novo e avisa
       const l = await call('myStatus').catch(() => null); if (!l) return;
@@ -1974,7 +1975,7 @@
     // v1.51: o que o próprio WhatsApp diz do teto + as telas de restrição carregadas (as que já estavam ao abrir o WhatsApp não contam)
     mon.teto = await call('tetoOficial').catch((e) => ({ erro: e.message }));
     const rs0 = await call('restricoes').catch(() => null), rs = rs0 || []; if (rs0 && !mon.restrBase) mon.restrBase = new Set(rs.filter((x) => x.carregada).map((x) => x.id));   // a base só vale de uma leitura que deu certo (senão viraria alarme falso)
-    mon.restr = rs; mon.restrNovas = mon.restrBase ? rs.filter((x) => x.carregada && !mon.restrBase.has(x.id)).map((x) => x.id) : [];
+    mon.restr = rs; mon.restrNovas = mon.restrBase ? rs.filter((x) => x.carregada && !x.nossa && !mon.restrBase.has(x.id)).map((x) => x.id) : [];   // v1.52.7: o que a nossa própria leitura carregou não é sinal do WhatsApp
     return { mudancas: MON.comparar(mon.base.valores, mon.atual.valores), novos: MON.eventosNovos(mon.base.eventos, mon.atual.eventos) };
   }
   // v1.50: SONDA — procura em todos os módulos com assunto de limite/anti-spam (ver sondaLimites na ponte) e compara com a sonda anterior.

@@ -26,6 +26,13 @@
     return [...NOMES_APAGAR.filter((n) => ids.includes(n)), ...ids.filter((i) => pareceAcao(i) && !NOMES_APAGAR.includes(i))];
   };
   const loadMod = (id) => { try { return WPP.loader.loadModule(id); } catch { return null; } };
+  // Funções de REVOGAR STATUS em qualquer módulo de revogar/status (só nomes; nenhuma é chamada aqui). Ordem: nome mais parecido primeiro.
+  const buscaRevokeStatus = () => {
+    const out = [], ids = moduleIds().filter((i) => /^WAWeb/.test(i) && (/Revoke/.test(i) || /Status/.test(i) && /(Action|Actions|Utils)$/.test(i)) && !/Newsletter|Wam|Enum|Parse|Format|Render|Metric|Proto|Smax|\.react$|Coex|Orphan|Associated|Addon|Privacy|Contact/.test(i));
+    for (const id of ids) { const m = loadMod(id); if (!m || typeof m !== 'object') continue;
+      for (const k of Object.keys(m)) if (typeof m[k] === 'function' && /revok/i.test(k) && /status/i.test(k) && !/contact|newsletter|decrypt/i.test(k)) out.push({ id, k }); }
+    return out.sort((a, b) => (/^send/i.test(b.k) ? 1 : 0) - (/^send/i.test(a.k) ? 1 : 0));
+  };
   const findRevoke = () => {
     if (revokeAchado) return revokeAchado;
     const conhecido = WPP.whatsapp?.functions?.revokeStatus;
@@ -37,6 +44,8 @@
       const k = [...EXPORTS_APAGAR, ...Object.keys(m)].find((n) => typeof m[n] === 'function' && /revoke|^default$/i.test(n) && !/contact/i.test(n));
       if (k) return (revokeAchado = { fn: m[k], onde: `${id}.${k}` });
     }
+    const achado = buscaRevokeStatus()[0];   // v1.52.7: o WhatsApp 2.3000.1053579369 tirou o "sendStatusRevokeMsgAction" que a wa-js usa: procura o novo nome
+    if (achado) { const m = loadMod(achado.id); if (typeof m?.[achado.k] === 'function') return (revokeAchado = { fn: m[achado.k], onde: `${achado.id}.${achado.k}` }); }
     return null;
   };
   // Para o relatório/mapa: módulos candidatos e o que cada um exporta
@@ -86,11 +95,6 @@
     const r = findRevoke();
     if (r) out.push({ nome: r.onde, fn: (msg) => r.fn(mine, msg) });
     // função do próprio WhatsApp (aparece no mapa como "removeStatusMessage"): tentamos com os argumentos mais prováveis
-    const rsm = WPP.whatsapp?.functions?.removeStatusMessage;
-    if (typeof rsm === 'function') {
-      out.push({ nome: 'functions.removeStatusMessage(msg)', fn: (msg) => rsm(msg) });
-      if (mine) out.push({ nome: 'functions.removeStatusMessage(meu StatusV3, msg)', fn: (msg) => rsm(mine, msg) });
-    }
     const Cmd = WPP.whatsapp?.Cmd;
     if (typeof Cmd?.sendRevokeMsgs === 'function') {
       let chatStatus = null;
@@ -102,6 +106,9 @@
     // caminho oficial da wa-js para "apagar para todos" (busca a mensagem e a conversa por conta própria)
     out.push({ nome: 'WPP.chat.deleteMessage', fn: (msg) => WPP.chat.deleteMessage('status@broadcast', msg.id._serialized, true, true) });
     out.push({ nome: 'WPP.status.remove', fn: (msg) => WPP.status.remove(msg.id._serialized) });
+    // POR ÚLTIMO: removeStatusMessage espera uma LISTA (com 1 item dava "e is not iterable") e pode só tirar da SUA tela. O nome começa com "local?" para o painel avisar.
+    const rsm = WPP.whatsapp?.functions?.removeStatusMessage;
+    if (typeof rsm === 'function') out.push({ nome: 'local? functions.removeStatusMessage([msg])', fn: (msg) => rsm([msg]) });
     return out;
   };
   // ===== Laboratório: ligar/desligar chaves de recurso (A/B) do WhatsApp, só neste navegador =====
@@ -227,6 +234,12 @@
     'sendActive', 'historicoChat', 'baixarAudio', 'aguardando', 'votosEnquete', 'limpezaListar', 'limpezaApagar', 'limpezaGrupoVelhas', 'limpezaGrupoApagar',
     'labSet', 'labReset', 'atendAtivo', 'ocultar', 'archive', 'markUnread', 'label', 'startChat', 'conviteGrupo', 'duplicadosConjunto', 'rascunho', 'setInputText', 'tetoOficial', 'setTheme', 'recarregar', 'listChats']);   // v1.42/v1.47.3/v1.52.6: o que envia, apaga, muda a conversa (sincroniza com o celular), lê conversa/mídia ou entrega dado só obedece ao painel
   let tkOk = null, externas = 0, recusadas = 0; const auditoria = [], pinSemChat = new Map();
+  // v1.52.7: as telas de restrição (banimento, teto, timelock…) e quais já estão na memória. As sondas do AtendeZap (mapa, referências, sonda,
+  // explorador, teto) carregam módulos e, junto, as dependências deles — inclusive o código dessas telas. O que entrou durante uma leitura nossa
+  // fica marcado como "nossa" para o Monitor não dar alarme falso de banimento.
+  const RX_RESTR = /TempBan|ReachoutTimelock|NewChatCapped|NewChatMessageCapped|CappingWarning|SuspendedGroup|SuspendedOrTerminated|GroupAppeal|SuspendedCommunity|AccountBan|Banned|Terminated/;
+  const restrLidas = () => { let mm = null; try { mm = WPP.loader.__debug?.().modulesMap || null; } catch { /* sem registro */ } return moduleIds().filter((i) => RX_RESTR.test(i)).map((i) => ({ id: i.replace(/^WAWeb/, ''), carregada: !!mm?.[i]?.factoryFinished })); };
+  const restrNossas = new Set(), SONDAS = new Set(['mapa', 'referencias', 'sondaLimites', 'explorar', 'tetoOficial', 'removeStatus', 'monitorLer', 'labList']);
   const ehVisuUnica = async (id) => { try { const m = await WPP.chat.getMessageById(id); return !!(m && (m.isViewOnce === true || m.viewOnce === true)); } catch { return false; } };
   const api = {
     ready: () => isReady(),
@@ -1113,11 +1126,7 @@
     },
     // v1.51: VIGIA DAS RESTRIÇÕES — telas de banimento temporário, bloqueio para contatar pessoas novas, limite atingido, grupo suspenso…
     // O WhatsApp só carrega o código dessas telas quando vai mostrar (ou preparar) uma delas: "carregada" aqui = sinal para olhar.
-    restricoes: () => {
-      let mm = null; try { mm = WPP.loader.__debug?.().modulesMap || null; } catch { /* sem registro */ }
-      const RX = /TempBan|ReachoutTimelock|NewChatCapped|NewChatMessageCapped|CappingWarning|SuspendedGroup|SuspendedOrTerminated|GroupAppeal|SuspendedCommunity|AccountBan|Banned|Terminated/;
-      return moduleIds().filter((i) => RX.test(i)).map((i) => ({ id: i.replace(/^WAWeb/, ''), carregada: !!mm?.[i]?.factoryFinished }));
-    },
+    restricoes: () => restrLidas().map((x) => ({ ...x, nossa: restrNossas.has(x.id) })),   // nossa = entrou na memória por uma leitura do AtendeZap, não pelo WhatsApp
     // v1.50: EXPLORADOR — mapeia TODOS os módulos do WhatsApp por tema (o que ele sabe fazer, guarda, busca, mostra, mede e esconde).
     // Ações e dados: também os NOMES do que cada módulo exporta (nunca chama nada). Só nomes técnicos; sem mensagens, contatos ou números.
     explorar: async () => {
@@ -1219,7 +1228,7 @@
         totalModulos: ids.length, contagemPorPalavra, modulos: ids,
         wppFuncoes: wpp, whatsappExports: whatsapp, whatsappFunctions: functions,
         apagarStatusVia: viaSalva() || findRevoke()?.onde || null,
-        apagarStatusCandidatos: revokeCandidatos(),
+        apagarStatusCandidatos: revokeCandidatos(), apagarStatusBusca: buscaRevokeStatus().slice(0, 12).map((x) => `${x.id}.${x.k}`),   // v1.52.7
         // v1.37: onde o WhatsApp guarda o prazo de "Apagar para todos" (só nomes e números de constantes; para um dia ajustarmos a tela do próprio WhatsApp)
         sondaApagarPrazo: (() => {
           const o = {};
@@ -1315,7 +1324,9 @@
     const fn = api[d.method];
     if (!fn) return post({ kind: 'res', id: d.id, error: 'método desconhecido: ' + d.method });
     try {
+      const antes = SONDAS.has(d.method) ? new Set(restrLidas().filter((x) => x.carregada).map((x) => x.id)) : null;
       const result = await fn(...(d.args || []));
+      if (antes) for (const x of restrLidas()) if (x.carregada && !antes.has(x.id)) restrNossas.add(x.id);   // carregou durante a nossa leitura
       post({ kind: 'res', id: d.id, result });
     } catch (err) {
       post({ kind: 'res', id: d.id, error: err?.message || String(err) });

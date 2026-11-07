@@ -4,6 +4,9 @@
 > Para o estado ATUAL e as regras, leia `SKILL.md`. Consulte este arquivo só para achar o motivo de uma decisão antiga.
 
 
+## v1.52.7 (07/11/2026) — apagar status e alarme falso de banimento
+O Johon mandou o pacote: 6 falhas ao apagar status depois da atualização do WhatsApp e o Monitor dizendo que a tela de banimento foi carregada. O teto oficial dizia NONE. A tela entrou na memória por causa das nossas próprias sondas.
+
 ## v1.52.6 (07/11/2026) — revisão completa
 Pedido: revisar tudo de forma autônoma e entregar às 6:00. Cinco revisores independentes; ~70 achados conferidos e corrigidos (detalhe no SKILL.md). Os mais graves eram de REGRA: sondas de visualização única no mapa, Laboratório podendo desligar o teto anti-spam do WhatsApp, áudio de visualização única transcrito pelo robô, texto do robô dentro do relatório/pacote.
 
