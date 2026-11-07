@@ -4377,7 +4377,7 @@
   const METHOD_FEAT = { sendText: 'Respostas rápidas', sendFile: 'Enviar para vários', sendContact: 'Respostas rápidas', sendStatus: 'Status', removeStatus: 'Status',
     myStatus: 'Status', applyPins: 'Fixar', setInputText: 'Assinatura', sendActive: 'Assinatura', startChat: 'Iniciar conversa', openChat: 'Iniciar conversa',
     setTheme: 'Tema', label: 'Etiquetas', labels: 'Etiquetas', listChats: 'Enviar para vários',
-    pedidosLista: 'Pedidos de grupos', pedidosPlano: 'Pedidos de grupos', gruposLista: 'Pedidos de grupos',
+    pedidosLista: 'Pedidos de grupos', pedidosPlano: 'Pedidos de grupos',
     duplicadosConjunto: 'Pedidos de grupos', removerDuplicados: 'Pedidos de grupos', gruposSo: 'Grupos só na aba Grupos', historicoChat: 'Atendente IA', atendAtivo: 'Atendente IA', rascunho: 'Atendente IA', gruposAdmin: 'Pedidos de grupos', painelConjunto: 'Pedidos de grupos', conviteGrupo: 'Pedidos de grupos', enviarConvite: 'Pedidos de grupos', enviarConvites: 'Pedidos de grupos', padronizar: 'Pedidos de grupos', sendEspecial: 'Itens especiais', votosEnquete: 'Itens especiais', marcarLinhas: 'Vagas nos grupos', vagasGrupos: 'Vagas nos grupos' };
   const CHECKS = [];
   const addCheck = (grupo, nome, run, acao, funcs = []) => CHECKS.push({ grupo, nome, run, acao, funcs });

@@ -261,9 +261,6 @@
       }
       return out;
     },
-    profilePic: async (id) => {
-      try { return (await WPP.contact.getProfilePictureUrl(id)) || null; } catch { return null; }
-    },
     openChat: async (id) => { await WPP.chat.openChatBottom(await resolve(id)); return true; },
     startChat: async (number, text) => {
       const r = await WPP.contact.queryExists(number + '@c.us');
@@ -450,11 +447,6 @@
       await WPP.chat.deleteMessage(id, ids, false, false); return { n: ids.length };   // sem o caminho direto: o antigo (devagar, um aviso por mensagem)
     },
     // ---- Pedidos para entrar no grupo (v1.12) ----
-    // gruposLista: grupos (id + nome) para montar os conjuntos "sem duplicar".
-    gruposLista: async () => (await WPP.chat.list())
-      .filter((c) => (sid(c.id) || '').endsWith('@g.us'))
-      .map((c) => ({ id: sid(c.id), name: info(c).name }))
-      .sort((a, b) => String(a.name).localeCompare(String(b.name), 'pt-BR')),
     // pedidosLista: grupos em que você é admin e que têm pedidos pendentes (ids = só esses grupos; vazio = todos).
     pedidosLista: async (ids) => {
       const todos = (await WPP.chat.list()).filter((c) => (sid(c.id) || '').endsWith('@g.us'));
