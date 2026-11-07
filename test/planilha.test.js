@@ -27,6 +27,7 @@ const SENHA = '9fK2xQ7mLr4vTz81';
 let s = carrega(''); assert.match(s.post({ token: 'x', aba: 'ping' }).erro, /defina a senha/); assert.equal(s.post({ token: '', aba: 'ping' }).ok, false);
 assert.equal(carrega('curta').post({ token: 'curta', aba: 'ping' }).ok, false);
 s = carrega(SENHA); assert.equal(s.post({ token: ' ' + SENHA + ' ', aba: 'ping' }).ok, true); assert.equal(s.post({ token: 'errada-errada-1', aba: 'ping' }).erro, 'senha (token) incorreta');
+{ const man = JSON.parse(fs.readFileSync(path.join(__dirname, '../manifest.json'), 'utf8')), pg = s.post({ token: SENHA, aba: 'ping' }); assert.equal(pg.versaoScript, man.version); assert.ok(pg.versao >= 5); }   // v1.52.3: o AtendeZap.gs tem o MESMO número da extensão (toda atualização muda os dois)
 // 2) o AtendeZap descobre se o script está atualizado pela versão do ping
 assert.ok(s.post({ token: SENHA, aba: 'ping' }).versao >= 2);
 // 3) Demanda com as 3 colunas de tempo (14 colunas); fórmula neutralizada; cabeçalho criado

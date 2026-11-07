@@ -1,4 +1,6 @@
 /**
+ * VERSÃO 1.52.3 (o MESMO número da extensão: toda atualização muda; a extensão mostra qual está publicada em Atendente IA › Memória IA)
+ *
  * AtendeZap — entrega os textos do Gerador de Anúncios para o WhatsApp (botão 🚚 da extensão) e guarda o APRENDIZADO DA IA.
  *
  * O QUE JÁ FAZIA (continua igual, sem senha, só leitura):
@@ -31,6 +33,7 @@ var ABAS_IA_ = {
   'IA - Conversas': ['Data', 'Pergunta (sem dados pessoais)', 'Resposta (sem dados pessoais)', 'Quem respondeu'],   // v4: banco de conhecimento (escuta automática do AtendeZap)
   'IA - Avaliação': ['Data', 'Período (dias)', 'Trocas', 'Com memória', 'Bateram com a memória', 'Diferentes da memória', 'Sem memória', 'Sem resposta', 'Tempo mediano (s)']   // v5: avaliação do atendimento (só números)
 };
+var VERSAO_ = '1.52.3';   // v1.52.3: igual ao manifest.json da extensão (o teste confere)
 var VERSAO_IA_ = 5;   // o AtendeZap confere esta versão ao "Testar conexão" para avisar se o script está desatualizado
 
 function doGet(e) {
@@ -56,7 +59,7 @@ function doPost(e) {
   try {
     var b = JSON.parse((e && e.postData && e.postData.contents) || '{}');
     if (!tokenOk_(b.token)) return json_({ ok: false, erro: senha_().length < 12 ? 'defina a senha TOKEN_IA no script (12 ou mais caracteres)' : 'senha (token) incorreta' });
-    if (b.aba === 'ping') return json_({ ok: true, gravadas: 0, versao: VERSAO_IA_ });
+    if (b.aba === 'ping') return json_({ ok: true, gravadas: 0, versao: VERSAO_IA_, versaoScript: VERSAO_ });
     if (b.aba === 'robo') return robo_(b, false);
     if (b.aba === 'robo-livre') return robo_(b, true);
     if (b.aba === 'limpar') return limpar_(b);

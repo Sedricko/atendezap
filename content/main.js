@@ -4075,7 +4075,7 @@
     if (!tok) return toast('Escreva a senha da planilha (a mesma do TOKEN_IA no script).', 5000);
     const r = await chrome.runtime.sendMessage({ tipo: 'planilhaEscrever', url: S.cargasUrl, token: tok, aba: 'ping', linhas: [] }).catch((e) => ({ erro: e.message }));
     memSt.sync = r?.ok ? { ok: true, t: Date.now(), erro: '' } : { ok: false, t: Date.now(), erro: r?.erro || 'falhou' };
-    memSt.scriptAntigo = !!r?.ok && !(r.versao >= 2); // o script novo responde a versão no ping; sem ela, falta colar o AtendeZap.gs atualizado
+    memSt.scriptAntigo = !!r?.ok && !(r.versao >= 2); memSt.versaoScript = r?.ok && /^\d+(\.\d+){0,3}$/.test(String(r.versaoScript || '')) ? String(r.versaoScript) : '';   // v1.52.3: versão do AtendeZap.gs // o script novo responde a versão no ping; sem ela, falta colar o AtendeZap.gs atualizado
     toast(!r?.ok ? 'Não conectou: ' + memSt.sync.erro : memSt.scriptAntigo ? 'Conectou, mas o script da planilha está desatualizado (faltam os tempos de resposta): cole o AtendeZap.gs novo.' : 'Planilha conectada. O aprendizado e os tempos serão gravados nas abas "IA - …".', 8000); renderPanel();
   }
   async function memImportar() {
@@ -4337,6 +4337,7 @@
         h('div', { class: 'rowf' }, h('button', { class: 'obtn', onclick: memTestarPlanilha }, 'Testar conexão'),
           h('button', { class: 'obtn', disabled: !fila, onclick: memSincronizar }, `Enviar agora (${fila} na fila)`),
           h('button', { class: 'obtn', disabled: memSt.importando, onclick: memImportar }, memSt.importando ? 'Importando…' : 'Importar memória da planilha')),
+        memSt.sync?.ok ? h('small', { class: 'hint' }, memSt.versaoScript ? `Script da planilha de frete (AtendeZap.gs): versão ${memSt.versaoScript}` + (AC.versaoMenor(memSt.versaoScript, acessoVersao()) ? ` — mais velho que a extensão (${acessoVersao()}): cole o AtendeZap.gs novo e publique uma "Nova versão"` : '') : 'Script da planilha de frete (AtendeZap.gs): versão antiga, anterior à 1.52.3 — cole o novo e publique uma "Nova versão"') : null,
         (memSt.scriptAntigo || memSt.avisoScript) ? h('small', { class: 'iaav' }, '⚠ O script da planilha está desatualizado: cole o AtendeZap.gs novo (Apps Script) para gravar também os tempos de resposta.') : null,
         sy.ok != null ? h('small', { class: sy.ok ? 'hint' : 'dan' }, sy.ok ? `✔ Planilha conectada (${new Date(sy.t).toLocaleTimeString('pt-BR')})` : `✖ ${sy.erro}`) : null),
       c.lembrarPerfil ? h('div', { class: 'sec' }, h('div', { class: 'sh' }, h('b', { class: 'grow' }, `Perfis de motoristas lembrados (${perfis})`)),
