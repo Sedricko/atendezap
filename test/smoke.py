@@ -266,7 +266,7 @@ async def main():
         res['mapa_sonda'] = isinstance(mp.get('sondaLimites'), dict) and 'erro' not in mp['sondaLimites'] and 'total' in mp['sondaLimites'] and 'tela' in mp['sondaLimites']   # v1.50
         res['mapa'] = (mp['mapa']['totalModulos'], mp['mapa']['apagarStatusVia'], len(mp['mapa']['wppFuncoes'].get('chat', [])), mp['mapa']['recursos'])
         # v1.47: DIAGNÓSTICO AMPLIADO — o mapa traz ambiente, ponte, IA, erros e o que mudou; o pacote .zip reúne tudo e NÃO leva dado pessoal
-        res['dg_mapa_extras'] = {'chaves': all(k in mp for k in ['ambiente', 'ponte', 'ia', 'erros', 'mudancas']), 'primeira_leitura': mp['mudancas'].get('primeiraLeitura') is True or 'contagem' in mp['mudancas'], 'entrega_view_once': 'varridas' in mp['mapa'].get('entregaViewOnce', {}) and 'viewOnce' in mp['mapa']['entregaViewOnce'],
+        res['dg_mapa_extras'] = {'chaves': all(k in mp for k in ['ambiente', 'ponte', 'ia', 'erros', 'mudancas']), 'primeira_leitura': mp['mudancas'].get('primeiraLeitura') is True or 'contagem' in mp['mudancas'], 'sem_view_once': 'entregaViewOnce' not in mp['mapa'] and 'sondaViewOnce' not in mp['mapa'],   # v1.52.6: sondas de visualização única removidas (regra)
                                  'ambiente': 'storage' in mp['ambiente']['permissoes'] and mp['ambiente']['minChrome'] == '111' and mp['ambiente']['armazenamento']['chaves'] > 0 and mp['ambiente']['armazenamento']['totalBytes'] > 0 and len(mp['ambiente']['armazenamento']['maiores']) > 0}
         async with page.expect_download() as dlz:
             await page.locator('#az-panel .gbtn', has_text='Gerar pacote de diagnóstico').click()
@@ -1995,7 +1995,7 @@ async def main():
             'ie_envios': lambda v: v == {'tem_resumo': True, 'mascarado': True, 'sem_chave': True, 'limpou': True},
             'va_auto': lambda v: v == {'rodou': True, 'guardou': True, 'numero_na_aba': True, 'numero_no_icone': True},
             'bk_seguro': lambda v: v == {'nasce_desmarcado': True, 'sem_banco_por_padrao': True, 'banco_quando_marca': True, 'sem_identificacao': True, 'configs_novas': True, 'texto': True},
-            'dg_mapa_extras': lambda v: v == {'chaves': True, 'primeira_leitura': True, 'entrega_view_once': True, 'ambiente': True},
+            'dg_mapa_extras': lambda v: v == {'chaves': True, 'primeira_leitura': True, 'sem_view_once': True, 'ambiente': True},
             'dg_pacote': lambda v: v == {'arquivos': ['LEIAME.txt', 'ambiente.json', 'erros.json', 'estrutura.json', 'ia.json', 'mapa.json', 'ponte.json', 'relatorio.html'], 'abre': True, 'json_ok': True, 'sem_dado_pessoal': True, 'leiame': True, 'ponte': True, 'mudancas': True, 'ia': True, 'relatorio': True},
             'rsu_resumo': lambda v: v == {'ordem': ['🔴 Carlos Frete', '🟡 Seu Joaquim', '⚪ Dona Rita'], 'acao': True, 'sem_link': True, 'abrir': 3, 'entrada': True, 'aceite_guardado': True, 'aviso_ia': True},
             'av_avaliacao': lambda v: v == {'resumo': True, 'memoria': True, 'diferente': True, 'sem_resposta': True, 'sem_memoria': True, 'tempo': True, 'planilha': True},

@@ -80,7 +80,8 @@
   };
   const logErr = (onde, msg) => {
     if (!vivo()) return;   // cópia antiga da página depois de atualizar a extensão: não entra em laço de erro
-    LOG.unshift({ t: new Date().toLocaleTimeString('pt-BR'), onde, msg: String(msg).slice(0, 300) });
+    const mask = globalThis.AZIA?.mascarar || String;   // v1.52.6: erro pode citar telefone/id: já entra mascarado (vai no relatório e no pacote)
+    LOG.unshift({ t: new Date().toLocaleTimeString('pt-BR'), onde, msg: mask(String(msg)).slice(0, 300) });
     LOG.length = Math.min(LOG.length, 30);
     clearTimeout(logErr.t); logErr.t = setTimeout(() => chrome.storage.local.set({ logErros: LOG.slice(0, 30) }).catch(() => {}), 3000);   // v1.52.1: o erro não some ao recarregar (vai no próximo pacote)
     // 3 erros desde o último autoteste => roda o autodiagnóstico (o WhatsApp pode ter mudado)
@@ -218,7 +219,7 @@
     const modo = S.gruposSoCfg?.janela || 'escolher'; let motivo = '';
     for (const j of [...document.querySelectorAll(SEL_JANELA)].filter(janelaReal)) {
       const d = janelaDesc(j), m = modo === 'nunca' ? '' : modo === 'qualquer' ? 'opção: qualquer janela grande' : U.janelaEscolheConversa(d);
-      gs.ultJanela = { rotulo: (d.rotulo || d.texto).slice(0, 40), pausa: m || 'não (janela de informação)', modo, t: Date.now() }; // só para o Diagnóstico
+      gs.ultJanela = { rotulo: IA.mascarar(d.rotulo || d.texto).slice(0, 40), pausa: m || 'não (janela de informação)', modo, t: Date.now() }; // só para o Diagnóstico
       if (m) { motivo = m; break; }
     }
     if (!motivo) { gs.janelaDesde = 0; return false; }
@@ -3362,7 +3363,7 @@
       usaCargas: !!(c.usarCargas && S.cargasUrl), manterAcordado: c.manterAcordado !== false, recuperarH: c.recuperarH, ritmo: c.ritmo, nuncaPalavras: (c.nuncaPalavras || []).length, retencaoDias: c.retencaoDias, travaUnico: c.travaUnico !== false, quem: c.quem, nuncaAtender: (c.nuncaAtender || []).length, foraEscopoSessao: atend.foraEscopo, transcAudio: { ligado: !!c.transcreverAudio, ok: atend.transcOk, erro: atend.transcErro, ultErro: atend.transcUlt }, robo: atend.bloqueado ? 'em espera: ' + atend.bloqueado.outro : atend.semTrava ? 'sem trava de robô único (script antigo ou sem planilha)' : 'ativo', modeloRobo: c.modeloRobo || '(o mesmo)', iaMsMedio: atendIaMs(), iaFalhasHoje: (S.iaUso?.data === new Date().toISOString().slice(0, 10) ? S.iaUso.falhas : null) || {}, modeloReserva: S.iaCfg?.modeloReserva || '', iaChaves: { total: chavesDe(S.iaCfg).filter((k) => String(k || '').trim()).length, descansando: Object.entries(S.iaChaveEstado || {}).filter(([, e]) => e.ate > Date.now()).map(([id, e]) => ({ id, tipo: e.tipo, voltaEmMin: Math.round((e.ate - Date.now()) / 60000) })) }, tempos24h: { iaS: tm24.ia?.mediana ?? null, clienteEsperouS: tm24.espera?.mediana ?? null, clienteDemorouS: tm24.cliente?.mediana ?? null, atendenteS: tm24.humano?.mediana ?? null, falhasIA: tm24.falhasIA }, pausaChamadoMin: c.pausaChamadoMin, pausaHumanoH: c.pausaHumanoH,
       ultimaBatidaMin: atend.ultBatida ? Math.round((agora - atend.ultBatida) / 60000) : null, ultimoEventoMin: atend.ultEvento ? Math.round((agora - atend.ultEvento) / 60000) : null, eventosRecebidos: atend.recebidos,
       ultimaParadaMin: atend.lacunaMin || 0, ultimoErroIA: atend.ultErro ? { haMin: Math.round((agora - atend.ultErro.t) / 60000), msg: String(atend.ultErro.msg).slice(0, 120) } : null,
-      problemas: est.problemas, acoes24h: por, ultimas: (S.atendLog || []).slice(0, 15).map((l) => [Math.round((agora - l.t) / 60000), l.acao, IA.mascarar(l.resumo || '').slice(0, 80)]) };
+      problemas: est.problemas, acoes24h: por, ultimas: (S.atendLog || []).slice(0, 15).map((l) => [Math.round((agora - l.t) / 60000), l.acao]) };   // v1.52.6: sem o texto que o robô mandou (relatório e pacote nunca levam mensagem)
   }
   function atendRetomar(id) { atendEst((e) => ({ ...e, pausas: id ? Object.fromEntries(Object.entries(e.pausas || {}).filter(([k]) => k !== id)) : {} })); toast(id ? 'Conversa retomada.' : 'Todas as conversas foram retomadas.'); renderPanel(); }
   function atendZerarLimites() { atendEst((e) => ({ ...e, porContato: {}, hora: [], ultimo: {} })); toast('Limites de hoje zerados.'); renderPanel(); }
@@ -4562,7 +4563,7 @@
   addCheck('Erros recentes', 'Erros no console da página', ({ br }) => {
     const c = br.console;
     if (!c) return { ok: 'warn', d: 'vigia do console não carregou' };
-    const linhas = c.ultimos.map((u) => `${u.t} [${u.origem === 'extensao' ? 'AtendeZap' : 'WhatsApp'}]${u.n > 1 ? ` ×${u.n}` : ''} ${u.msg}`);
+    const linhas = c.ultimos.map((u) => `${u.t} [${u.origem === 'extensao' ? 'AtendeZap' : 'WhatsApp'}]${u.n > 1 ? ` ×${u.n}` : ''} ${IA.mascarar(u.msg)}`);
     return {
       ok: c.extensao ? 'warn' : true,
       d: `da extensão: ${c.extensao} · do próprio WhatsApp: ${c.whatsapp} (não são da extensão e não aparecem mais em chrome://extensions)` +
@@ -4675,7 +4676,7 @@
       selo: (() => { const hd = document.getElementById('az-head'); return hd ? { largura: Math.round(hd.getBoundingClientRect().width), botoes: hd.shadowRoot?.querySelectorAll('button').length ?? 0 } : null; })(),
       auditoriaPonte: audit ? { externas: audit.externas, recusadas: audit.recusadas, ultimas: (audit.ultimas || []).filter((x) => !x.ok).slice(-10) } : null,
       saude, checks: results.map(({ grupo, nome, ok, d, funcs, ms }) => ({ grupo, nome, ok, d, funcs, ms })),
-      ponte: br, testes: probe, seletores: dom, sondagem, erros: LOG, historico: estado.historico || [],
+      ponte: br?.console?.ultimos ? { ...br, console: { ...br.console, ultimos: br.console.ultimos.map((u) => ({ ...u, msg: IA.mascarar(u.msg) })) } } : br, testes: probe, seletores: dom, sondagem, erros: LOG, historico: estado.historico || [],
       versoesWhatsApp: dados[VERSOES]?.historico || [], labTestes: dados[LAB_TESTES] || {},
     };
     // resumo curto no topo (e a comparação com a execução anterior); depois guarda esta execução como a "anterior"
@@ -4683,7 +4684,7 @@
     chrome.storage.local.set({ diagUltimo: { t: data.data, ver: br.waVersion || null, oks: Object.fromEntries(data.checks.map((c) => [c.nome, c.ok])) } }).catch(() => {});
     const ordenado = { resumo: data.resumo, ...data }; // o resumo é a primeira coisa do arquivo
     // relatório sem números: ids de conversa/grupo/lid viram # (a versão do WhatsApp continua legível)
-    const limpo = JSON.parse(JSON.stringify(ordenado).replace(/\d{6,}(?=@|_)/g, '#'));
+    const limpo = JSON.parse(JSON.stringify(ordenado).replace(/\d[\d-]{5,}(?=@|_)/g, '#'));   // v1.52.6: pega também o grupo antigo 5511…-16…@g.us
     const carregando = !document.getElementById('side') || /demoraram demais|não respondeu/.test((probe?.erro || '') + (br?.erro || ''));   // o WhatsApp ainda está abrindo
     return { results, saude, data: limpo, report: JSON.stringify(limpo), inv: { hist: invHist, base: invBase }, carregando };
   }
@@ -4838,7 +4839,7 @@ ${hist ? `<h2>Histórico de autotestes</h2><table><tr><td><b>Quando</b></td><td>
       if (cs.position !== 'static' && cs.position !== 'relative') o.pos = cs.position;
       if (cs.display === 'none') o.oculto = 1;
       const az = [...el.attributes].map((x) => x.name).filter((n) => n.startsWith('data-az-')); if (az.length) o.az = az.join(',');
-      if (el.matches('button, [role="tab"], [role="button"], [data-testid="filter-button"]') && !el.closest('[data-testid="cell-frame-container"], [data-testid^="conv-msg"]')) {
+      if (el.matches('button, [role="tab"], [role="button"], [data-testid="filter-button"]') && !el.closest('[data-testid="cell-frame-container"], [data-testid^="conv-msg"], #main header')) {   // v1.52.6: o cabeçalho da conversa tem o NOME do contato
         const tx = (el.textContent || '').trim().replace(/\s+/g, ' '); if (tx && tx.length <= 16) o.txt = tx;
       }
       if (prof > 0) {
@@ -4880,7 +4881,7 @@ ${hist ? `<h2>Histórico de autotestes</h2><table><tr><td><b>Quando</b></td><td>
       nosAZ: ['az-panel', 'az-pop', 'az-head'].map((id) => { const e = document.getElementById(id); const r = e?.getBoundingClientRect(); return { id, existe: !!e, box: r ? [Math.round(r.left), Math.round(r.top), Math.round(r.width), Math.round(r.height)] : null }; }),
       perf: U.perfLinhas(PERF, performance.now() - PERF_T0),
     };
-    return JSON.stringify(out).replace(/\d{6,}(?=@|_)/g, '#'); // sem números de telefone/ids de conversa
+    return JSON.stringify(out).replace(/\d[\d-]{5,}(?=@|_)/g, '#'); // sem números de telefone/ids de conversa (inclusive grupo antigo 5511…-16…@g.us)
   }
   async function baixarEstrutura() {
     // 5 s para deixar a tela no estado do problema (ex.: clique no campo de mensagem e digite "/" para a lista nativa abrir)
@@ -4978,7 +4979,6 @@ ${hist ? `<h2>Histórico de autotestes</h2><table><tr><td><b>Quando</b></td><td>
     br_consumer_pix_groups_web_enabled: ["Pix: em grupos e copiar código/chave", "Num grupo: clipe 📎; e numa conversa com comprovante ou pedido de Pix.", "Pedir/enviar Pix no grupo e botão \"Copiar código/chave Pix\" no cartão do pagamento.", ["br_payments_pix_groups_enabled", "payments_receipt_and_state_copy_pix_code_p2p", "payments_receipt_and_state_copy_pix_code_p2m", "payments_receipt_and_state_copy_pix_key_p2p", "payments_receipt_and_state_copy_pix_key_p2m"]],
     wa_web_status_resharer_flow_enabled: ["Status: repostar", "Abra o status de outra pessoa.", "Aparece a opção de repostar o status.", ["wa_web_status_reshare_attribution_enabled", "wa_web_reshare_poster_side_enabled"]],
     message_partial_selection_m2: ["Texto: trecho, menção e spoiler", "Numa conversa: arraste sobre o texto de uma mensagem; num grupo, seja mencionado; formate um texto.", "Dá para marcar só parte do texto, a sua menção fica destacada e há formato \"spoiler\" (texto escondido).", ["message_partial_selection_discoverability", "message_partial_selection_in_bubble", "wa_web_highlight_me_mention", "is_spoiler_rich_format_sender_enabled", "is_spoiler_rich_format_enabled"]],
-    wa_web_large_group_presence_enabled: ["Ver quem está online/digitando em grupos", "Abra um grupo.", "Aparece quem está online ou digitando.", ["wa_web_small_group_presence_enabled"]],
     poll_add_option_enabled: ["Enquetes: adicionar opções", "Crie uma enquete.", "Aparece \"permitir que outros adicionem opções\".", ["poll_add_option_creator_enabled", "poll_add_option_participant_enabled", "poll_add_option_receiving_enabled"]],
     enable_video_thumbnails_in_chat_list: ["Lista: miniatura de vídeo e filtros inteligentes", "Lista de conversas, numa conversa cuja última mensagem é um vídeo; barra de filtros no topo.", "Aparece a miniatura do vídeo e filtros novos na lista.", ["smart_filters_enabled_consumer"]],
     smb_web_customer_management_custom_fields: ["Gerenciador de clientes (Business)", "Menu ⋮ › Ferramentas comerciais › Contatos.", "Tela de clientes com listas, filtros, campos personalizados e exportar/importar.", ["smb_web_customer_management_enabled", "smb_web_customer_management_import_export", "smb_web_customer_manager_export_enabled", "smb_web_customer_manager_bulk_edit_enabled", "smb_web_customer_manager_date_range_filter_enabled", "smb_web_customer_manager_dob_filter_enabled", "smb_web_customer_manager_header_menu_enabled", "smb_contact_manager_sublist_enabled", "contact_manager_mvp_enabled", "smb_contact_manager_hidden_contacts_enabled"]],

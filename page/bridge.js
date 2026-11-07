@@ -224,8 +224,10 @@
   // página que o WhatsApp, então um script que ESCUTE as mensagens da página ainda consegue ver a chave; isto barra pedidos soltos, não é um cofre.
   const SENSIVEIS = new Set(['sendText', 'sendFile', 'sendContact', 'sendStatus', 'removeStatus', 'block', 'enviarConvite', 'enviarConvites', 'pedidosPlano', 'padronizar', 'sendEspecial', 'removerDuplicados',
     'apagarParaTodos', 'minhasMsgs', 'recuperarAtivo', 'exportarLer', 'exportarMidia', 'contatoAparelho', 'conversasParaTreino', 'naoLidas', 'ligacaoAtivo', 'ligacaoContexto',
-    'sendActive', 'historicoChat', 'baixarAudio', 'aguardando', 'votosEnquete', 'limpezaListar', 'limpezaApagar', 'limpezaGrupoVelhas', 'limpezaGrupoApagar']);   // v1.47.3: também enviam ou leem conversa/mídia   // v1.42: tudo que apaga, lê conversas ou baixa mídia só obedece ao painel (com a chave dele)
+    'sendActive', 'historicoChat', 'baixarAudio', 'aguardando', 'votosEnquete', 'limpezaListar', 'limpezaApagar', 'limpezaGrupoVelhas', 'limpezaGrupoApagar',
+    'labSet', 'labReset', 'atendAtivo', 'ocultar', 'archive', 'markUnread', 'label', 'startChat', 'conviteGrupo', 'duplicadosConjunto', 'rascunho', 'setInputText', 'tetoOficial', 'setTheme', 'recarregar', 'listChats']);   // v1.42/v1.47.3/v1.52.6: o que envia, apaga, muda a conversa (sincroniza com o celular), lê conversa/mídia ou entrega dado só obedece ao painel
   let tkOk = null, externas = 0, recusadas = 0; const auditoria = [], pinSemChat = new Map();
+  const ehVisuUnica = async (id) => { try { const m = await WPP.chat.getMessageById(id); return !!(m && (m.isViewOnce === true || m.viewOnce === true)); } catch { return false; } };
   const api = {
     ready: () => isReady(),
     auditoria: () => ({ externas, recusadas, ultimas: auditoria.slice(-30) }),
@@ -394,10 +396,6 @@
     composing: async (id, s) => { await WPP.chat.markIsComposing(id, s * 1000); await sleep(s * 1000); return true; },
     recording: async (id, s) => { await WPP.chat.markIsRecording(id, s * 1000); await sleep(s * 1000); return true; },
     archive: async (id, v) => { await WPP.chat.archive(id, v); return true; },
-    pin: async (id, v) => {
-      try { await (v ? WPP.chat.pin(id) : WPP.chat.unpin(id)); } catch (e) { if (!/_error$/.test(e?.code || '')) throw e; } // já fixado/desfixado
-      return true;
-    },
     markUnread: async (id) => { await WPP.chat.markIsUnread(id); return true; },
     sendContact: async (id, numero, nome) => { await WPP.chat.sendVCardContactMessage(id, { id: numero + '@c.us', name: nome }); return true; },
     block: async (id) => { await (WPP.blocklist?.blockContact || WPP.contact.blockContact)(id); return true; },
@@ -827,8 +825,8 @@
       const msgs = await WPP.chat.getMessages(chatId, { count: Math.min(40, n + 4) });
       let chat = null; try { chat = await WPP.chat.find(toWid(chatId)); } catch { /* sem nome */ }
       const rot = { audio: '[áudio]', ptt: '[áudio]', image: '[imagem]', video: '[vídeo]', document: '[documento]', sticker: '[figurinha]', location: '[localização]', vcard: '[contato]', multi_vcard: '[contatos]' };
-      const lista = (msgs || []).filter((m) => m.type !== 'revoked' && !/e2e|notification|gp2|protocol/.test(m.type || ''))
-        .map((m) => ({ de: m.id?.fromMe ? 'atendente' : 'cliente', tipo: m.type, t: m.t || 0, ...(m.type === 'ptt' || m.type === 'audio' ? { mid: String(m.id?._serialized || ''), dur: Number(m.duration) || 0 } : {}),
+      const lista = (msgs || []).filter((m) => m.type !== 'revoked' && !/e2e|notification|gp2|protocol|call_log|ciphertext/.test(m.type || ''))   // ciphertext = "aguardando a mensagem": o robô não responde a isso
+        .map((m) => ({ de: m.id?.fromMe ? 'atendente' : 'cliente', tipo: m.type, t: m.t || 0, ...((m.type === 'ptt' || m.type === 'audio') && !(m.isViewOnce || m.viewOnce) ? { mid: String(m.id?._serialized || ''), dur: Number(m.duration) || 0 } : {}),
           texto: m.type === 'chat' ? String(m.body || '') : `${m.caption ? m.caption + ' ' : ''}${rot[m.type] || '[' + m.type + ']'}`.trim() }))
         .filter((x) => x.texto).sort((x, y) => x.t - y.t).slice(-n);
       return { nome: chat ? info(chat).name : '', msgs: lista };
@@ -936,14 +934,17 @@
     exportarMidia: async (id, maxBytes) => {
       const max = Math.min(100e6, Math.max(1e5, Number(maxBytes) || 25e6));
       try {
+        if (await ehVisuUnica(id)) return { ok: false, motivo: 'visualização única: não se baixa' };
         const blob = await WPP.chat.downloadMedia(id);
         if (!blob) return { ok: false, motivo: 'o WhatsApp não devolveu o arquivo' };
         if (blob.size > max) return { ok: false, motivo: `arquivo grande demais (${(blob.size / 1e6).toFixed(1)} MB)` };
         return { ok: true, mime: blob.type || '', buf: await blob.arrayBuffer() };
       } catch (e) { return { ok: false, motivo: String(e?.message || e).slice(0, 120) }; }
     },
+    // v1.52.6: regra do projeto — visualização única nunca é baixada, exportada nem transcrita (a conferência é aqui, na ponte, não só no painel)
     // v1.29 — baixa UM áudio (para a IA transcrever). Devolve {mime, b64, bytes}; recusa arquivos grandes demais.
     baixarAudio: async (mid, maxBytes = 4000000) => {
+      if (await ehVisuUnica(mid)) throw new Error('visualização única: não se baixa nem se transcreve');
       const blob = await WPP.chat.downloadMedia(mid);
       if (!blob) throw new Error('não consegui baixar o áudio');
       if (blob.size > maxBytes) throw new Error('áudio grande demais (' + Math.round(blob.size / 1024) + ' KB)');
@@ -999,7 +1000,7 @@
       let conferiu = true;
       for (const g of new Set([...conjunto, ...alvos])) {
         const r = await lerGrupo(g);
-        if (!r.ok || !r.lista.length) { conferiu = false; continue; }
+        if (!r.ok || !r.lista.length || !r.lista.some((p) => p.admin)) { conferiu = false; continue; }   // nenhum admin na leitura = leitura sem a marca de admin: não remove ninguém
         for (const p of r.lista) if (p.admin) adminsCanon.add(await canon(p.wid));
       }
       const out = [];
@@ -1063,12 +1064,12 @@
     // Menu do botão direito na lista só dá o nome exibido: acha o id da conversa por ele
     chatPorNome: async (nome) => {
       const l = await WPP.chat.list();
-      const c = l.find((x) => (x.formattedTitle || x.name || x.contact?.formattedName) === nome);
-      return c ? c.id._serialized : null;
+      const cs = l.filter((x) => (x.formattedTitle || x.name || x.contact?.formattedName) === nome);
+      return cs.length === 1 ? cs[0].id._serialized : null;   // dois com o mesmo nome: não chuta (ocultaria a conversa errada)
     },
     // Diagnóstico: o que existe nesta versão do WhatsApp/wa-js
-    diag: () => ({
-      wppLoaded: !!window.WPP,
+    diag: () => { const WPP = window.WPP; return {   // sem wa-js carregada o WPP nem existe: o Diagnóstico existe justamente para esse caso
+      wppLoaded: !!WPP,
       waJs: WPP?.version || null,
       waVersion: WPP?.whatsapp?.Features?.getVersion?.() || window.Debug?.VERSION || null,
       ready: isReady(),
@@ -1078,7 +1079,7 @@
       // Funções da wa-js que a extensão usa (ao usar uma nova, acrescente aqui para o Diagnóstico checar)
       fnMap: Object.fromEntries(['chat.sendTextMessage', 'chat.sendFileMessage', 'chat.sendVCardContactMessage', 'chat.setInputText', 'conn.setTheme', 'chat.list', 'status.sendTextStatus', 'status.sendImageStatus', 'status.sendVideoStatus', 'status.getMyStatus', 'status.remove', 'whatsapp.Cmd.sendRevokeMsgs', 'chat.deleteMessage', 'chat.getMessageById',
         'chat.openChatBottom', 'chat.find', 'chat.getActiveChat', 'chat.markIsComposing', 'chat.markIsRecording', 'chat.archive', 'chat.mute', 'chat.unmute', 'chat.markIsUnread',
-        'contact.queryExists', 'contact.getProfilePictureUrl', 'group.getMembershipRequests', 'group.approve', 'group.reject', 'group.getParticipants', 'group.iAmAdmin', 'group.removeParticipants', 'group.ensureGroup', 'group.getGroupSizeLimit', 'loader.search', 'group.addParticipants', 'group.getInviteCode', 'group.setDescription', 'group.setSubject', 'group.setProperty', 'group.setIcon', 'chat.sendGroupInviteMessage', 'chat.sendPixKeyMessage', 'chat.sendLocationMessage', 'chat.sendCreatePollMessage', 'chat.getVotes', 'chat.getMessages', 'conn.getMyUserId', 'contact.getPnLidEntry', 'blocklist.blockContact', 'labels.getAllLabels', 'labels.addOrRemoveLabels', 'profile.isBusiness']
+        'contact.queryExists', 'chat.downloadMedia', 'chat.clear', 'chat.delete', 'group.getMembershipRequests', 'group.approve', 'group.reject', 'group.getParticipants', 'group.iAmAdmin', 'group.removeParticipants', 'group.ensureGroup', 'group.getGroupSizeLimit', 'loader.search', 'group.addParticipants', 'group.getInviteCode', 'group.setDescription', 'group.setSubject', 'group.setProperty', 'group.setIcon', 'chat.sendGroupInviteMessage', 'chat.sendPixKeyMessage', 'chat.sendLocationMessage', 'chat.sendCreatePollMessage', 'chat.getVotes', 'chat.getMessages', 'conn.getMyUserId', 'contact.getPnLidEntry', 'blocklist.blockContact', 'labels.getAllLabels', 'labels.addOrRemoveLabels', 'profile.isBusiness']
         .map((p) => [p, typeof p.split('.').reduce((o, k) => o?.[k], WPP) === 'function'])
         .concat([['interno.apagarStatus', !!findRevoke() || typeof WPP.whatsapp?.Cmd?.sendRevokeMsgs === 'function']])),
       apagarStatusVia: viaSalva() || findRevoke()?.onde || null,
@@ -1089,8 +1090,7 @@
       modulosAusentes: window.__azModulosAusentes || [],
       wrapInofensivos: window.__azWrapInofensivos || [],   // funções do WhatsApp que a wa-js tentou embrulhar e não existem mais (sem efeito)
       console: window.__azConsole || null,
-    }),
-    ping: () => Date.now(),
+    }; },
     labList: () => ({ ...labEstado(), recursos: recursosInternos() }),
     // v1.51: CONTADOR OFICIAL DO TETO — o que o próprio WhatsApp diz (barrado? avisado? % usada?). Só funções de LEITURA sem parâmetro
     // (is/get/should/can), nunca fetch/update/clear/set/send/log/subscribe. Só números, liga/desliga e datas; nada de contato.
@@ -1182,6 +1182,8 @@
     // v1.49: monitor de limitações — as chaves (o painel escolhe as de limite) e os nomes dos módulos de telemetria. Só nomes e valores do WhatsApp.
     monitorLer: () => ({ recursos: recursosInternos(), eventos: moduleIds().filter((n) => n.endsWith('WamEvent')) }),
     labSet: (nome, valor) => {
+      if (/capping|spam|integrity|restrict|enforce|ban|block|report|limit|quota|kill_switch|defense/i.test(String(nome))) throw new Error('chave de proteção do WhatsApp (anti-spam, limite, integridade): o Laboratório não mexe');   // mesma lista do PERIGO de lib/funcoes.js
+      if (valor !== null && valor !== undefined && typeof valor !== 'boolean' && typeof valor !== 'number') throw new Error('valor inválido');
       if (valor === null || valor === undefined) delete labOverrides[nome];
       else labOverrides[nome] = valor;
       salvarLab();
@@ -1226,42 +1228,7 @@
           }
           return o;
         })(),
-        // v1.46: que CHAVES e que módulos de "portão" os módulos de visualização única do WhatsApp consultam (só NOMES; nenhum código vai para o relatório). Serve para achar a chave oficial que liga a abertura em aparelhos conectados.
-        sondaViewOnce: (() => {
-          const o = { modulos: {}, chaves: [], portoes: [] };
-          try {
-            const flags = new Map((recursosInternos() || []).map((x) => [x.nome, x.valor])), chaves = new Set(), portoes = new Set(), rxPortao = /^WA(Web)?[A-Za-z0-9.]*(Gating|ABProp|Capab|Companion|Linked|Device|Migrat)[A-Za-z0-9.]*$/;
-            for (const nome of ['WAWebViewOnceState', 'WAWebMessageViewOncePendingCancel', 'WAWebViewOnceSunsetIcon.react', 'WAWebViewOnceScreenshotActionsWamEvent', 'WAWebViewOnceSunset.react', 'WAWebMessageViewOnce.react', 'WAWebAttachMediaViewOnceNux.react', 'WAWebAttachMediaViewOnce.react', 'WAWebAttachMediaViewOnceInChat.react']) {
-              try {
-                const mod = loadMod(nome); if (!mod) { o.modulos[nome] = null; continue; }
-                const usa = new Set(), via = new Set();
-                for (const k of Object.keys(mod)) {
-                  const v = mod[k], f = typeof v === 'function' ? v : v && (v.type || v.render); if (typeof f !== 'function') continue;
-                  let src = ''; try { src = Function.prototype.toString.call(f); } catch { continue; }
-                  for (const m of src.matchAll(/["']([A-Za-z][A-Za-z0-9_.]{4,100})["']/g)) { if (flags.has(m[1])) usa.add(m[1]); else if (rxPortao.test(m[1])) via.add(m[1]); }
-                }
-                o.modulos[nome] = { chaves: [...usa], portoes: [...via] }; usa.forEach((k) => chaves.add(k)); via.forEach((k) => portoes.add(k));
-              } catch (e) { o.modulos[nome] = 'erro: ' + String(e?.message || e).slice(0, 60); }
-            }
-            o.chaves = [...chaves].map((k) => ({ nome: k, valor: flags.get(k) })); o.portoes = [...portoes];
-          } catch (e) { o.erro = String(e?.message || e).slice(0, 80); }
-          return o;
-        })(),
-        // v1.47: o WhatsApp entregou o ARQUIVO da visualização única a este navegador ou só o aviso? SÓ metadados (tipos e sim/não): nenhum id, texto nem conteúdo.
-        entregaViewOnce: (() => {
-          const o = { varridas: 0, tipos: {}, viewOnce: { total: 0, comArquivo: 0, soAviso: 0, amostra: [] } };
-          try {
-            const col = WPP.whatsapp.MsgStore, lista = col.getModelsArray ? col.getModelsArray() : (col.models || []);
-            for (const m of lista) {
-              o.varridas++; const tp = String(m.type || '?'); o.tipos[tp] = (o.tipos[tp] || 0) + 1;
-              if (!(m.isViewOnce === true || m.viewOnce === true || /view_?once/i.test(tp) || /view_?once/i.test(String(m.subtype || '')))) continue;
-              const tem = !!(m.mediaKey || m.directPath || m.filehash || m.encFilehash); o.viewOnce.total++; if (tem) o.viewOnce.comArquivo++; else o.viewOnce.soAviso++;
-              if (o.viewOnce.amostra.length < 12) o.viewOnce.amostra.push({ tipo: tp, subtipo: String(m.subtype || '').slice(0, 30), minha: !!m.id?.fromMe, temChave: !!m.mediaKey, temCaminho: !!m.directPath, temHash: !!(m.filehash || m.encFilehash), horas: Math.round((Date.now() / 1000 - (m.t || 0)) / 3600) });
-            }
-            o.tipos = Object.fromEntries(Object.entries(o.tipos).sort((x, y) => y[1] - x[1]).slice(0, 40));
-          } catch (e) { o.erro = String(e?.message || e).slice(0, 80); }
-          return o;
-        })(),
+        // v1.52.6: as sondas de visualização única (sondaViewOnce/entregaViewOnce) foram REMOVIDAS: regra do projeto, nunca ajudar a abrir visualização única.
         statusExports: (() => { try { return statusExports(); } catch { return null; } })(),
         limites: (() => { try { return api.limitesWA(); } catch { return null; } })(),
         recursos: recursosInternos(),
@@ -1397,7 +1364,7 @@
         const grupo = /@g\.us$/.test(chatId), tipo = m?.type || '';
         const midiaTipo = ['image', 'video', 'sticker'].includes(tipo);
         const snap = { id: refId || String(ev.id?._serialized || ''), chatId, chatNome, grupo, existe: !!m, tipo, t: m?.t || 0,
-          texto: m ? String(tipo === 'chat' ? (m.body || '') : (m.caption || '')).slice(0, 4000) : '', thumb: m && midiaTipo ? String(m.body || '').slice(0, 60000) : '',
+          texto: m && !(m.isViewOnce || m.viewOnce) ? String(tipo === 'chat' ? (m.body || '') : (m.caption || '')).slice(0, 4000) : '', thumb: m && midiaTipo && !(m.isViewOnce || m.viewOnce) ? String(m.body || '').slice(0, 60000) : '',   // visualização única: nada do conteúdo sai da ponte
           mime: m?.mimetype || '', nome: m?.filename || '', dur: Number(m?.duration) || 0, viewOnce: !!(m && (m.isViewOnce === true || m.viewOnce === true)),
           deNome: String(m?.senderObj?.pushname || m?.senderObj?.formattedName || m?.notifyName || (grupo ? '' : chatNome) || '').slice(0, 80) };
         post({ kind: 'evt', type: 'msg_apagada', snap, ev: { fromMe: false, tipo: ev.type } });
