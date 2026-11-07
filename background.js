@@ -12,9 +12,9 @@ chrome.action.onClicked.addListener(async () => {
 chrome.runtime.onMessage.addListener((msg, _sender, responder) => {
   if (msg?.tipo !== 'buscarLista') return;
   if (!/^https:\/\/script\.google\.com\/macros\/s\/[\w-]+\/exec(\?.*)?$/.test(msg.url || '')) { responder({ erro: 'link inválido: precisa ser https://script.google.com/macros/s/…/exec' }); return; }
-  fetch(msg.url, { redirect: 'follow', credentials: 'omit' })
+  iaChamar(msg.url, { redirect: 'follow' }, 30000)   // com tempo limite: planilha travada não deixa o painel esperando para sempre
     .then(async (r) => { const t = await r.text(); responder(r.ok ? { texto: t } : { erro: `a planilha respondeu ${r.status}` }); })
-    .catch((e) => responder({ erro: e.message }));
+    .catch((e) => responder({ erro: e?.name === 'AbortError' ? 'a planilha demorou demais' : e.message }));
   return true; // resposta assíncrona
 });
 
@@ -136,11 +136,11 @@ chrome.runtime.onMessage.addListener((msg, _sender, responder) => {
     const u = new URL(msg.url);
     if (msg.tipo === 'planilhaMemoria') {
       u.searchParams.set('acao', 'memoria'); u.searchParams.set('token', String(msg.token || ''));
-      return planilhaJson(await fetch(u.toString(), { redirect: 'follow', credentials: 'omit' }));
+      return planilhaJson(await iaChamar(u.toString(), { redirect: 'follow' }, 30000));
     }
     const corpo = JSON.stringify({ token: String(msg.token || ''), aba: String(msg.aba || ''), linhas: (msg.linhas || []).slice(0, 200), inst: String(msg.inst || '').slice(0, 40), nome: String(msg.nome || '').slice(0, 40), dias: Number(msg.dias) || 0 });
-    return planilhaJson(await fetch(u.toString(), { method: 'POST', redirect: 'follow', credentials: 'omit', headers: { 'content-type': 'text/plain;charset=utf-8' }, body: corpo }));
-  })().then(responder, (e) => responder({ erro: e?.message || String(e) }));
+    return planilhaJson(await iaChamar(u.toString(), { method: 'POST', redirect: 'follow', headers: { 'content-type': 'text/plain;charset=utf-8' }, body: corpo }, 30000));
+  })().then(responder, (e) => responder({ erro: e?.name === 'AbortError' ? 'a planilha demorou demais' : (e?.message || String(e)) }));
   return true; // resposta assíncrona
 });
 

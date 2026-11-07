@@ -85,7 +85,7 @@
     LOG.length = Math.min(LOG.length, 30);
     clearTimeout(logErr.t); logErr.t = setTimeout(() => chrome.storage.local.set({ logErros: LOG.slice(0, 30) }).catch(() => {}), 3000);   // v1.52.1: o erro não some ao recarregar (vai no próximo pacote)
     // 3 erros desde o último autoteste => roda o autodiagnóstico (o WhatsApp pode ter mudado)
-    try { if (onde !== 'autoDiag' && ++AUTO.errosDesde === 3) setTimeout(() => autoDiag('erros seguidos'), 2000); } catch { /* erro antes de o AUTO existir */ }
+    try { if (onde !== 'autoDiag' && ++AUTO.errosDesde >= 3) { AUTO.errosDesde = 0; setTimeout(() => autoDiag('erros seguidos'), 2000); } } catch { /* erro antes de o AUTO existir */ }
   };
   window.addEventListener('error', (e) => logErr('script', e.message));
   window.addEventListener('unhandledrejection', (e) => { const m = e.reason?.message || e.reason; if (!/context invalidated/i.test(String(m))) logErr('promessa', m); });
@@ -873,6 +873,7 @@
   function closePanel() { ui.open = false; saveUi(); renderPanel(); }
   let lastEdit = null;
   function renderPanel() {
+    if (ui.sec !== 'diag') view.diagRes = null;   // voltou ao Diagnóstico: analisa de novo
     const fresh = view.editing && view.editing !== lastEdit;
     lastEdit = view.editing;
     if (fresh) loadPreviews(view.editing); // miniaturas das mídias salvas
@@ -885,7 +886,7 @@
     if (ui.open && app && getComputedStyle(app).position === 'static') app.style.position = 'relative';
     document.documentElement.style.setProperty('--az-w', painelW() + 'px');
     const velho = panelRoot.querySelector('.pb');
-    const chave = ui.sec + (view.editing ? ':ed' : '') + (ui.sec === 'diag' ? ':' + (view.diagAba || 'diag') : '') + (ui.sec === 'lote' ? ':' + lote.aba : '');
+    const chave = ui.sec + (view.editing ? ':ed' : '') + (ui.sec === 'diag' ? ':diag' : '') + (ui.sec === 'lote' ? ':' + lote.aba : '');
     const rolagem = velho && velho.dataset.chave === chave ? velho.scrollTop : 0;
     panelRoot.querySelector('.panel')?.remove();
     panelRoot.querySelector('.handle')?.remove();
@@ -3721,7 +3722,8 @@
     return r.aplicar;
   }
   async function acessoConsultar(manual) {
-    if (!acessoConectado() || acesso.busy) return;
+    if (!acessoConectado()) return;
+    if (acesso.busy) { if (manual) toast('Já estou consultando o administrador: um instante.'); return; }
     acesso.busy = true; acesso.ult = Date.now();
     try {
       const cod = S.acessoCfg.codigo;
@@ -3775,13 +3777,15 @@
   }
   async function acessoVerEnvio() {
     const dados = acesso.ultSaude?.dados || AC.montarSaude(await acessoOrigemSaude());
-    await dialogo({ titulo: 'O que é enviado ao administrador', texto: AC.descreverEnvio(dados).map((x) => '• ' + x).join('\n') + (acesso.ultSaude ? `\n\nÚltimo envio: ${hhmm(acesso.ultSaude.t)}.` : '\n\nAinda não enviou nada.'), cancelar: null });
+    await dialogo({ titulo: 'O que é enviado ao administrador', texto: AC.descreverEnvio(dados, acessoEf().global.coletarPacote !== false).map((x) => '• ' + x).join('\n') + (acesso.ultSaude ? `\n\nÚltimo envio: ${hhmm(acesso.ultSaude.t)}.` : '\n\nAinda não enviou nada.'), cancelar: null });
   }
   async function acessoPerguntarSaude() {
     const ef = acessoEf(); if (!ef.valido || !ef.global.coletarSaude || S.acessoCfg?.saude != null || acesso.perguntando) return;
     acesso.perguntando = true; try {   // uma pergunta por vez (antes empilhava uma a cada consulta)
+    const cod = S.acessoCfg?.codigo;   // a resposta vale só para ESTE administrador (trocou de convite com a pergunta aberta: ignora)
     const dados = AC.montarSaude(await acessoOrigemSaude());
-    const ok = await dialogo({ titulo: 'O administrador pede um resumo técnico', texto: `Para cuidar do funcionamento, o administrador quer receber a cada ${ef.global.saudeMin} min este resumo do seu AtendeZap:\n\n${AC.descreverEnvio(dados).map((x) => '• ' + x).join('\n')}\n\nVocê pode mudar de ideia depois em Configurações › Acesso da equipe.`, ok: 'Aceitar e enviar', cancelar: 'Não enviar' });
+    const ok = await dialogo({ titulo: 'O administrador pede um resumo técnico', texto: `Para cuidar do funcionamento, o administrador quer receber a cada ${ef.global.saudeMin} min este resumo do seu AtendeZap:\n\n${AC.descreverEnvio(dados, ef.global.coletarPacote !== false).map((x) => '• ' + x).join('\n')}\n\nVocê pode mudar de ideia depois em Configurações › Acesso da equipe.`, ok: 'Aceitar e enviar', cancelar: 'Não enviar' });
+    if (S.acessoCfg?.codigo !== cod) return;
     S.acessoCfg = { ...S.acessoCfg, saude: !!ok }; await save('acessoCfg'); renderPanel();
     if (ok) acessoEnviarSaude(true);
     } finally { acesso.perguntando = false; }
@@ -3990,7 +3994,7 @@
       chamar: () => h('div', { class: 'sec' }, h('div', { class: 'sh' }, h('b', { class: 'grow' }, 'Quando chamar você (um humano)')),
         h('label', { class: 'lb' }, 'Palavras do cliente que chamam um humano direto (separe por vírgula)', h('textarea', { class: 'in', rows: 2, value: (c.palavrasHumano || []).join(', '),
           onchange: (e) => mud('palavrasHumano', e.target.value.split(',').map((x) => x.trim()).filter(Boolean)) })),
-        h('label', { class: 'inl' }, h('span', null, 'Confiança mínima da IA'), h('input', { class: 'in num', type: 'number', min: 0, max: 100, step: 5, value: Math.round(c.confianca * 100), onchange: (e) => mud('confianca', Math.max(0, Math.min(100, +e.target.value || 60)) / 100) }), '%'),
+        h('label', { class: 'inl' }, h('span', null, 'Confiança mínima da IA'), h('input', { class: 'in num', type: 'number', min: 0, max: 100, step: 5, value: Math.round(c.confianca * 100), onchange: (e) => mud('confianca', Math.max(0, Math.min(100, e.target.value === '' ? 60 : +e.target.value)) / 100) }), '%'),
         linha('msgHumano', 'Mensagem ao cliente quando chamar você (modo automático; vazio = não avisa)', 'Vou chamar um atendente…'),
         S.labels.length ? h('label', { class: 'lb' }, 'Etiqueta para essas conversas (opcional)', h('select', { class: 'in', onchange: (e) => mud('etiquetaHumano', e.target.value) },
           h('option', { value: '' }, 'Nenhuma'), S.labels.map((l) => h('option', { value: l.id, selected: c.etiquetaHumano === l.id }, l.name)))) : null,
@@ -4079,7 +4083,7 @@
       if (!r?.ok && /aba não permitida/.test(r?.erro || '')) { // script antigo (sem a aba "IA - Tempos"): descarta essas linhas para não travar o resto da fila
         let k = linhas.length; S.memFila = S.memFila.filter((x) => !(x.aba === aba && k-- > 0)); memSt.avisoScript = true; continue;
       }
-      if (!r?.ok) { memSt.sync = { ok: false, t: Date.now(), erro: r?.erro || 'falhou' }; return renderSeguro(); }
+      if (!r?.ok) { memSt.sync = { ok: false, t: Date.now(), erro: r?.erro || 'falhou' }; await save('memFila'); return renderSeguro(); }   // guarda o que JÁ foi confirmado (senão reenviaria e duplicaria na planilha)
       let n = linhas.length; S.memFila = S.memFila.filter((x) => !(x.aba === aba && n-- > 0)); // tira da fila o que a planilha confirmou
     }
     memSt.sync = { ok: true, t: Date.now(), erro: '' }; await save('memFila'); renderSeguro();
@@ -4091,7 +4095,7 @@
     if (!tok) return toast('Escreva a senha da planilha (a mesma do TOKEN_IA no script).', 5000);
     const r = await chrome.runtime.sendMessage({ tipo: 'planilhaEscrever', url: S.cargasUrl, token: tok, aba: 'ping', linhas: [] }).catch((e) => ({ erro: e.message }));
     memSt.sync = r?.ok ? { ok: true, t: Date.now(), erro: '' } : { ok: false, t: Date.now(), erro: r?.erro || 'falhou' };
-    memSt.scriptAntigo = !!r?.ok && !(r.versao >= 2); memSt.versaoScript = r?.ok && /^\d+(\.\d+){0,3}$/.test(String(r.versaoScript || '')) ? String(r.versaoScript) : '';   // v1.52.3: versão do AtendeZap.gs // o script novo responde a versão no ping; sem ela, falta colar o AtendeZap.gs atualizado
+    memSt.scriptAntigo = !!r?.ok && !(r.versao >= 2); memSt.pingou = !!r?.ok; memSt.versaoScript = r?.ok && /^\d+(\.\d+){0,3}$/.test(String(r.versaoScript || '')) ? String(r.versaoScript) : '';   // v1.52.3: versão do AtendeZap.gs // o script novo responde a versão no ping; sem ela, falta colar o AtendeZap.gs atualizado
     toast(!r?.ok ? 'Não conectou: ' + memSt.sync.erro : memSt.scriptAntigo ? 'Conectou, mas o script da planilha está desatualizado (faltam os tempos de resposta): cole o AtendeZap.gs novo.' : 'Planilha conectada. O aprendizado e os tempos serão gravados nas abas "IA - …".', 8000); renderPanel();
   }
   async function memImportar() {
@@ -4353,7 +4357,7 @@
         h('div', { class: 'rowf' }, h('button', { class: 'obtn', onclick: memTestarPlanilha }, 'Testar conexão'),
           h('button', { class: 'obtn', disabled: !fila, onclick: memSincronizar }, `Enviar agora (${fila} na fila)`),
           h('button', { class: 'obtn', disabled: memSt.importando, onclick: memImportar }, memSt.importando ? 'Importando…' : 'Importar memória da planilha')),
-        memSt.sync?.ok ? h('small', { class: 'hint' }, memSt.versaoScript ? `Script da planilha de frete (AtendeZap.gs): versão ${memSt.versaoScript}` + (AC.versaoMenor(memSt.versaoScript, acessoVersao()) ? ` — mais velho que a extensão (${acessoVersao()}): cole o AtendeZap.gs novo e publique uma "Nova versão"` : '') : 'Script da planilha de frete (AtendeZap.gs): versão antiga, anterior à 1.52.3 — cole o novo e publique uma "Nova versão"') : null,
+        memSt.pingou ? h('small', { class: 'hint' }, memSt.versaoScript ?   /* só depois do "Testar conexão": é ele que pergunta a versão */ `Script da planilha de frete (AtendeZap.gs): versão ${memSt.versaoScript}` + (AC.versaoMenor(memSt.versaoScript, acessoVersao()) ? ` — mais velho que a extensão (${acessoVersao()}): cole o AtendeZap.gs novo e publique uma "Nova versão"` : '') : 'Script da planilha de frete (AtendeZap.gs): versão antiga, anterior à 1.52.3 — cole o novo e publique uma "Nova versão"') : null,
         (memSt.scriptAntigo || memSt.avisoScript) ? h('small', { class: 'iaav' }, '⚠ O script da planilha está desatualizado: cole o AtendeZap.gs novo (Apps Script) para gravar também os tempos de resposta.') : null,
         sy.ok != null ? h('small', { class: sy.ok ? 'hint' : 'dan' }, sy.ok ? `✔ Planilha conectada (${new Date(sy.t).toLocaleTimeString('pt-BR')})` : `✖ ${sy.erro}`) : null),
       c.lembrarPerfil ? h('div', { class: 'sec' }, h('div', { class: 'sh' }, h('b', { class: 'grow' }, `Perfis de motoristas lembrados (${perfis})`)),
@@ -4748,8 +4752,8 @@ ${hist ? `<h2>Histórico de autotestes</h2><table><tr><td><b>Quando</b></td><td>
   // v1.15: o mapa ficou enxuto. Antes: rodava o diagnóstico INTEIRO de novo (inclusive os testes ao vivo) só para embuti-lo, repetia
   // todos os módulos num "indice" e era gravado indentado (765 KB). Agora reaproveita o diagnóstico recente, leva só o resumo e vai compacto.
   async function ambienteDiag() {   // v1.47: onde a extensão roda e o que ocupa o armazenamento (só nomes de chaves e tamanhos)
-    const dados = await chrome.storage.local.get(null), bytes = {}, m = chrome.runtime.getManifest();
-    await Promise.all(Object.keys(dados).map(async (k) => { try { bytes[k] = await chrome.storage.local.getBytesInUse(k); } catch { bytes[k] = 0; } }));
+    const chaves = chrome.storage.local.getKeys ? await chrome.storage.local.getKeys() : Object.keys(await chrome.storage.local.get(null)), bytes = {}, m = chrome.runtime.getManifest();   // só os NOMES: ler tudo carregaria as mídias salvas
+    await Promise.all(chaves.map(async (k) => { try { bytes[k] = await chrome.storage.local.getBytesInUse(k); } catch { bytes[k] = 0; } }));
     const total = await chrome.storage.local.getBytesInUse(null).catch(() => 0);
     return { atendezap: m.version, navegador: navigator.userAgent.replace(/\s+/g, ' ').slice(0, 160), plataforma: navigator.platform, idioma: navigator.language, fuso: Intl.DateTimeFormat().resolvedOptions().timeZone, tela: { w: screen.width, h: screen.height, dpr: devicePixelRatio, janela: [innerWidth, innerHeight] },
       permissoes: m.permissions || [], hosts: m.host_permissions || [], minChrome: m.minimum_chrome_version || null, armazenamento: { totalBytes: total, chaves: Object.keys(bytes).length, maiores: AZDIAG.topArmazenamento(bytes, 15) },
@@ -4759,7 +4763,7 @@ ${hist ? `<h2>Histórico de autotestes</h2><table><tr><td><b>Quando</b></td><td>
     const flags = Object.fromEntries((Array.isArray(mapa.recursos) ? mapa.recursos : []).filter((x) => x && x.nome).map((x) => [x.nome, x.valor])), modulos = Array.isArray(mapa.modulos) ? mapa.modulos : [];
     const atual = { whatsapp: mapa.whatsapp, t: Date.now(), flags, modulos }, base = (await chrome.storage.local.get('mapaBase')).mapaBase;
     const mudancas = base ? AZDIAG.diffMapas(base, atual) : { primeiraLeitura: true, para: mapa.whatsapp || null };
-    if (modulos.length) await chrome.storage.local.set({ mapaBase: atual }).catch(() => {});
+    if (modulos.length && !AUTO.semBase) await chrome.storage.local.set({ mapaBase: atual }).catch(() => {});
     return { ambiente: await ambienteDiag(), ponte: AZDIAG.resumirPonte(PONTE), ia: AZIAREG.resumo(iaReg.itens), erros: LOG.slice(0, 30).map((e) => ({ ...e, msg: IA.mascarar(e.msg) })), mudancas };
   }
   async function gerarMapa(pronto, retornar) {
@@ -4804,7 +4808,8 @@ ${hist ? `<h2>Histórico de autotestes</h2><table><tr><td><b>Quando</b></td><td>
     if (pac.busy) return; pac.busy = true;
     try {
       let partes = null;
-      try { const ent = await montarPacoteEnt(AUTO.ultimo && Date.now() - new Date(AUTO.ultimo.data.data).getTime() < 70 * 60000 ? AUTO.ultimo : null);
+      try { AUTO.semBase = !manual;   // o pacote automático de hora em hora não move a base do "o que mudou" nem as marcas 🆕 do Laboratório
+        const ent = await montarPacoteEnt(AUTO.ultimo && Date.now() - new Date(AUTO.ultimo.data.data).getTime() < 70 * 60000 ? AUTO.ultimo : null).finally(() => { AUTO.semBase = false; });
         partes = await AZDIAG.compactarPartes(JSON.stringify({ formato: 'atendezap-pacote-1', versao: acessoVersao(), quando: new Date().toISOString(), arquivos: Object.fromEntries(ent.map((x) => [x.nome, x.dados])) }));
         await chrome.storage.local.set({ pacotePendente: { t: Date.now(), partes } });
       } catch (e) { logErr('pacote', e.message); partes = (await chrome.storage.local.get('pacotePendente')).pacotePendente?.partes || null; }
@@ -4814,9 +4819,9 @@ ${hist ? `<h2>Histórico de autotestes</h2><table><tr><td><b>Quando</b></td><td>
       else if (manual) toast(r?.ignorado ? 'O administrador desligou o envio do pacote (aba Global › coletarPacote).' : 'Não consegui enviar agora; ficou guardado e vai na próxima tentativa: ' + (r?.erro || 'sem resposta'), 9000);
     } finally { pac.busy = false; }
   }
-  async function montarPacoteEnt(pronto) {
+  async function montarPacoteEnt(pronto0) {   // a mesma análise vai para o relatório e para o mapa (antes rodava duas vezes)
     {
-      const { data } = pronto || (await runChecks('pacote')), m = chrome.runtime.getManifest(), mapaTxt = await gerarMapa(pronto, true), estr = await estruturaTela().catch((e) => JSON.stringify({ erro: e.message })), mp = JSON.parse(mapaTxt), agora = new Date(), J = (o) => JSON.stringify(o, null, 1);
+      const pronto = pronto0 || (await runChecks('pacote')), { data } = pronto, m = chrome.runtime.getManifest(), mapaTxt = await gerarMapa(pronto, true), estr = await estruturaTela().catch((e) => JSON.stringify({ erro: e.message })), mp = JSON.parse(mapaTxt), agora = new Date(), J = (o) => JSON.stringify(o, null, 1);
       const arquivos = [['relatorio.html', 'saúde de cada função e o resumo técnico (abra no navegador)'], ['mapa.json', 'chaves e módulos do WhatsApp, o que mudou desde a última leitura e as sondas'], ['estrutura.json', 'foto da estrutura da tela (sem mensagens nem contatos)'], ['ambiente.json', 'navegador, tela, permissões e o que ocupa o armazenamento'], ['erros.json', 'últimos erros do painel'], ['ponte.json', 'quais chamadas ao WhatsApp mais demoram ou falham'], ['ia.json', 'quantos envios à IA, tempo e erros (sem o texto enviado)']];
       const ent = [{ nome: 'LEIAME.txt', dados: AZDIAG.textoPacote({ versao: m.version, whatsapp: mp.mapa?.whatsapp || '?', quando: agora.toLocaleString('pt-BR'), arquivos }) }, { nome: 'relatorio.html', dados: reportHtml(data) }, { nome: 'mapa.json', dados: mapaTxt }, { nome: 'estrutura.json', dados: estr },
         { nome: 'ambiente.json', dados: J(mp.ambiente) }, { nome: 'erros.json', dados: J(mp.erros) }, { nome: 'ponte.json', dados: J(mp.ponte) }, { nome: 'ia.json', dados: J(mp.ia) }].map((x) => ({ ...x, data: agora }));
@@ -4899,7 +4904,7 @@ ${hist ? `<h2>Histórico de autotestes</h2><table><tr><td><b>Quando</b></td><td>
   // ----- Autodiagnóstico -----
   // Roda sozinho: ao conectar, na 1ª conversa aberta, a cada 30 min, quando o WhatsApp muda de versão e após erros seguidos.
   // Guarda um histórico curto (diagEstado.historico) e mostra um aviso quando alguma função fica ✖.
-  const AUTO = { busy: false, ultimo: null, errosDesde: 0, primeiraConversa: false };
+  const AUTO = { busy: false, ultimo: null, errosDesde: 0, primeiraConversa: false, semBase: false };
   async function autoDiag(motivo, tentativa = 0) {
     const estado = (await chrome.storage.local.get('diagEstado')).diagEstado || {};
     if (estado.auto === false || AUTO.busy) return;
@@ -4997,7 +5002,7 @@ ${hist ? `<h2>Histórico de autotestes</h2><table><tr><td><b>Quando</b></td><td>
   const salvarRefs = async (r, versao) => {
     // v1.49: guarda também as funções-porteiro que leem alguma chave (para a aba Funções) e quais são novas desde a leitura anterior
     const portoes = Object.fromEntries(Object.entries(r.portoes || {}).map(([m, fns]) => [m, Object.fromEntries(Object.entries(fns).filter(([, p]) => p?.[1]?.length))]).filter(([, fns]) => Object.keys(fns).length));
-    const antes = lab.refs?.portoes ? new Set(AZFUN.ids(lab.refs.portoes)) : null, novas = antes ? AZFUN.ids(portoes).filter((i) => !antes.has(i)) : (lab.refs?.novas || []);
+    const antes = lab.refs?.portoes ? new Set(AZFUN.ids(lab.refs.portoes)) : null, novas = antes && !AUTO.semBase ? AZFUN.ids(portoes).filter((i) => !antes.has(i)) : (lab.refs?.novas || []);
     lab.refs = { versao, t: new Date().toISOString(), stats: r.stats, nomes: Object.fromEntries(Object.entries(r.nomes).map(([k, v]) => [k, v.map((n) => n.replace(/^WAWeb/, ''))])), portoes, novas };
     await chrome.storage.local.set({ refCache: lab.refs });
   };
@@ -5109,7 +5114,7 @@ ${hist ? `<h2>Histórico de autotestes</h2><table><tr><td><b>Quando</b></td><td>
       h('p', { class: 'hint' }, 'Ligar muda só este navegador. Se o servidor do WhatsApp não liberar para a sua conta, o recurso não aparece ou some ao reabrir. "Voltar ao normal" desfaz tudo.')];
   }
   function labView() {
-    if (!lab.dados) { loadLab(); return [h('p', { class: 'hint' }, 'Lendo as chaves de recurso do WhatsApp…')]; }
+    if (!lab.dados) { if (!lab.carregando) { lab.carregando = true; loadLab().finally(() => { lab.carregando = false; }); } return [h('p', { class: 'hint' }, 'Lendo as chaves de recurso do WhatsApp…')]; }   // uma leitura por vez
     const d = lab.dados;
     const ov = d.overrides || {};
     const nAlt = Object.keys(ov).length;
@@ -5291,8 +5296,11 @@ ${hist ? `<h2>Histórico de autotestes</h2><table><tr><td><b>Quando</b></td><td>
   function diagView() {
     const out = h('div', { class: 'col' }, h('p', { class: 'hint' }, 'Analisando o WhatsApp Web (inclui testes ao vivo, leva alguns segundos)…'));
     (async () => {
-      const res = await runChecks('manual');
-      AUTO.ultimo = res;
+      let res = view.diagRes;   // v1.52.6: redesenhar a tela (marcar um filtro, um toast) não refaz a análise inteira; só "Analisar de novo" ou voltar à tela
+      if (!res) {
+        try { res = await runChecks('manual'); } catch (e) { out.replaceChildren(h('p', { class: 'dan' }, 'Não consegui analisar: ' + String(e?.message || e).slice(0, 120)), h('button', { class: 'gbtn sm', onclick: () => renderPanel() }, 'Tentar de novo')); return; }
+        view.diagRes = res; AUTO.ultimo = res;
+      }
       const { results, saude } = res;
       const n = { ok: 0, warn: 0, bad: 0, skip: 0 };
       results.forEach((r) => n[stOf(r.ok)]++);
@@ -5306,7 +5314,7 @@ ${hist ? `<h2>Histórico de autotestes</h2><table><tr><td><b>Quando</b></td><td>
         // v1.18: à vista só o de uso diário; o resto (arquivos para o Claude) fica recolhido para não encher a tela
         h('div', { class: 'center' },
           h('button', { class: 'gbtn sm', title: 'Texto curto (≈10 linhas) para colar na conversa com o Claude: o que está ruim, o que mudou desde a última vez e o custo do AtendeZap', onclick: () => copiarResumo(res) }, 'Copiar resumo'),
-          h('button', { class: 'gbtn out sm', onclick: () => renderPanel() }, 'Analisar de novo'),
+          h('button', { class: 'gbtn out sm', onclick: () => { view.diagRes = null; renderPanel(); } }, 'Analisar de novo'),
           h('button', { class: 'gbtn sm', title: 'A IA lê o resumo técnico e explica em português o que está errado e o que fazer', disabled: ia.diag?.carregando, onclick: () => iaDiagnostico(res) }, '✨ Explicar com IA')),
         acessoOculto('diagAvancado') ? null : h('details', { class: 'tec maisdiag', open: !!view.diagMais, ontoggle: (e) => { view.diagMais = e.target.open; } },
           h('summary', null, 'Avançado: arquivos para suporte (enviar ao Claude)'),
@@ -5338,14 +5346,14 @@ ${hist ? `<h2>Histórico de autotestes</h2><table><tr><td><b>Quando</b></td><td>
             closed ? null : items.map((r) => h('div', { class: 'diag ' + stOf(r.ok) },
               h('span', null, { true: '✔', warn: '⚠', skip: '○' }[r.ok] || '✖'),
               h('div', { class: 'grow' }, h('b', null, r.nome), r.d ? h('small', null, r.d) : null),
-              r.acao ? h('button', { class: 'obtn', onclick: async () => { try { await r.acao.fn(); } catch (e) { toast(e.message); } renderPanel(); } }, r.acao.label) : null)));
+              r.acao ? h('button', { class: 'obtn', onclick: async () => { try { await r.acao.fn(); } catch (e) { toast(e.message); } view.diagRes = null; renderPanel(); } }, r.acao.label) : null)));
         }),
         h('div', { class: 'dgrp' },
           h('div', { class: 'dgh' }, h('i', { class: 'dd ok' }), h('b', null, 'Autodiagnóstico'), h('em', null, hist.length)),
-          h('label', { class: 'tog' }, h('span', null, 'Testar sozinho ao abrir, a cada 30 min e quando o WhatsApp atualizar'),
-            h('input', { type: 'checkbox', checked: estado.auto !== false, onchange: async (e) => { await chrome.storage.local.set({ diagEstado: { ...estado, auto: e.target.checked } }); } }), h('i')),
+          h('label', { class: 'tog' }, h('span', null, 'Testar sozinho ao abrir, a cada 30 min (no Modo leve, de hora em hora) e quando o WhatsApp atualizar'),
+            h('input', { type: 'checkbox', checked: estado.auto !== false, onchange: async (e) => { /* relê: um autoteste pode ter gravado depois do desenho */ const atual = (await chrome.storage.local.get('diagEstado')).diagEstado || {}; await chrome.storage.local.set({ diagEstado: { ...atual, auto: e.target.checked } }); } }), h('i')),
           hist.slice(0, 6).map((x) => h('div', { class: 'diag ' + (x.bad ? 'bad' : x.warn ? 'warn' : 'ok') },
-            h('span', null, x.bad ? '✖' : '✔'),
+            h('span', null, x.bad ? '✖' : x.warn ? '⚠' : '✔'),
             h('div', { class: 'grow' }, h('b', null, `${new Date(x.data).toLocaleString('pt-BR')} · ${x.motivo}`),
               h('small', null, `WhatsApp ${x.whatsapp || '?'} · ✔ ${x.ok} ⚠ ${x.warn} ✖ ${x.bad}${x.skip ? ' ○ ' + x.skip : ''}${x.afetadas?.length ? ' · afetadas: ' + x.afetadas.join(', ') : ''}`))))),
         h('p', { class: 'hint' }, 'O relatório não contém mensagens nem contatos. Envie ao Claude quando algo estiver com ✖.')).childNodes);
@@ -5370,7 +5378,7 @@ ${hist ? `<h2>Histórico de autotestes</h2><table><tr><td><b>Quando</b></td><td>
     window.addEventListener('resize', () => { if (pop.open) renderPop(); });
     const poll = setInterval(async () => {
       if (S.ready) return clearInterval(poll);
-      if (await Promise.race([call('ready'), sleep(1500)])) setReady();
+      if (await callT(1500, 'ready').catch(() => false)) setReady();   // com tempo limite: sem a ponte, não acumula pedidos pendentes
     }, 2000);
   })();
 })();

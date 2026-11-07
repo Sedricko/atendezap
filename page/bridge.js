@@ -146,7 +146,7 @@
 
   const isReady = () => !!(window.WPP && (WPP.isFullReady || WPP.isReady || WPP.loader?.isFullReady || WPP.loader?.isReady));
   // Mesmo formato do original: número puro vira @c.us; grupos têm id longo.
-  const toWid = (e) => (!e ? '' : /@(c\.us|g\.us|lid)$/.test(e) ? e : e + (e.length > 16 ? '@g.us' : '@c.us'));
+  const toWid = (e) => (!e ? '' : /@[\w.]+$/.test(e) ? e : e + (e.length > 16 ? '@g.us' : '@c.us'));   // já tem @ (inclusive @newsletter e @broadcast): fica como está
   // Resolve para o id que o WhatsApp usa de fato (pode ser @lid nas versões novas)
   const resolve = async (e) => { try { return (await WPP.chat.find(toWid(e)))?.id?._serialized || toWid(e); } catch { return toWid(e); } };
   const sid = (w) => (typeof w === 'string' ? w : w?._serialized);
@@ -558,7 +558,7 @@
         if (executar && redir.length) {
           const limpar = [];
           for (const x of redir) {
-            if (adicoesFeitas >= MAX_ADICOES) { item.semVaga.push(x.f.rotulo); continue; }
+            if (adicoesFeitas >= MAX_ADICOES) { item.redirecionar = item.redirecionar.filter((y) => y.quem !== x.f.rotulo); item.semVaga.push(x.f.rotulo); continue; }   // passou do teto desta vez: conta só como pendente (antes aparecia nas duas listas)
             adicoesFeitas++;
             try {
               const res = await WPP.group.addParticipants(x.destino, [x.wid]);
