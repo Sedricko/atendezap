@@ -32,10 +32,12 @@
  */
 
 var ADM_VERSAO = 3;
-var ADM_ABA = { usuarios: 'Usuarios', perfis: 'Perfis', excecoes: 'Excecoes', global: 'Global', saude: 'Saude', computadores: 'Computadores', legenda: 'Legenda' };
+var ADM_ABA = { usuarios: 'Usuarios', perfis: 'Perfis', excecoes: 'Excecoes', global: 'Global', saude: 'Saude', computadores: 'Computadores', legenda: 'Legenda', equipe: 'Equipe' };
+// v1.52: Central da equipe. A aba Equipe NUNCA guarda telefone: só a "impressão digital" do cliente (SHA-256 com a senha da equipe, que fica nas propriedades do script, fora da planilha).
+var ADM_CAB_EQUIPE = ['Cliente (impressão digital, sem telefone)', 'Dono', 'Desde', 'Passado por', 'Motivo', 'Quando passou'];
 // colunas de Usuarios (1 = A)
-var ADM_U = { NOME: 1, CODIGO: 2, PERFIL: 3, ATIVO: 4, VALIDADE: 5, CONVITE: 6, ULTIMA: 7, VERSAO: 8, INST: 9, ROBO: 10, SINAL: 11, ALERTADO: 12, OBS: 13, MAXPC: 14 };
-var ADM_CAB_USUARIOS = ['Nome', 'Código', 'Perfil', 'Ativo (sim/não)', 'Validade (dd/mm/aaaa)', 'Convite (mande à pessoa)', 'Última consulta', 'Versão', 'Instalação', 'Robô', 'Último sinal', 'Alertado', 'Observações', 'Máx. computadores (vazio = 1)'];
+var ADM_U = { NOME: 1, CODIGO: 2, PERFIL: 3, ATIVO: 4, VALIDADE: 5, CONVITE: 6, ULTIMA: 7, VERSAO: 8, INST: 9, ROBO: 10, SINAL: 11, ALERTADO: 12, OBS: 13, MAXPC: 14, WHATS: 15 };
+var ADM_CAB_USUARIOS = ['Nome', 'Código', 'Perfil', 'Ativo (sim/não)', 'Validade (dd/mm/aaaa)', 'Convite (mande à pessoa)', 'Última consulta', 'Versão', 'Instalação', 'Robô', 'Último sinal', 'Alertado', 'Observações', 'Máx. computadores (vazio = 1)', 'WhatsApp do atendente (para passar cliente)'];
 var ADM_CAB_SAUDE = ['Data', 'Pessoa', 'Versão', 'WhatsApp', 'Ok', 'Avisos', 'Problemas', 'Sem teste', 'Checagens com problema', 'Robô (modo)', 'Robô ligado', 'Respondeu 24h', 'Repasses 24h', 'Ignoradas 24h', 'Falhas IA 24h', 'Pendências', 'IA (s)', 'Cliente esperou (s)', 'Falhas IA hoje', 'Resumo (JSON)'];
 // Cores da aba Perfis: [fundo, texto]. Verde = ATIVO, laranja = liberado mas vem desligado, vermelho = bloqueado (e vazio, que é a mesma coisa). AMARELO é só do modo AUTOMÁTICO do robô (atenção: responde sozinho).
 var ADM_COR = { ligado: ['#ceead6', '#137333'], obrigatorio: ['#81c995', '#0d652d'], desligado: ['#fce5cd', '#b45f06'], bloqueado: ['#fad2cf', '#c5221f'], vazio: ['#fce8e6', '#c5221f'], automatico: ['#ffe599', '#7f6000'] };
@@ -43,7 +45,7 @@ var ADM_COR = { ligado: ['#ceead6', '#137333'], obrigatorio: ['#81c995', '#0d652
 var ADM_LIMITES_VAL = { roboModoMax: ['desligado', 'sugerir', 'automatico'], roboMaxPorContatoDia: [1, 200], roboMaxPorHora: [1, 500], chavesMax: [1, 6], retencaoMaxDias: [1, 365] };
 // Como a aba Perfis é organizada: [título do grupo, explicação, [chaves]]. Todo recurso e todo limite está em exatamente um grupo (o teste confere).
 var ADM_GRUPOS = [
-  ['▸ ATENDIMENTO', 'Responder clientes: respostas, fila de espera, assinatura, o robô (Atendente IA), a transcrição de áudios e a Lista de frete', ['replies', 'fila', 'sig', 'atendente', 'memoria', 'iaAudio', 'escuta', 'resumo', 'ligacao', 'cargas']],
+  ['▸ ATENDIMENTO', 'Responder clientes: respostas, fila de espera, assinatura, o robô (Atendente IA), a transcrição de áudios e a Lista de frete', ['replies', 'fila', 'sig', 'atendente', 'memoria', 'iaAudio', 'escuta', 'resumo', 'ligacao', 'cargas', 'equipeCentral']],
   ['▸ GRUPOS', 'Tudo de grupos: pedidos para entrar, vagas e "grupos só na aba Grupos"', ['pedidos', 'unicos', 'vagas', 'gruposSo']],
   ['▸ FERRAMENTAS', 'Iniciar conversa, enviar para vários, fixar conversas, exportar conversa e backup', ['start', 'lote', 'pins', 'contato', 'exportar', 'backup']],
   ['▸ PRIVACIDADE', 'Ocultar conversas, apagar as suas mensagens para todos e recuperar o que os contatos apagarem', ['ocultas', 'apagar', 'recuperar', 'limpeza']],
@@ -71,6 +73,7 @@ var ADM_RECURSOS = [
   ['contato', '[Em teste] Ferramentas › Contato: dados do contato aberto e o aparelho provável dele (Android, iPhone ou Web)'], ['resumo', '[Em teste] Atendimento › Resumo: a IA resume as mensagens não lidas das conversas individuais e sugere o que fazer primeiro (só resume, não responde a ninguém)'], ['ligacao', '[Em teste] Atendimento › Aguardando: responde com UMA mensagem curta quem ligar e não foi atendido (nunca em grupo, nunca atende nem recusa a chamada; a pessoa liga lá dentro)'], ['avaliacao', '[Em teste] Diagnóstico › Avaliação: confere o que a pessoa respondeu contra a memória aprendida, quem ficou sem resposta e o tempo de resposta (sem IA, sem nota para ninguém)'],
   ['escuta', '[Em teste] Atendimento › Memória IA › Banco de conhecimento: lê as conversas de tempos em tempos e guarda o conhecimento (sem dados pessoais); a pessoa liga lá dentro e a IA só propõe, ela aprova'],
   ['memoria', 'Atendimento › Memória IA (o que a IA aprendeu; a escuta automática fica aqui dentro)'], ['unicos', 'Grupos › Conjuntos de grupos (sem duplicar quem já está em grupo igual)'], ['iaenvios', 'Diagnóstico › Envios à IA (quantos pedidos foram à IA, tempo e erros)'],
+  ['equipeCentral', '[Em teste] Atendimento › Equipe: "este cliente é da Maria" e passar cliente para um colega (a planilha guarda só a impressão digital do cliente, nunca o telefone; preencha a coluna WhatsApp do atendente em Usuarios)'],
   ['limpeza', '[Em teste] Privacidade › Limpar conversas: apaga as conversas paradas há mais de 30 a 360 dias (fixadas, com etiqueta e não lidas ficam) e, nos grupos, só PARA A PESSOA as mensagens antigas']
 ];
 // Limites (valor vazio = sem teto). [chave, descrição]
@@ -93,7 +96,7 @@ var ADM_PERFIS_EXEMPLO = {
   atendente: ['', 'bloqueado', 'ligado', 'ligado'], vagas: ['', 'ligado', 'ligado', 'ligado'], pedidos: ['', 'desligado', 'desligado', 'ligado'], cargas: ['', 'ligado', 'ligado', 'ligado'],
   iaAudio: ['', 'bloqueado', 'desligado', 'ligado'], diagAvancado: ['', 'bloqueado', 'bloqueado', 'ligado'],
   diag: ['', 'bloqueado', 'bloqueado', 'ligado'], cfgPosicao: ['', 'ligado', 'ligado', 'ligado'], cfgIA: ['', 'bloqueado', 'ligado', 'ligado'], cfgPartes: ['', 'bloqueado', 'bloqueado', 'ligado'], cfgLimites: ['', 'bloqueado', 'bloqueado', 'ligado'],
-  memoria: ['', 'bloqueado', 'ligado', 'ligado'], unicos: ['', 'desligado', 'desligado', 'ligado'], iaenvios: ['', 'bloqueado', 'bloqueado', 'ligado'], limpeza: ['', 'bloqueado', 'bloqueado', 'ligado'],
+  memoria: ['', 'bloqueado', 'ligado', 'ligado'], unicos: ['', 'desligado', 'desligado', 'ligado'], iaenvios: ['', 'bloqueado', 'bloqueado', 'ligado'], limpeza: ['', 'bloqueado', 'bloqueado', 'ligado'], equipeCentral: ['', 'bloqueado', 'bloqueado', 'ligado'],
   'limite:roboModoMax': ['', 'desligado', 'sugerir', 'automatico'], 'limite:roboMaxPorContatoDia': ['', '', '15', ''], 'limite:roboMaxPorHora': ['', '', '40', ''], 'limite:chavesMax': ['', '1', '2', '6'], 'limite:retencaoMaxDias': ['', '90', '90', '']
 };
 var ADM_NOMES_PERFIS = ['Novo', 'Básico', 'Com robô', 'Administrador'];   // "Novo" fica em branco: quem entra sem perfil (ou com perfil que não existe) só vê o "Acesso da equipe"
@@ -212,6 +215,41 @@ function admCompletar_() {
   if (!us) return;
   admGarantirComputadores_();
   if (String(us.getRange(1, ADM_U.MAXPC).getValue() || '') === '') us.getRange(1, ADM_U.MAXPC).setValue(ADM_CAB_USUARIOS[ADM_U.MAXPC - 1]).setFontWeight('bold');
+  if (String(us.getRange(1, ADM_U.WHATS).getValue() || '') === '') us.getRange(1, ADM_U.WHATS).setValue(ADM_CAB_USUARIOS[ADM_U.WHATS - 1]).setFontWeight('bold');   // v1.52
+}
+// ---------------------------------------------------------------- v1.52: Central da equipe
+function admSegredoEquipe_() {
+  var p = PropertiesService.getScriptProperties(), s = p.getProperty('AZ_SEGREDO_EQUIPE');
+  if (!s) { s = Utilities.getUuid().replace(/-/g, '') + Utilities.getUuid().replace(/-/g, ''); p.setProperty('AZ_SEGREDO_EQUIPE', s); }
+  return s;
+}
+function admEquipeAba_() {
+  var ss = SpreadsheetApp.getActiveSpreadsheet(), sh = ss.getSheetByName(ADM_ABA.equipe);
+  if (!sh) sh = ss.insertSheet(ADM_ABA.equipe);
+  if (sh.getLastRow() === 0) { sh.getRange(1, 1, 1, ADM_CAB_EQUIPE.length).setValues([ADM_CAB_EQUIPE]); sh.getRange(1, 1, 1, ADM_CAB_EQUIPE.length).setFontWeight('bold'); sh.setFrozenRows(1); }
+  return sh;
+}
+// Colegas da equipe (ativos): nome e o WhatsApp do atendente, para "passar cliente". vals = aba Usuarios inteira.
+function admColegas_(vals) {
+  var out = [], r; for (r = 1; r < vals.length; r++) { var n = String(vals[r][ADM_U.NOME - 1] || '').trim(); if (!n || !admSim_(vals[r][ADM_U.ATIVO - 1])) continue; out.push({ nome: n.slice(0, 60), whatsapp: String(vals[r][ADM_U.WHATS - 1] || '').replace(/\D/g, '').slice(0, 15) }); }
+  return out.slice(0, 50);
+}
+// Ações da Central: equipeVer (quem é o dono), equipeMarcar (fica com quem respondeu primeiro), equipePassar (muda o dono, com motivo).
+function admEquipe_(acao, nome, b, colegas, agora) {
+  var h = String(b.cliente || '').trim(); if (!/^[0-9a-f]{32}$/.test(h)) return { ok: false, erro: 'cliente inválido' };
+  var sh = admEquipeAba_(), vals = sh.getDataRange().getValues(), linha = -1, r;
+  for (r = 1; r < vals.length; r++) if (String(vals[r][0]).trim() === h) { linha = r; break; }
+  var reg = linha > 0 ? vals[linha] : null, info = function (x) { return x ? { dono: String(x[1] || ''), desde: x[2] instanceof Date ? x[2].getTime() : null, passadoPor: String(x[3] || ''), motivo: String(x[4] || ''), quando: x[5] instanceof Date ? x[5].getTime() : null } : {}; };
+  if (acao === 'equipeVer') return { ok: true, info: info(reg) };
+  if (acao === 'equipeMarcar') { if (reg && reg[1]) return { ok: true, info: info(reg) }; sh.appendRow([h, admCel_(nome), agora, '', '', '']); return { ok: true, info: { dono: nome, desde: agora.getTime() } }; }
+  if (acao === 'equipePassar') {
+    var para = String(b.para || '').trim(); if (!colegas.some(function (c) { return c.nome === para; })) return { ok: false, erro: 'colega não encontrado' };
+    if (reg && reg[1] && String(reg[1]) !== nome) return { ok: false, erro: 'este cliente é de ' + reg[1] + ': só ' + reg[1] + ' pode passar' };
+    var linhaNova = [h, admCel_(para), reg && reg[2] ? reg[2] : agora, admCel_(nome), admCel_(String(b.motivo || '').slice(0, 200)), agora];
+    if (linha > 0) sh.getRange(linha + 1, 1, 1, 6).setValues([linhaNova]); else sh.appendRow(linhaNova);
+    return { ok: true, info: info(linhaNova) };
+  }
+  return { ok: false, erro: 'ação desconhecida' };
 }
 
 // ---------------------------------------------------------------- organização e aparência (cores, listas de escolha, grupos)
@@ -445,12 +483,17 @@ function doPost(e) {
     if (acao === 'config') {
       sh.getRange(linha + 1, ADM_U.ULTIMA, 1, 3).setValues([[agora, admCel_(String(b.versao || '').slice(0, 14)), admCel_(String(b.inst || '').slice(0, 40))]]);
       var corpo = { nome: nome, perfil: perfil, recursos: cfg.recursos, limites: cfg.limites, global: cfg.global };
-      return admJson_({ ok: true, nome: nome, perfil: perfil, recursos: cfg.recursos, limites: cfg.limites, global: cfg.global, pcs: pc.pcs, hash: admHash_(JSON.stringify(corpo)), agora: agora.getTime() });
+      var eq = cfg.recursos.equipeCentral && cfg.recursos.equipeCentral !== 'bloqueado' ? { segredo: admSegredoEquipe_(), colegas: admColegas_(vals) } : null;   // v1.52: só para quem tem a Central liberada
+      return admJson_({ ok: true, nome: nome, perfil: perfil, recursos: cfg.recursos, limites: cfg.limites, global: cfg.global, pcs: pc.pcs, hash: admHash_(JSON.stringify(corpo)), agora: agora.getTime(), equipe: eq });
     }
     if (acao === 'saude') {
       if (cfg.global.coletarSaude !== 'sim') return admJson_({ ok: true, ignorado: true });
       admRegistrarSaude_(sh, linha + 1, nome, b.dados, agora);
       return admJson_({ ok: true });
+    }
+    if (/^equipe(Ver|Marcar|Passar)$/.test(acao)) {   // v1.52
+      if (!cfg.recursos.equipeCentral || cfg.recursos.equipeCentral === 'bloqueado') return admJson_({ ok: false, erro: 'Central da equipe bloqueada para o seu perfil' });
+      return admJson_(admEquipe_(acao, nome, b, admColegas_(vals), agora));
     }
     return admJson_({ ok: false, erro: 'ação desconhecida' });
   } catch (err) {

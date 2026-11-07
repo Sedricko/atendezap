@@ -1,4 +1,4 @@
-AtendeZap — extensão para WhatsApp Web (Chrome/Edge) · v1.51.0
+AtendeZap — extensão para WhatsApp Web (Chrome/Edge) · v1.52.0
 
 COMO INSTALAR
  1. Descompacte a pasta "atendezap" num lugar fixo (não apague depois). Precisa de Chrome/Edge 111 ou mais novo.
@@ -24,7 +24,7 @@ PRIMEIROS PASSOS
 PLANILHAS (duas, separadas; nunca no mesmo projeto do Apps Script)
  • Planilha de frete / IA — script planilha/AtendeZap.gs (versão 5): guarda as abas IA - Demanda, IA - Aprendizado, IA - Memória (a equipe também edita), IA - Tempos, IA - Conversas e IA - Avaliação.
    Mantenha a sua senha na linha TOKEN_IA e, ao atualizar o script, use Implantar › Gerenciar implantações › Nova versão (o link continua o mesmo).
- • Painel Administrador — script planilha/AdminControle.gs: convites, perfis (33 recursos por perfil, vazio = bloqueado), limites, computadores e saúde. Menu "AtendeZap Admin" na própria planilha.
+ • Painel Administrador — script planilha/AdminControle.gs: convites, perfis (34 recursos por perfil, vazio = bloqueado), limites, computadores e saúde. Menu "AtendeZap Admin" na própria planilha.
    Detalhes e histórico: docs/HISTORICO.txt (seção v1.34 em diante).
 
 PRIVACIDADE E SEGURANÇA (resumo)

@@ -101,7 +101,7 @@ WPP.whatsapp.Cmd = { sendRevokeMsgs: async (chat, { list }) => { for (const m of
 ABA_DE = {'Respostas rápidas': ('Atendimento', 'Respostas'), 'Aguardando resposta': ('Atendimento', 'Aguardando'), 'Assinatura': ('Atendimento', 'Assinatura'), 'Atendente IA': ('Atendimento', 'Atendente IA'), 'Memória IA': ('Atendimento', 'Memória IA'), 'Lista de frete': ('Atendimento', 'Lista de frete'),
           'Pedidos': ('Grupos', 'Pedidos'), 'Conjuntos': ('Grupos', 'Conjuntos'), 'Sem duplicar': ('Grupos', 'Conjuntos'), 'Ajustes dos grupos': ('Grupos', 'Ajustes'),
           'Iniciar conversa': ('Ferramentas', 'Iniciar conversa'), 'Enviar para vários': ('Ferramentas', 'Enviar para vários'), 'Conversas fixadas': ('Ferramentas', 'Fixadas'), 'Exportar conversa': ('Ferramentas', 'Exportar'), 'Contato do cliente': ('Ferramentas', 'Contato'), 'Resumo do que perdi': ('Atendimento', 'Resumo'), 'Avaliação do atendimento': ('Diagnóstico', 'Avaliação'), 'Envios à IA': ('Diagnóstico', 'Envios à IA'), 'Backup': ('Ferramentas', 'Backup'),
-          'Conversas ocultas': ('Privacidade', 'Ocultas'), 'Apagar mensagens': ('Privacidade', 'Apagar'), 'Recuperar apagadas': ('Privacidade', 'Recuperar'), 'Limpar conversas': ('Privacidade', 'Limpar'),
+          'Conversas ocultas': ('Privacidade', 'Ocultas'), 'Apagar mensagens': ('Privacidade', 'Apagar'), 'Recuperar apagadas': ('Privacidade', 'Recuperar'), 'Equipe': ('Atendimento', 'Equipe'), 'Limpar conversas': ('Privacidade', 'Limpar'),
           'Diagnóstico': ('Diagnóstico', 'Saúde'), 'Limites': ('Diagnóstico', 'Limites'), 'Laboratório': ('Diagnóstico', 'Laboratório'), 'Configurações': ('Configurações', None)}
 async def ir(page, nome):
     rail, aba = ABA_DE.get(nome, (nome, None))
@@ -545,7 +545,12 @@ async def main():
                 if (b.codigo !== 'CODIGOTESTE123456') return resp({ ok: false, erro: 'acesso negado' });
                 if (A.recusa) return resp({ ok: false, erro: A.recusa, limite: A.limite || 1, emUso: 1 });   // limite de computadores / computador desconectado
                 if (A.desativado) return resp({ ok: false, desativado: true, erro: 'desativado' });
-                if (b.acao === 'config') return resp({ ok: true, nome: 'Maria', perfil: 'Com robô', recursos: A.recursos || {}, limites: A.limites || {}, global: A.global || {}, pcs: A.pcs, hash: JSON.stringify([A.recursos, A.limites, A.global]).length + 'h', agora: Date.now() });
+                if (b.acao === 'config') return resp({ ok: true, nome: 'Maria', perfil: 'Com robô', recursos: A.recursos || {}, limites: A.limites || {}, global: A.global || {}, pcs: A.pcs, hash: JSON.stringify([A.recursos, A.limites, A.global]).length + 'h', agora: Date.now(),
+                  equipe: A.recursos && A.recursos.equipeCentral ? { segredo: 'ab'.repeat(16), colegas: [{ nome: 'Maria' }, { nome: 'Joao', whatsapp: '5511977776666' }] } : null });   // v1.52
+                if (/^equipe/.test(b.acao)) { const E = (self.__equipe ||= {}); self.__eqLog = [...(self.__eqLog || []), { acao: b.acao, cliente: b.cliente, para: b.para, motivo: b.motivo }];
+                  if (b.acao === 'equipeMarcar' && !(E[b.cliente] || {}).dono) E[b.cliente] = { dono: 'Maria', desde: Date.now() };
+                  if (b.acao === 'equipePassar') E[b.cliente] = { dono: b.para, passadoPor: 'Maria', motivo: b.motivo || '', quando: Date.now() };
+                  return resp({ ok: true, info: E[b.cliente] || {} }); }
                 if (b.acao === 'saude') return resp({ ok: true });
                 return resp({ ok: false, erro: 'ação desconhecida' });
               }
@@ -1189,7 +1194,7 @@ async def main():
         res['ac_desligado_extras'] = {'cartoes': (await page.evaluate(TELA))['cartoes'], 'diag_na_barra': await page.locator('#az-panel .tb[data-tip^="Diagnóstico"]').count()}
         await sw.evaluate("chrome.storage.local.set({ acessoExigir: false, acessoCfg: {}, acessoEstado: null, acessoAplicado: {}, modulos: {}, atendCfg: {}, atendEst: {}, atendLog: [], atendSug: [] }); self.__admin = {}"); await page.wait_for_timeout(1200)
         # v1.35.1: perfil ADMINISTRADOR com os 21 recursos ligados — TUDO o que a planilha oferece tem de aparecer e funcionar na extensão (era o caso do Laboratório que não aparecia)
-        TODOS = {k: 'ligado' for k in ['replies', 'fila', 'sig', 'start', 'lote', 'pins', 'ocultas', 'apagar', 'recuperar', 'exportar', 'contato', 'escuta', 'resumo', 'ligacao', 'avaliacao', 'backup', 'lab', 'gruposSo', 'atendente', 'vagas', 'pedidos', 'cargas', 'iaAudio', 'diagAvancado', 'diag', 'cfgPosicao', 'cfgIA', 'cfgPartes', 'cfgLimites', 'memoria', 'unicos', 'iaenvios', 'limpeza']}
+        TODOS = {k: 'ligado' for k in ['replies', 'fila', 'sig', 'start', 'lote', 'pins', 'ocultas', 'apagar', 'recuperar', 'exportar', 'contato', 'escuta', 'resumo', 'ligacao', 'avaliacao', 'backup', 'lab', 'gruposSo', 'atendente', 'vagas', 'pedidos', 'cargas', 'iaAudio', 'diagAvancado', 'diag', 'cfgPosicao', 'cfgIA', 'cfgPartes', 'cfgLimites', 'memoria', 'unicos', 'iaenvios', 'limpeza', 'equipeCentral']}
         await sw.evaluate("chrome.storage.local.set({ acessoExigir: true, acessoCfg: {}, acessoEstado: null, acessoAplicado: {}, modulos: {}, atendCfg: %s, atendEst: {}, atendLog: [], atendSug: [] }); self.__adminLog = []" % json.dumps(cfgA)); await admin({'recursos': TODOS, 'limites': {'roboModoMax': 'automatico', 'chavesMax': '6'}, 'global': G1}); await page.wait_for_timeout(1500)
         await conectar(conv(ADM, COD)); await page.wait_for_timeout(1200); await ir(page, 'Configurações'); await page.wait_for_timeout(800)
         res['ac_todos_config'] = await page.evaluate("""(() => { const r = document.querySelector('#az-panel').shadowRoot; return { cartoes: [...r.querySelectorAll('.pb .sec')].map((x) => (x.querySelector('.sh b') || {}).innerText), abas: [...r.querySelectorAll('.hubtabs .ht')].map((b) => b.innerText.replace(/\\d+$/, '').trim()), mais_chave: r.querySelector('.pb').innerText.includes('+ Adicionar outra chave') }; })()""")
@@ -1211,6 +1216,16 @@ async def main():
         await sub_atend(page, 'Painel'); automatico_livre = await page.evaluate("![...document.querySelector('#az-panel').shadowRoot.querySelectorAll('.seg button')].find((b) => b.innerText.includes('Automático')).disabled")
         await sub_atend(page, 'Ajustes')
         res['ac_todos_robo'] = {'audio': await page.evaluate(PBTXT + ".includes('Áudios dos clientes')"), 'automatico_livre': automatico_livre}
+        # v1.52: Central da equipe — ninguém é dono ainda; passar para o Joao (com o contato dele ao cliente); a planilha só recebe a impressão digital
+        await ir(page, 'Equipe'); await page.wait_for_timeout(1800)
+        eq0 = await page.evaluate(PBTXT + ".includes('ninguém ainda')")
+        await page.locator('#az-panel select.in').select_option('Joao'); await page.wait_for_timeout(300)
+        await page.locator('#az-panel input[placeholder^="Motivo"]').fill('carga para SP'); await page.wait_for_timeout(200)
+        await dlg_next(page); await page.locator('#az-panel .gbtn', has_text='Passar cliente').click(); await page.wait_for_timeout(2500)
+        eqlog = await sw.evaluate("self.__eqLog || []")
+        passe = [x for x in eqlog if x['acao'] == 'equipePassar']
+        res['equipe'] = {'sem_dono': eq0, 'passou': bool(passe) and passe[0]['para'] == 'Joao' and passe[0]['motivo'] == 'carga para SP', 'so_digital': bool(passe) and bool(re.fullmatch(r'[0-9a-f]{32}', passe[0]['cliente'] or '')) and '558599990000' not in json.dumps(eqlog),
+                         'avisou_cliente': await page.evaluate("window.__log.some((l) => l[0] === 'text' && l.slice(1).some((x) => String(x).includes('wa.me/5511977776666')))"), 'dono_agora': await page.evaluate(PBTXT + ".includes('Dono deste cliente') && " + PBTXT + ".includes('Joao')")}
         await sw.evaluate("chrome.storage.local.set({ acessoExigir: false, acessoCfg: {}, acessoEstado: null, acessoAplicado: {}, modulos: {}, atendCfg: {}, atendEst: {}, atendLog: [], atendSug: [] }); self.__admin = {}"); await page.wait_for_timeout(1200)
         # v1.36: LIMITE DE COMPUTADORES por convite — o servidor recusa o excedente; a extensão explica e nada trava por engano
         await sw.evaluate("chrome.storage.local.set({ instId: '', acessoExigir: true, acessoCfg: {}, acessoEstado: null, acessoAplicado: {}, modulos: {}, atendCfg: %s, atendEst: {}, atendLog: [], atendSug: [] }); self.__adminLog = []" % json.dumps(cfgA)); await page.wait_for_timeout(1500)
@@ -1874,6 +1889,7 @@ async def main():
             'rb_F_G_H_textos': lambda v: v == [1, 1, 0],
             'rb_sugestao': lambda v: v[0] == 0 and len(v[1]) == 1 and v[1][0][0] == 'responder',
             'rb_sug_manual_tudo': lambda v: v == 2,
+            'equipe': lambda v: v == {'sem_dono': True, 'passou': True, 'so_digital': True, 'avisou_cliente': True, 'dono_agora': True},   # v1.52
             'teto_oficial': lambda v: v == {'leu': True, 'restricao': True, 'autoteste': True, 'nao_chamou_fetch': True},   # v1.51
             'lab_explorar': lambda v: v == {'temas': True, 'resumo': True},   # v1.50
             'mapa_explorar': lambda v: v is True,   # v1.50
@@ -1984,7 +2000,7 @@ async def main():
             'ac_pc_desconectado': lambda v: v == {'banner': True, 'motivo': True, 'respostas_na_barra': 0},
             'ac_pc_volta': lambda v: v == {'conectou': True, 'conectar': True, 'respostas_na_barra': 1, 'mantem_escolha': True, 'sem_novo_aviso': True},
             'ac_todos_config': lambda v: v == {'cartoes': ['Posição do painel', 'Acesso da equipe', 'Assistente de IA (Gemini)', 'Partes do painel'], 'abas': [], 'mais_chave': True},
-            'ac_todos_barra': lambda v: v == {'icones': ['Atendimento', 'Grupos', 'Ferramentas', 'Privacidade', 'Diagnóstico', 'Configurações'], 'abas': {'Atendimento': ['Respostas', 'Aguardando', 'Assinatura', 'Atendente IA', 'Memória IA', 'Lista de frete', 'Resumo 🧪'], 'Grupos': ['Pedidos', 'Conjuntos', 'Ajustes'], 'Ferramentas': ['Iniciar conversa', 'Enviar para vários', 'Fixadas', 'Contato 🧪', 'Exportar 🧪', 'Backup'], 'Privacidade': ['Ocultas', 'Apagar 🧪', 'Recuperar 🧪', 'Limpar 🧪'], 'Diagnóstico': ['Saúde', 'Limites', 'Avaliação 🧪', 'Envios à IA', 'Laboratório 🧪'], 'Configurações': []}, 'cartoes': {'Ajustes dos grupos': ['Vagas nos grupos', 'Grupos só na aba Grupos'], 'Lista de frete': ['Lista de frete (planilha Google)'], 'Limites': ['Risco de banimento (hoje)', 'Limites do WhatsApp', 'Monitor de limitações']}},
+            'ac_todos_barra': lambda v: v == {'icones': ['Atendimento', 'Grupos', 'Ferramentas', 'Privacidade', 'Diagnóstico', 'Configurações'], 'abas': {'Atendimento': ['Respostas', 'Aguardando', 'Assinatura', 'Atendente IA', 'Memória IA', 'Lista de frete', 'Resumo 🧪', 'Equipe'], 'Grupos': ['Pedidos', 'Conjuntos', 'Ajustes'], 'Ferramentas': ['Iniciar conversa', 'Enviar para vários', 'Fixadas', 'Contato 🧪', 'Exportar 🧪', 'Backup'], 'Privacidade': ['Ocultas', 'Apagar 🧪', 'Recuperar 🧪', 'Limpar 🧪'], 'Diagnóstico': ['Saúde', 'Limites', 'Avaliação 🧪', 'Envios à IA', 'Laboratório 🧪'], 'Configurações': []}, 'cartoes': {'Ajustes dos grupos': ['Vagas nos grupos', 'Grupos só na aba Grupos'], 'Lista de frete': ['Lista de frete (planilha Google)'], 'Limites': ['Risco de banimento (hoje)', 'Limites do WhatsApp', 'Monitor de limitações']}},
             'ac_todos_diag': lambda v: v == {'laboratorio': True, 'avancado': True}, 'ac_todos_robo': lambda v: v == {'audio': True, 'automatico_livre': True},
             'ac_vazio_tela': lambda v: v == {'cartoes': ['Acesso da equipe'], 'sem_diag_nem_backup': True, 'aberto': True, 'aviso': True, 'respostas_na_barra': 0, 'config_na_barra': 1},
             'ac_vazio_libera': lambda v: v == {'cartoes': ['Posição do painel', 'Acesso da equipe'], 'respostas_na_barra': 1, 'aviso_sumiu': True},

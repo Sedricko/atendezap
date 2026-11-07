@@ -830,7 +830,7 @@ const cifrar = (obj, senha) => { // mesmo formato do CryptoJS/OpenSSL ("Salted__
   assert.equal(A.liberado(A.avaliar(ac, est(A.normalizar({ recursos: { replies: 'ligado' } })), T0, true), 'replies', undefined), true);
   // NADA VEM LIBERADO DE FÁBRICA: perfil vazio = só o Acesso da equipe; o administrador libera item a item
   const vz = A.avaliar(ac, est(A.normalizar({})), T0);
-  assert.equal(A.RECURSOS.length, 33); for (const k of A.RECURSOS) assert.equal(A.liberado(vz, k, undefined), false, k); for (const k of A.RECURSOS) assert.equal(A.liberado(vz, k, true), false, k + ' (mesmo se a pessoa quiser)');
+  assert.equal(A.RECURSOS.length, 34); for (const k of A.RECURSOS) assert.equal(A.liberado(vz, k, undefined), false, k); for (const k of A.RECURSOS) assert.equal(A.liberado(vz, k, true), false, k + ' (mesmo se a pessoa quiser)');
   for (const k of ['diag', 'cfgPosicao', 'cfgIA', 'cfgPartes', 'cfgLimites']) assert.ok(A.RECURSOS.includes(k), k);                      // as partes da tela de Configurações e o Diagnóstico são controladas
   assert.equal(A.estado(vz, 'replies'), 'bloqueado'); assert.equal(A.estado(livre, 'replies'), 'livre'); assert.equal(A.estado(livre, 'diag'), 'livre'); assert.equal(A.estado(vz, 'config'), 'livre'); assert.equal(A.estado(des, 'replies'), 'bloqueado'); assert.equal(A.estado(lg, 'cfgIA'), 'bloqueado');
   assert.equal(A.estado(A.avaliar(ac, est(A.normalizar({ recursos: { cfgIA: 'desligado' } })), T0), 'cfgIA'), 'desligado');
@@ -1251,3 +1251,16 @@ const cifrar = (obj, senha) => { // mesmo formato do CryptoJS/OpenSSL ("Salted__
   assert.equal(R.previsao(e, 400, 1, t0).nivel, 'vermelho');
   console.log('risco de banimento ok');
 }
+// ---- v1.52: Central da equipe (impressão digital do cliente, avisos) ----
+(async () => {
+  require('../lib/equipe.js'); const E = globalThis.AZEQUIPE;
+  assert.equal(E.numeroDe('5511999990001@c.us'), '5511999990001'); assert.equal(E.numeroDe('12345@lid'), null); assert.equal(E.numeroDe('120363@g.us'), null);
+  const a = await E.digital('senhaEquipe', '5511999990001@c.us'), b = await E.digital('senhaEquipe', '5511999990001@c.us'), c = await E.digital('outraSenha', '5511999990001@c.us');
+  assert.match(a, /^[0-9a-f]{32}$/); assert.equal(a, b); assert.notEqual(a, c); assert.ok(!a.includes('99999'));   // a mesma digital nos dois computadores; outra senha = outra digital; sem o número
+  assert.equal(await E.digital('', '5511999990001@c.us'), null); assert.equal(await E.digital('s', '1@lid'), null);
+  assert.equal(E.aviso({ dono: 'Maria', desde: Date.UTC(2026, 10, 2, 12) }, 'João').tipo, 'outro'); assert.match(E.aviso({ dono: 'Maria' }, 'João').texto, /Este cliente é de Maria/);
+  assert.equal(E.aviso({ dono: 'João' }, 'João'), null); assert.match(E.aviso({ dono: 'João', passadoPor: 'Maria', motivo: 'carga para SP', quando: Date.now() }, 'João').texto, /Maria passou este cliente para você.*carga para SP/);
+  assert.equal(E.textoPassar({ nome: 'Maria' }), null); assert.equal(E.textoPassar({ nome: 'Maria', whatsapp: '5511988887777' }), 'A partir de agora quem vai te atender é Maria: https://wa.me/5511988887777');
+  assert.deepEqual(E.limparColegas([{ nome: ' Ana ', whatsapp: '+55 (11) 9 8888-7777' }, { nome: '' }]), [{ nome: 'Ana', whatsapp: '5511988887777' }]);
+  console.log('central da equipe ok');
+})().catch((e) => { console.error(e); process.exit(1); });

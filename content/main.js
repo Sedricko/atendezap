@@ -91,7 +91,8 @@
   const ponteReg = (m, ms, erro) => { const x = (PONTE[m] ||= { n: 0, erros: 0, ms: 0, max: 0 }); x.n++; if (erro) x.erros++; x.ms += ms; if (ms > x.max) x.max = ms; };
   const RISCO_MET = new Set(['sendText', 'sendFile', 'sendContact', 'sendEspecial', 'sendStatus', 'startChat']);   // v1.50: envios contados no Risco de banimento
   const call = (method, ...args) => new Promise((res, rej) => {
-    if (RISCO_MET.has(method)) riscoReg(method, args[0]);   // v1.50: conta o que o AtendeZap envia hoje (Risco de banimento)
+    if (RISCO_MET.has(method)) riscoReg(method, args[0]);
+    if (method === 'sendText' || method === 'sendFile') eqEnviou(args[0]);   // v1.52: quem responde primeiro vira o dono   // v1.50: conta o que o AtendeZap envia hoje (Risco de banimento)
     const id = ++seq;
     pending.set(id, { res, rej, method, t0: performance.now() });
     window.postMessage({ __az: 1, kind: 'req', id, method, args, tk: AZ_TK }, location.origin);
@@ -112,6 +113,7 @@
       if (d.type === 'msg_apagada_midia') recuperarRecebeuMidia(d);
       if (d.type === 'active_chat') {
         S.active = d.chat; renderHead();
+        if (d.chat?.id && eqAtivo()) eqAoAbrir(d.chat.id);   // v1.52: de quem é este cliente
         if (d.chat && !AUTO.primeiraConversa) { AUTO.primeiraConversa = true; setTimeout(() => autoDiag('primeira conversa aberta'), 3000); }
       }
     }
@@ -144,7 +146,7 @@
   }
   const ligado = (k) => {
     if (k === 'gruposAj') return ligado('vagas') || ligado('gruposSo');   // abas novas = chaves que já existiam (a planilha não muda)
-    const m = k === 'frete' ? 'cargas' : k === 'limites' ? 'cfgLimites' : k, ef = acessoEf();   // v1.47.2: Memória IA, Conjuntos e Envios à IA têm linha própria na planilha
+    const m = k === 'frete' ? 'cargas' : k === 'limites' ? 'cfgLimites' : k === 'equipe' ? 'equipeCentral' : k, ef = acessoEf();   // v1.47.2: Memória IA, Conjuntos e Envios à IA têm linha própria na planilha
     return AC.liberado(ef, m, S.mods?.[m]);
   };
   // v1.12 — fixada por aba: cada conversa pode valer só em uma aba da lista (Todas | Não lidas | Favoritas | Grupos).
@@ -780,7 +782,7 @@
 
   // ---------- Painel lateral recolhível ----------
   const view = { diagOnly: false, diagClosed: new Set(), restore: null, bkSel: null, editing: null, q: '', modo: 'tudo', tipo: '', cat: '', closed: new Set(), menu: null, prev: null, addMenu: false, addGroup: 'msg' };
-  const SECTIONS = [['replies', 'zap', 'Respostas rápidas'], ['atendente', 'zap', 'Atendente IA'], ['memoria', 'zap', 'Memória IA'], ['fila', 'clock', 'Aguardando resposta'], ['sig', 'pen', 'Assinatura'], ['frete', 'truck', 'Lista de frete'], ['pedidos', 'users', 'Pedidos de grupos'], ['unicos', 'users', 'Conjuntos de grupos'], ['gruposAj', 'users', 'Ajustes dos grupos'], ['start', 'chat', 'Iniciar conversa'], ['lote', 'layers', 'Enviar para vários'], ['pins', 'pin', 'Conversas fixadas'], ['resumo', 'layers', 'Resumo do que perdi'], ['contato', 'users', 'Contato do cliente'], ['exportar', 'download', 'Exportar conversa'], ['backup', 'save', 'Backup'], ['ocultas', 'eyeoff', 'Conversas ocultas'], ['apagar', 'trash', 'Apagar mensagens'], ['recuperar', 'eye', 'Recuperar apagadas'], ['limpeza', 'trash', 'Limpar conversas'], ['diag', 'pulse', 'Diagnóstico'], ['limites', 'pulse', 'Limites do WhatsApp'], ['iaenvios', 'pulse', 'Envios à IA'], ['avaliacao', 'pulse', 'Avaliação do atendimento'], ['lab', 'flask', 'Laboratório'], ['config', 'gear', 'Configurações']];
+  const SECTIONS = [['replies', 'zap', 'Respostas rápidas'], ['atendente', 'zap', 'Atendente IA'], ['memoria', 'zap', 'Memória IA'], ['fila', 'clock', 'Aguardando resposta'], ['sig', 'pen', 'Assinatura'], ['frete', 'truck', 'Lista de frete'], ['equipe', 'users', 'Equipe'], ['pedidos', 'users', 'Pedidos de grupos'], ['unicos', 'users', 'Conjuntos de grupos'], ['gruposAj', 'users', 'Ajustes dos grupos'], ['start', 'chat', 'Iniciar conversa'], ['lote', 'layers', 'Enviar para vários'], ['pins', 'pin', 'Conversas fixadas'], ['resumo', 'layers', 'Resumo do que perdi'], ['contato', 'users', 'Contato do cliente'], ['exportar', 'download', 'Exportar conversa'], ['backup', 'save', 'Backup'], ['ocultas', 'eyeoff', 'Conversas ocultas'], ['apagar', 'trash', 'Apagar mensagens'], ['recuperar', 'eye', 'Recuperar apagadas'], ['limpeza', 'trash', 'Limpar conversas'], ['diag', 'pulse', 'Diagnóstico'], ['limites', 'pulse', 'Limites do WhatsApp'], ['iaenvios', 'pulse', 'Envios à IA'], ['avaliacao', 'pulse', 'Avaliação do atendimento'], ['lab', 'flask', 'Laboratório'], ['config', 'gear', 'Configurações']];
   // Barra do painel em grupos: atendimento | envio | conversas | sistema
   const visiveis = () => SECTIONS.filter(([k]) => ligado(k));
   const GRUPO = { respostas: 0, grupos: 1, ferramentas: 1, privacidade: 2, diagnostico: 3, config: 3 }; // separadores: Atendimento | Grupos + Ferramentas | Privacidade | Diagnóstico + Configurações
@@ -788,14 +790,14 @@
   // como abas dentro do painel. As seções continuam com as mesmas chaves (ui.sec, módulos, atalhos antigos, alerta).
   // v1.39 — barra por ASSUNTO (6 ícones): cada opção mora onde se trata do seu assunto. 🧪 = ainda em teste (etiqueta na própria aba, não uma área separada).
   const HUBS = {
-    respostas: { icone: 'zap', titulo: 'Atendimento', abas: [['replies', 'Respostas'], ['fila', 'Aguardando'], ['sig', 'Assinatura'], ['atendente', 'Atendente IA'], ['memoria', 'Memória IA'], ['frete', 'Lista de frete'], ['resumo', 'Resumo']] },
+    respostas: { icone: 'zap', titulo: 'Atendimento', abas: [['replies', 'Respostas'], ['fila', 'Aguardando'], ['sig', 'Assinatura'], ['atendente', 'Atendente IA'], ['memoria', 'Memória IA'], ['frete', 'Lista de frete'], ['resumo', 'Resumo'], ['equipe', 'Equipe']] },
     grupos: { icone: 'users', titulo: 'Grupos', abas: [['pedidos', 'Pedidos'], ['unicos', 'Conjuntos'], ['gruposAj', 'Ajustes']] },
     ferramentas: { icone: 'wrench', titulo: 'Ferramentas', abas: [['start', 'Iniciar conversa'], ['lote', 'Enviar para vários'], ['pins', 'Fixadas'], ['contato', 'Contato'], ['exportar', 'Exportar'], ['backup', 'Backup']] },
     privacidade: { icone: 'lock', titulo: 'Privacidade', abas: [['ocultas', 'Ocultas'], ['apagar', 'Apagar'], ['recuperar', 'Recuperar'], ['limpeza', 'Limpar']] },
     diagnostico: { icone: 'pulse', titulo: 'Diagnóstico', abas: [['diag', 'Saúde'], ['limites', 'Limites'], ['avaliacao', 'Avaliação'], ['iaenvios', 'Envios à IA'], ['lab', 'Laboratório']] },
     config: { icone: 'gear', titulo: 'Configurações', abas: [['config', 'Geral']] },
   };
-  const HUB_DE = { replies: 'respostas', fila: 'respostas', sig: 'respostas', atendente: 'respostas', memoria: 'respostas', frete: 'respostas', resumo: 'respostas', pedidos: 'grupos', unicos: 'grupos', gruposAj: 'grupos', start: 'ferramentas', lote: 'ferramentas', pins: 'ferramentas', contato: 'ferramentas', exportar: 'ferramentas', backup: 'ferramentas', ocultas: 'privacidade', apagar: 'privacidade', recuperar: 'privacidade', limpeza: 'privacidade', diag: 'diagnostico', limites: 'diagnostico', iaenvios: 'diagnostico', avaliacao: 'diagnostico', lab: 'diagnostico', config: 'config' };
+  const HUB_DE = { replies: 'respostas', fila: 'respostas', sig: 'respostas', atendente: 'respostas', memoria: 'respostas', frete: 'respostas', resumo: 'respostas', equipe: 'respostas', pedidos: 'grupos', unicos: 'grupos', gruposAj: 'grupos', start: 'ferramentas', lote: 'ferramentas', pins: 'ferramentas', contato: 'ferramentas', exportar: 'ferramentas', backup: 'ferramentas', ocultas: 'privacidade', apagar: 'privacidade', recuperar: 'privacidade', limpeza: 'privacidade', diag: 'diagnostico', limites: 'diagnostico', iaenvios: 'diagnostico', avaliacao: 'diagnostico', lab: 'diagnostico', config: 'config' };
   const emTeste = (k) => MODULOS.some((m) => m[0] === k && m[3] === 'teste');
   const railKey = (k) => HUB_DE[k] || k;
   const abasDe = (hub) => HUBS[hub].abas.filter(([k]) => ligado(k));
@@ -870,7 +872,7 @@
       return;
     }
     if (!ligado(ui.sec)) ui.sec = visiveis()[0][0];
-    const body = { memoria: memoriaView, atendente: atendView, config: configView, replies: view.editing ? editorView : repliesView, sig: sigView, start: startView, lote: loteView, pedidos: pedidosView, unicos: unicosView, fila: filaView, pins: pinsView, ocultas: ocultasView, apagar: apagarView, recuperar: recuperarView, limpeza: limpezaView, lab: () => [h('div', { class: 'eh' }, h('b', null, 'Laboratório')), labView()], gruposAj: gruposAjView, frete: freteView, limites: limitesSecaoView, resumo: resumoView, avaliacao: avaliacaoView, iaenvios: iaEnviosView, contato: contatoView, exportar: exportarView, backup: backupView, diag: diagView }[ui.sec]();
+    const body = { memoria: memoriaView, atendente: atendView, config: configView, replies: view.editing ? editorView : repliesView, sig: sigView, start: startView, lote: loteView, pedidos: pedidosView, unicos: unicosView, fila: filaView, pins: pinsView, ocultas: ocultasView, apagar: apagarView, recuperar: recuperarView, limpeza: limpezaView, equipe: equipeView, lab: () => [h('div', { class: 'eh' }, h('b', null, 'Laboratório')), labView()], gruposAj: gruposAjView, frete: freteView, limites: limitesSecaoView, resumo: resumoView, avaliacao: avaliacaoView, iaenvios: iaEnviosView, contato: contatoView, exportar: exportarView, backup: backupView, diag: diagView }[ui.sec]();
     panelRoot.prepend(h('div', { class: 'panel ' + lado, style: lado === 'topo' ? '' : `width:${painelW()}px` },
       h('div', { class: 'ph' },
         h('button', { class: 'tb close', 'data-tip': 'Recolher (Alt+Z)', onclick: closePanel }, icon(LADOS[lado][2], 20)),
@@ -1545,6 +1547,7 @@
     ['ligacao', 'Ligação → mensagem automática', 'Quando alguém LIGAR e você não falou com a pessoa, manda UMA mensagem curta pedindo que escreva. Nunca atende nem recusa a chamada, nunca em grupo. Fica em Atendimento › Aguardando; vem desligada.', 'teste'],
     ['avaliacao', 'Avaliação do atendimento', 'Confere o que você respondeu nas conversas contra a memória aprendida, mostra quem ficou sem resposta e o tempo de resposta. Sem IA e sem nota para ninguém. Fica em Diagnóstico › Avaliação.', 'teste'],
     ['limpeza', 'Limpar conversas', 'Mostra quantas conversas estão paradas há mais de 30, 60, 90, 180 ou 360 dias e apaga de uma vez (fixadas, com etiqueta e não lidas ficam). Nos grupos, apaga só PARA VOCÊ as mensagens antigas. Fica em Privacidade › Limpar.', 'teste'],
+    ['equipeCentral', 'Central da equipe', 'Mostra de quem é o cliente ("este cliente é da Maria") e passa o cliente para um colega, com motivo. Usa a planilha do administrador, que guarda só uma impressão digital do cliente, nunca o telefone. Fica em Atendimento › Equipe.', 'teste'],
   ];
 
   // ----- Pedidos para entrar nos grupos (v1.12) -----
@@ -1852,7 +1855,7 @@
     ];
   }
 
-  const MOD_ICONE = { replies: 'zap', fila: 'clock', sig: 'pen', start: 'chat', lote: 'layers', pins: 'pin', ocultas: 'eyeoff', apagar: 'trash', recuperar: 'eye', limpeza: 'trash', backup: 'save', lab: 'flask', exportar: 'download', contato: 'users', escuta: 'zap', resumo: 'layers', avaliacao: 'pulse', ligacao: 'clock', cargas: 'truck', pedidos: 'users', vagas: 'users' };
+  const MOD_ICONE = { replies: 'zap', fila: 'clock', sig: 'pen', start: 'chat', lote: 'layers', pins: 'pin', ocultas: 'eyeoff', apagar: 'trash', recuperar: 'eye', limpeza: 'trash', equipeCentral: 'users', backup: 'save', lab: 'flask', exportar: 'download', contato: 'users', escuta: 'zap', resumo: 'layers', avaliacao: 'pulse', ligacao: 'clock', cargas: 'truck', pedidos: 'users', vagas: 'users' };
   const limW = { dados: null, lendo: false };
   function limitesView() {
     if (!limW.dados && !limW.lendo && S.ready) {
@@ -2024,7 +2027,7 @@
           tile(MOD_ICONE[k] || 'shapes'),
           h('div', { class: 'grow' }, h('b', null, nome + (tipo === 'teste' ? ' 🧪' : '')), h('small', null, desc), acessoTrava(k) ? h('small', { class: 'iaav' }, acessoTrava(k)) : null),
           h('span', { class: 'tog' }, h('input', { type: 'checkbox', checked: ligado(k), disabled: !!acessoTrava(k), onchange: (e) => alternar(k, e.target.checked) }), h('i')));
-          const vis = MODULOS.filter(([k]) => !acessoOculto(k)), de = (k) => ({ cargas: 'respostas', vagas: 'grupos', gruposSo: 'grupos', escuta: 'respostas', ligacao: 'respostas' })[k] || HUB_DE[k];
+          const vis = MODULOS.filter(([k]) => !acessoOculto(k)), de = (k) => ({ cargas: 'respostas', vagas: 'grupos', gruposSo: 'grupos', escuta: 'respostas', ligacao: 'respostas', equipeCentral: 'respostas' })[k] || HUB_DE[k];
           return Object.keys(HUBS).map((hub) => { const ms = vis.filter(([k]) => de(k) === hub); return ms.length ? [h('p', { class: 'hint grp' }, HUBS[hub].titulo), ms.map(linha)] : null; });
         })()),
         h('p', { class: 'hint' }, 'Configurações fica sempre visível: é onde fica o Acesso da equipe (o convite).')),
@@ -2328,6 +2331,64 @@
       return recuperarCfgSalvar({ ligado: true, aceitou: true });
     }
     return recuperarCfgSalvar({ ligado: !!on });
+  }
+  // ----- v1.52: Central da equipe (🧪) — "este cliente é da Maria" e passar cliente. A planilha só recebe a impressão digital do cliente (lib/equipe.js). -----
+  const EQ = globalThis.AZEQUIPE, eqp = { cache: new Map(), marcados: new Set(), avisado: new Set(), atual: null, para: '', motivo: '', avisar: true };
+  const eqCfg = () => S.acessoEstado?.config?.equipe || null;
+  const eqAtivo = () => ligado('equipeCentral') && acessoConectado() && !!eqCfg()?.segredo && !acessoEf().desativado;
+  async function eqInfo(chatId, forcar) {
+    const h = await EQ.digital(eqCfg()?.segredo, chatId); if (!h) return null;
+    const c = eqp.cache.get(h); if (c && !forcar && Date.now() - c.t < 600000) return { h, info: c.info };
+    const r = await acessoPost({ acao: 'equipeVer', codigo: S.acessoCfg.codigo, inst: acessoInst(), cliente: h });
+    if (!r?.ok) return { h, info: null, erro: r?.erro || 'sem resposta' };
+    eqp.cache.set(h, { info: r.info || {}, t: Date.now() }); return { h, info: r.info || {} };
+  }
+  async function eqAoAbrir(id) {
+    const r = await eqInfo(id).catch(() => null); eqp.atual = r ? { ...r, id } : null;
+    const av = r?.info && EQ.aviso(r.info, S.acessoEstado?.config?.nome);
+    if (av && !eqp.avisado.has(r.h + av.tipo)) { eqp.avisado.add(r.h + av.tipo); toast((av.tipo === 'outro' ? '👥 ' : '🤝 ') + av.texto, 9000); }
+    if (ui.sec === 'equipe') renderSeguro();
+  }
+  // Quem responde primeiro vira o dono (uma consulta por cliente por abertura do WhatsApp).
+  function eqEnviou(id) {
+    if (!eqAtivo() || !EQ.numeroDe(id) || eqp.marcados.has(id)) return; eqp.marcados.add(id);
+    (async () => { const r = await eqInfo(id); if (!r?.info || r.info.dono) return;
+      const m = await acessoPost({ acao: 'equipeMarcar', codigo: S.acessoCfg.codigo, inst: acessoInst(), cliente: r.h }); if (m?.ok) eqp.cache.set(r.h, { info: m.info, t: Date.now() }); })().catch(() => {});
+  }
+  async function eqPassar() {
+    const id = S.active?.id, eu = S.acessoEstado?.config?.nome, colega = (eqCfg()?.colegas || []).find((c) => c.nome === eqp.para);
+    if (!colega) return toast('Escolha o colega.');
+    const h = await EQ.digital(eqCfg()?.segredo, id); if (!h) return toast('Abra uma conversa individual (com número) para passar.');
+    const msg = eqp.avisar ? EQ.textoPassar(colega) : null;
+    if (!await confirmar(`Passar este cliente para ${colega.nome}?${eqp.motivo ? `\n\nMotivo: ${eqp.motivo}` : ''}${msg ? `\n\nO cliente vai receber:\n"${msg}"` : ''}`)) return;
+    const r = await acessoPost({ acao: 'equipePassar', codigo: S.acessoCfg.codigo, inst: acessoInst(), cliente: h, para: colega.nome, motivo: eqp.motivo });
+    if (!r?.ok) return toast('Não deu para passar: ' + (r?.erro || 'sem resposta'), 7000);
+    eqp.cache.set(h, { info: r.info, t: Date.now() }); eqp.atual = { h, info: r.info, id };
+    if (msg) { try { await call('sendText', id, msg); } catch (e) { toast('Passado, mas a mensagem ao cliente não saiu: ' + e.message, 7000); } }
+    eqp.motivo = ''; toast(`🤝 Cliente passado para ${colega.nome}${eu ? ` por ${eu}` : ''}.`, 6000); renderPanel();
+  }
+  function equipeView() {
+    const topo = h('div', { class: 'eh' }, h('b', null, 'Equipe 🧪'));
+    if (!acessoConectado()) return [topo, h('p', { class: 'hint' }, 'A Central da equipe usa a planilha do administrador: conecte o convite em Configurações › Acesso da equipe.')];
+    if (!eqCfg()?.segredo) return [topo, h('p', { class: 'hint' }, 'O administrador ainda não liberou a Central da equipe (linha "equipeCentral" na planilha) ou falta atualizar o script da planilha. Depois, clique em Configurações › Acesso da equipe › Atualizar agora.')];
+    const id = S.active?.id, ehInd = !!EQ.numeroDe(id), eu = S.acessoEstado?.config?.nome || '', colegas = (eqCfg().colegas || []).filter((c) => c.nome !== eu);
+    if (ehInd && eqp.atual?.id !== id) setTimeout(() => eqAoAbrir(id), 0);
+    const inf = eqp.atual?.id === id ? eqp.atual.info : null, av = inf && EQ.aviso(inf, eu);
+    const dono = !ehInd ? h('p', { class: 'hint' }, 'Abra uma conversa individual (com número) para ver de quem é o cliente.')
+      : !inf ? h('p', { class: 'hint' }, eqp.atual?.erro ? 'Não consegui falar com a planilha: ' + eqp.atual.erro : 'Consultando a planilha…')
+      : h('div', { class: 'col' }, h('div', { class: 'kv' }, h('span', null, 'Dono deste cliente'), h('b', { class: inf.dono && inf.dono !== eu ? 'dan' : null }, inf.dono ? (inf.dono === eu ? `você (${eu})` : inf.dono) : 'ninguém ainda (fica com quem responder primeiro)')),
+        av ? h('small', { class: av.tipo === 'outro' ? 'dan' : 'iaok' }, av.texto) : null);
+    const podePassar = ehInd && inf && (!inf.dono || inf.dono === eu), sel = colegas.find((c) => c.nome === eqp.para);
+    return [topo,
+      h('div', { class: 'sec' }, h('div', { class: 'sh' }, tile('users'), h('b', { class: 'grow' }, 'Este cliente'), h('button', { class: 'ib', title: 'Consultar de novo', disabled: !ehInd, onclick: async () => { const r = await eqInfo(id, true); eqp.atual = r ? { ...r, id } : null; renderPanel(); } }, '↻')), dono),
+      h('div', { class: 'sec' }, h('div', { class: 'sh' }, tile('users'), h('b', { class: 'grow' }, 'Passar cliente para um colega')),
+        !colegas.length ? h('p', { class: 'hint' }, 'Nenhum colega na planilha ainda (aba Usuarios, Ativo = sim).') : [
+          h('select', { class: 'in', disabled: !podePassar, onchange: (e) => { eqp.para = e.target.value; renderPanel(); } }, h('option', { value: '' }, 'Escolha o colega…'), colegas.map((c) => h('option', { value: c.nome, selected: c.nome === eqp.para }, c.nome + (c.whatsapp ? '' : ' (sem WhatsApp na planilha)')))),
+          h('input', { class: 'in', placeholder: 'Motivo (ex.: carga para SP, ele já negociou antes)', value: eqp.motivo, disabled: !podePassar, maxlength: 200, oninput: (e) => { eqp.motivo = e.target.value; } }),
+          sel?.whatsapp ? h('label', { class: 'chk' }, h('input', { type: 'checkbox', checked: eqp.avisar, disabled: !podePassar, onchange: (e) => { eqp.avisar = e.target.checked; } }), `Avisar o cliente com o contato de ${sel.nome}`) : null,
+          h('div', { class: 'rowf' }, h('button', { class: 'gbtn sm', disabled: !podePassar || !sel, onclick: (e) => comEspera(e.currentTarget, 'Passando…', eqPassar) }, 'Passar cliente')),
+          ehInd && inf?.dono && inf.dono !== eu ? h('small', { class: 'hint' }, `Só ${inf.dono} pode passar este cliente.`) : null]),
+      h('small', { class: 'hint' }, 'O dono é quem responde primeiro. A planilha guarda só uma impressão digital do cliente (embaralhada com a senha da equipe, que fica no script, fora da planilha): nenhum telefone aparece nela. O motivo vai como você escrever: evite dados pessoais.')];
   }
   // ----- Limpar conversas antigas (v1.48 🧪) -----
   // Individuais: conta por tempo parado (30…360 dias) e apaga de uma vez; fixadas, com etiqueta e não lidas nunca entram (regras em lib/limpeza.js).
