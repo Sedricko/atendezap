@@ -49,7 +49,7 @@
     S.sig = { ...SIG_DEFAULT, ...S.sig };
     if ('pinChat' in ch || 'pinAbas' in ch) applyPins();
     if ('conversasOcultas' in ch) esconderLinhas();
-    if ('modulos' in ch) { esconderLinhas(); closePop(); renderHead(); renderPanel(); }
+    if ('modulos' in ch) { esconderLinhas(); closePop(); renderHead(); renderPanel(); applyPins(); }
     if ('loteDestinos' in ch) lote.sel = new Map(S.loteDest || []);
     if (Object.keys(ch).every((k) => k === 'atendVida')) return; // batimento do robô: só guarda, não redesenha
     if (Object.keys(ch).every((k) => ['atendEst', 'atendLog', 'iaUso'].includes(k)) && panelRoot.activeElement?.matches?.('input, textarea, select')) return; // gravação em segundo plano: não derruba o que você digita
@@ -61,7 +61,7 @@
 
   // Painel aberto/recolhido e aba atual (só conveniência deste navegador)
   const ui = (() => { try { return JSON.parse(localStorage.getItem('az-ui')) || {}; } catch { return {}; } })();
-  if (!ui.sec || ui.sec === 'tabs') ui.sec = 'replies';
+  if (!ui.sec) ui.sec = 'replies';
   ui.open = false; // sempre começa recolhido ao carregar o WhatsApp (Alt+Z ou a aba na borda abrem)
   const painelW = () => Math.max(320, Math.min(640, Math.round(Number(ui.larg)) || PANEL_W));
   const saveUi = () => { try { localStorage.setItem('az-ui', JSON.stringify(ui)); } catch {} };
@@ -79,28 +79,31 @@
     try { const r = fn(...a); if (r && typeof r.then === 'function') return r.finally(fim); fim(); return r; } catch (e) { fim(); throw e; }
   };
   const logErr = (onde, msg) => {
+    if (!vivo()) return;   // cópia antiga da página depois de atualizar a extensão: não entra em laço de erro
     LOG.unshift({ t: new Date().toLocaleTimeString('pt-BR'), onde, msg: String(msg).slice(0, 300) });
     LOG.length = Math.min(LOG.length, 30);
     clearTimeout(logErr.t); logErr.t = setTimeout(() => chrome.storage.local.set({ logErros: LOG.slice(0, 30) }).catch(() => {}), 3000);   // v1.52.1: o erro não some ao recarregar (vai no próximo pacote)
     // 3 erros desde o último autoteste => roda o autodiagnóstico (o WhatsApp pode ter mudado)
-    if (onde !== 'autoDiag' && typeof AUTO !== 'undefined' && ++AUTO.errosDesde === 3) setTimeout(() => autoDiag('erros seguidos'), 2000);
+    try { if (onde !== 'autoDiag' && ++AUTO.errosDesde === 3) setTimeout(() => autoDiag('erros seguidos'), 2000); } catch { /* erro antes de o AUTO existir */ }
   };
   window.addEventListener('error', (e) => logErr('script', e.message));
-  window.addEventListener('unhandledrejection', (e) => logErr('promessa', e.reason?.message || e.reason));
+  window.addEventListener('unhandledrejection', (e) => { const m = e.reason?.message || e.reason; if (!/context invalidated/i.test(String(m))) logErr('promessa', m); });
   const AZ_TK = Array.from(crypto.getRandomValues(new Uint8Array(12)), (x) => x.toString(16).padStart(2, '0')).join(''); // chave do painel (a ponte recusa pedidos que enviam/bloqueiam/removem sem ela)
   const PONTE = {};   // v1.47: por método da ponte: quantas chamadas, quantos erros e quanto tempo levaram (vai para o pacote de diagnóstico)
   const ponteReg = (m, ms, erro) => { const x = (PONTE[m] ||= { n: 0, erros: 0, ms: 0, max: 0 }); x.n++; if (erro) x.erros++; x.ms += ms; if (ms > x.max) x.max = ms; };
   // v1.52.1: enquanto o pacote não sai, os dados ACUMULAM: erros e tempos da ponte do dia sobrevivem à recarga da aba
   chrome.storage.local.get(['logErros', 'ponteDia']).then((d) => {
-    for (const e of d.logErros || []) if (LOG.length < 30 && !LOG.includes(e)) LOG.push(e);
+    for (const e of d.logErros || []) if (LOG.length < 30) LOG.push(e);
     if (d.ponteDia?.dia === new Date().toDateString()) for (const [m, x] of Object.entries(d.ponteDia.dados || {})) { const y = (PONTE[m] ||= { n: 0, erros: 0, ms: 0, max: 0 }); y.n += x.n || 0; y.erros += x.erros || 0; y.ms += x.ms || 0; y.max = Math.max(y.max, x.max || 0); }
   }).catch(() => {});
-  const pontePersistir = () => chrome.storage.local.set({ ponteDia: { dia: new Date().toDateString(), dados: PONTE } }).catch(() => {});
+  let ponteDiaAtual = new Date().toDateString();
+  const pontePersistir = () => { if (!vivo()) return; const dia = new Date().toDateString(); if (dia !== ponteDiaAtual) { for (const k in PONTE) delete PONTE[k]; ponteDiaAtual = dia; }   // virou o dia: começa do zero
+    chrome.storage.local.set({ ponteDia: { dia, dados: PONTE } }).catch(() => {}); };
   setInterval(pontePersistir, 5 * 60000); document.addEventListener('visibilitychange', () => { if (document.hidden) pontePersistir(); });
   const RISCO_MET = new Set(['sendText', 'sendFile', 'sendContact', 'sendEspecial', 'sendStatus', 'startChat']);   // v1.50: envios contados no Risco de banimento
   const call = (method, ...args) => new Promise((res, rej) => {
     if (RISCO_MET.has(method)) riscoReg(method, args[0]);
-    if (method === 'sendText' || method === 'sendFile') eqEnviou(args[0]);   // v1.52: quem responde primeiro vira o dono   // v1.50: conta o que o AtendeZap envia hoje (Risco de banimento)
+    if (method === 'sendText' || method === 'sendFile') eqEnviou(args[0]);   // v1.52: quem responde primeiro vira o dono
     const id = ++seq;
     pending.set(id, { res, rej, method, t0: performance.now() });
     window.postMessage({ __az: 1, kind: 'req', id, method, args, tk: AZ_TK }, location.origin);
@@ -189,11 +192,11 @@
     return l.length ? l.map((el) => `${String(el.textContent).trim().slice(0, 14)}[${['aria-selected', 'aria-pressed', 'aria-current', 'aria-checked'].filter((a) => el.hasAttribute(a)).map((a) => a.slice(5) + '=' + el.getAttribute(a)).join(',') || 'sem aria'}]`).join(' ') : 'nenhum botão de aba reconhecido';
   };
   const applyPins = () => {
-    if (!S.ready || !ligado('pins')) return;
-    const ativos = U.pinsAtivos(S.pins, S.pinAbas, abaAtual());
+    if (!S.ready) return;
+    const ativos = ligado('pins') ? U.pinsAtivos(S.pins, S.pinAbas, abaAtual()) : [];   // Fixadas desligada: solta as que o AtendeZap tinha fixado
     const removed = lastPins.filter((id) => !ativos.includes(id));
-    lastPins = [...ativos];
-    call('applyPins', ativos, removed).catch(() => {});
+    if (!ativos.length && !removed.length) return;
+    call('applyPins', ativos, removed).then(() => { lastPins = [...ativos]; }).catch(() => {});   // falhou: tenta soltar de novo na próxima
   };
   // v1.20 — "Grupos só na aba Grupos": a ponte esconde grupos na lista (pelo próprio filtro do WhatsApp, sem buracos) quando a aba é
   // Tudo/Não lidas/Favoritas. Aqui só dizemos a ela em que estado estamos: ligado, aba atual e se há texto na busca (na busca, mostra tudo).
@@ -242,7 +245,7 @@
     gs.rea.n++; gs.rea.t = Date.now(); syncGruposSo(true);
   }
   let abaVista;
-  const vigiaAba = () => { const a = abaAtual(); if (a !== abaVista) { abaVista = a; applyPins(); } syncGruposSo(); gruposReafirmar(); };
+  const vigiaAba = () => { const a = abaAtual(); if (a !== abaVista) { abaVista = a; applyPins(); } gruposReafirmar(); };   // syncGruposSo já roda na checagem de 1 s
   document.addEventListener('click', (e) => { if (e.target?.closest?.('#side')) { setTimeout(syncGruposSo, 0); setTimeout(vigiaAba, 250); } }, true);
   for (const ev of ['input', 'keyup']) document.addEventListener(ev, (e) => { if (e.target?.closest?.('#side [data-testid="chat-list-search-container"]')) setTimeout(syncGruposSo, 0); }, true);
   setInterval(vigiaAba, 1500);
@@ -437,7 +440,7 @@
 
   // v1.14.1 — progresso do envio: no topo da conversa aparece "o que está sendo enviado · passo X/Y" com barra, contagem das esperas
   // e botão ✕ para PARAR. Vale para qualquer resposta rápida (painel, /atalho, ⚡), inclusive as que chamam outras respostas.
-  const envio = { atual: null, timer: null };
+  const envio = { atual: null };
   const passosDe = (r, depth = 0) => (r.acoes || []).reduce((n, a) => n + 1 + (a.tipo === 'resposta' && depth < 3
     ? passosDe(S.replies.find((x) => x.id === a.respostaId && x.id !== r.id) || { acoes: [] }, depth + 1) : 0), 0);
   // espera que mostra a contagem regressiva e pode ser interrompida pelo botão Parar
@@ -473,7 +476,7 @@
   }
   function envioFim(e, estado) {
     e.fim = estado; e.ate = 0; renderHead();
-    clearInterval(envio.timer); envio.timer = null;
+    clearInterval(e.timer);
     setTimeout(() => { if (envio.atual === e) { envio.atual = null; renderHead(); } }, estado === 'ok' ? 2200 : 4500);
   }
   async function runReply(r, chatId, depth = 0, e = null) {
@@ -482,7 +485,7 @@
     const raiz = !e;
     if (raiz) { // só a resposta de fora cria a barra; as chamadas por dentro continuam nela
       e = { titulo: r.titulo || r.atalho || 'resposta', nome: chat?.name || '', total: Math.max(1, passosDe(r)), feito: 0, passo: 'Preparando…', ate: 0, parar: false, fim: null };
-      envio.atual = e; clearInterval(envio.timer); envio.timer = setInterval(() => { if (e.fim) return; renderHead(); }, 500); renderHead();
+      envio.atual = e; e.timer = setInterval(() => { if (e.fim) return; renderHead(); }, 500); renderHead();   // cada envio tem o seu relógio
     }
     const ctx = {
       nome: chat?.isGroup ? '' : (!looksNumber(chat?.name) ? chat?.name : chat?.pushname) || '',
@@ -545,6 +548,7 @@
     } catch (err) { if (raiz) envioFim(e, 'erro'); throw err; }
   }
   async function sendReply(r) {
+    if (envio.atual && !envio.atual.fim) return toast('Já há um envio em andamento: espere terminar (ou pare no ✕).');
     const id = await activeChatId();
     if (!id) return toast('Abra uma conversa primeiro.');
     S.replies = S.replies.map((x) => (x.id === r.id ? { ...x, usos: (x.usos || 0) + 1 } : x));
@@ -602,15 +606,15 @@
       }
       if (alvo && !alvo.hasAttribute('data-az-nativo')) { alvo.setAttribute('data-az-nativo', '1'); nat.ocultos.push(alvo); nat.total++; }
     }
-    if (novos && !nat.ocultos.length) nat.dica = vistos.join(' > '); // só para o Diagnóstico: o que apareceu e não consegui esconder
+    if (nat.ocultos.length) nat.dica = ''; else if (novos) nat.dica = vistos.join(' > '); // só para o Diagnóstico: o que apareceu e não consegui esconder
   }
   function onComposerChange() {
     const ed = composer();
-    if (!ed || !S.replies.length || !ligado('replies')) { restaurarNativo(); return closePop(); }
+    if (!ed || !S.replies.length || !ligado('replies')) return closePop();   // closePop já devolve a lista nativa
     const txt = readText(ed).trim();
     if (!txt) guardarBase(); // campo vazio: o que está acima do rodapé agora é o "normal"
     const m = /^\/(\S*)$/.exec(txt);
-    if (!m) { restaurarNativo(); return closePop(); }
+    if (!m) return closePop();
     pop.items = U.matchReplies(S.replies, m[1]).slice(0, 8);
     pop.idx = 0;
     const abriu = !pop.open && pop.items.length > 0;
@@ -1304,11 +1308,11 @@
   async function loteStatus(texto, r) {
     const midia = (f) => ['image', 'video'].includes(U.fileType(f.mime));
     const antes = await contarMeus();
-    let tentados = 0, pendentes = [];
+    let tentados = 0, falhou = 0, pendentes = [];
     const postar = async (kind, data, opts, nome) => {
       tentados++;
       try { await call('sendStatus', kind, data, opts); }
-      catch (e) { if (isTimeoutStatus(e)) pendentes.push(nome); else r.erros.push(`Meu status: ${nome} — ${e.message}`); }
+      catch (e) { if (isTimeoutStatus(e)) pendentes.push(nome); else { falhou++; r.erros.push(`Meu status: ${nome} — ${e.message}`); } }
     };
     // Avisa ANTES do que costuma falhar: foto/vídeo acima do limite de status do WhatsApp (ou vídeo longo demais) fica "meio enviado"
     // (ack 0) e vira status fantasma. Os limites vêm do próprio WhatsApp (Configurações › Limites do WhatsApp).
@@ -1348,7 +1352,7 @@
     const depois = await contarMeus();
     const publicados = depois === null ? null : Math.max(0, depois - antes);
     if (publicados === null) return;
-    const faltam = tentados - publicados - r.erros.filter((e) => e.startsWith('Meu status')).length;
+    const faltam = tentados - publicados - falhou;   // só o que foi tentado (os pulados não contam)
     r.avisos = faltam > 0
       ? [`Meu status: ${publicados} de ${tentados} publicados. ${faltam} ainda não apareceram — confira em "Meus status" em alguns minutos.`]
       : [`Meu status: todos os ${publicados} foram publicados (o WhatsApp só demorou para confirmar).`];
@@ -1501,7 +1505,7 @@
     const act = S.active?.id;
     (async () => {
       const names = new Map();
-      if (S.ready && S.pins.length) for (const c of await call('chatInfo', S.pins)) names.set(c.id, c.name);
+      if (S.ready && S.pins.length) for (const c of await call('chatInfo', S.pins).catch(() => [])) names.set(c.id, c.name);
       listEl.replaceChildren(...(S.pins.length ? S.pins.map((id, i) => h('div', { class: 'card pinrow' },
         h('div', { class: 'grow col1' },
           h('span', { class: 'link', onclick: () => call('openChat', id) }, '📌 ' + (names.get(id) || id.split('@')[0])),
@@ -1525,7 +1529,7 @@
   // O Apps Script da planilha publica a mesma lista do botão "Copiar Lista"; o background busca (permissão de host).
   // id vazio = lista de todas as cargas abertas; com id = anúncio daquela carga (planilha/AtendeZap.gs)
   async function buscarListaCargas(id = '') {
-    if (!S.cargasUrl) { toast('Cole o link do app da planilha em ⚙ Atendimento › Lista de frete.'); openPanel('config'); return null; }
+    if (!S.cargasUrl) { toast('Cole o link do app da planilha em Atendimento › Lista de frete.'); openPanel('frete'); return null; }
     toast(id ? `🚚 Buscando a carga ${id}…` : '🚚 Buscando a lista de frete…');
     const url = S.cargasUrl.split('?')[0] + (id ? '?id=' + encodeURIComponent(id) : '');
     const r = await chrome.runtime.sendMessage({ tipo: 'buscarLista', url }).catch((e) => ({ erro: e.message }));
@@ -1653,7 +1657,7 @@
       f === 'plano' ? [
         h('div', { class: 'col' }, grp.plano.map((g) => resumoG(g, false))),
         chkExc,
-        totalDup ? h('label', { class: 'chk' }, h('input', { type: 'checkbox', checked: grp.recusar, onchange: (e) => { grp.recusar = e.target.checked; } }), 'Recusar também os duplicados (desmarcado: ficam pendentes)') : null,
+        totalDup ? h('label', { class: 'chk' }, h('input', { type: 'checkbox', checked: grp.recusar, onchange: (e) => { grp.recusar = e.target.checked; renderPanel(); } }), 'Recusar também os duplicados (desmarcado: ficam pendentes)') : null,
         h('div', { class: 'rowf' },
           h('button', { class: 'obtn', onclick: () => { grp.fase = 'lista'; renderPanel(); } }, '← Voltar'),
           h('button', { class: 'gbtn grow', disabled: !totalOk && !totalRedir && !(grp.recusar && totalDup), onclick: aprovarPedidos }, `✔ Aprovar ${totalOk}` + (totalRedir ? ` e adicionar ${totalRedir}` : '') + ' agora')),
