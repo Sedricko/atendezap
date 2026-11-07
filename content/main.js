@@ -1908,7 +1908,12 @@
       clearTimeout(risco.salvarT); risco.salvarT = setTimeout(() => chrome.storage.local.set({ riscoDia: risco.est }).catch(() => {}), 2000); };
     if (risco.est === undefined) chrome.storage.local.get('riscoDia').then((d) => { if (risco.est === undefined) risco.est = d.riscoDia || null; fazer(); }).catch(fazer); else fazer();
   }
-  const tetoLigado = () => mon.atual?.valores?.wa_individual_new_chat_msg_capping_enabled === true || limW.dados?.vigia?.tetoNovas === true;
+  const tetoLigado = () => mon.atual?.valores?.wa_individual_new_chat_msg_capping_enabled === true || limW.dados?.vigia?.tetoNovas === true || mon.teto?.leituras?.isUserCapped === true || mon.teto?.leituras?.isUserWarned === true;
+  // v1.51: nomes em português das telas de restrição (o nome técnico vem do WhatsApp)
+  const RESTR_NOME = [[/TempBan/, 'banimento temporário'], [/ReachoutTimelock/, 'bloqueio temporário para contatar pessoas novas'], [/NewChat.*Capped|NewChatMessageCapped/, 'limite de contatos novos atingido'], [/CappingWarning/, 'aviso do teto de contatos novos'],
+    [/GroupAppeal/, 'recurso de grupo suspenso'], [/SuspendedOrTerminated|Terminated/, 'grupo suspenso ou encerrado'], [/SuspendedGroup/, 'grupo suspenso'], [/SuspendedCommunity/, 'comunidade suspensa'], [/Ban/, 'banimento']];
+  const restrNome = (id) => (RESTR_NOME.find(([rx]) => rx.test(id)) || [null, id])[1];
+  const sn = (v) => (v === true ? 'sim' : v === false ? 'não' : v == null ? '—' : typeof v === 'object' ? JSON.stringify(v).slice(0, 60) : String(v));
   const RISCO_COR = { verde: ['iaok', '🟢 Tranquilo'], amarelo: ['warn', '🟡 Atenção'], vermelho: ['dan', '🔴 Cuidado'] };
   const riscoTexto = (m) => (m.k === 'teto' ? 'o WhatsApp LIGOU o teto de mensagens para contatos novos na sua conta' : `${m.valor.toLocaleString('pt-BR')} ${RK.NOMES[m.k]} (cautela a partir de ${m.faixa.toLocaleString('pt-BR')})`);
   function riscoCard() {
@@ -1921,6 +1926,7 @@
       h('div', { class: 'col' }, kv('Conversas diferentes que receberam', v.destinos, 'destinos'), kv('Mensagens enviadas pelo AtendeZap', v.mensagens, 'mensagens'),
         kv('Pico num minuto', v.porMinuto, 'porMinuto'), kv('Conversas novas iniciadas', v.iniciadas, 'iniciadas'), kv('Status publicados', v.status, 'status')),
       h('small', { class: 'hint' }, 'Conta só o que sai pelo AtendeZap (robô, respostas rápidas, Enviar para vários, Iniciar conversa, Status), neste computador, desde a meia-noite. As faixas são cautela nossa: o WhatsApp não publica os limites. O que mais pesa para ele são denúncias e bloqueios de quem recebe, e mensagens para quem não tem você na agenda.'),
+      mon.teto?.existe ? h('small', { class: mon.teto.leituras?.isUserCapped || mon.teto.leituras?.isUserWarned ? 'dan' : 'hint' }, `O próprio WhatsApp diz: barrado pelo teto: ${sn(mon.teto.leituras?.isUserCapped)} · avisado: ${sn(mon.teto.leituras?.isUserWarned)}${typeof mon.teto.leituras?.getUsagePercentage === 'number' ? ` · usado: ${mon.teto.leituras.getUsagePercentage}%` : ''}.`) : null,
       a.nivel !== 'verde' ? h('small', { class: 'hint' }, 'Para baixar o risco: espace os envios (Enviar para vários › intervalo maior), prefira quem já conversa com você e pare por hoje se estiver no vermelho.') : null);
   }
   // ----- v1.49: Monitor de limitações e "o que o WhatsApp registra" (só LÊ; regras em lib/monitor.js) -----
@@ -1931,6 +1937,10 @@
     mon.atual = { valores: MON.extrair(r.recursos), eventos: MON.eventos(r.eventos), t: Date.now() };
     if (mon.base === undefined) mon.base = (await chrome.storage.local.get('monitorBase')).monitorBase || null;
     if (!mon.base) { mon.base = mon.atual; await chrome.storage.local.set({ monitorBase: mon.base }); }   // primeira leitura: guarda como já visto
+    // v1.51: o que o próprio WhatsApp diz do teto + as telas de restrição carregadas (as que já estavam ao abrir o WhatsApp não contam)
+    mon.teto = await call('tetoOficial').catch((e) => ({ erro: e.message }));
+    const rs = await call('restricoes').catch(() => []); if (!mon.restrBase) mon.restrBase = new Set(rs.filter((x) => x.carregada).map((x) => x.id));
+    mon.restr = rs; mon.restrNovas = rs.filter((x) => x.carregada && !mon.restrBase.has(x.id)).map((x) => x.id);
     return { mudancas: MON.comparar(mon.base.valores, mon.atual.valores), novos: MON.eventosNovos(mon.base.eventos, mon.atual.eventos) };
   }
   // v1.50: SONDA — procura em todos os módulos com assunto de limite/anti-spam (ver sondaLimites na ponte) e compara com a sonda anterior.
@@ -1984,6 +1994,11 @@
       h('details', { class: 'tec' }, h('summary', null, `O que o WhatsApp registra: ${mon.atual.eventos.length} tipos de registro`),
         h('small', { class: 'hint' }, 'São os módulos de telemetria do próprio programa do WhatsApp (…WamEvent). O nome diz o assunto; o que cada um mede exatamente o AtendeZap não consegue ler.'),
         Object.entries(ev).sort((a, b) => b[1].length - a[1].length).map(([assunto, l]) => h('div', { class: 'kv' }, h('span', null, assunto, h('small', { class: 'hint' }, ' — ' + l.slice(0, 6).join(', ') + (l.length > 6 ? '…' : ''))), h('b', null, String(l.length))))),
+      mon.teto?.existe ? [h('p', { class: 'hint grp' }, 'O que o próprio WhatsApp diz do teto'),
+        Object.entries(mon.teto.leituras).map(([k, v]) => h('div', { class: 'kv' }, h('span', null, { isUserCapped: 'Barrado pelo teto', isUserWarned: 'Avisado do teto', getUsagePercentage: 'Uso do teto (%)', getCappingWarningLevel: 'Nível de aviso', getCappingStatus: 'Situação', getCappingStatusType: 'Tipo de situação', getCappingData: 'Dados do teto', isOTEEligible: 'Elegível a liberação extra', shouldShowNewChatsStartedSettingsEntry: 'Mostra "conversas iniciadas" nas configurações' }[k] || k), h('b', { class: (k === 'isUserCapped' || k === 'isUserWarned') && v === true ? 'dan' : null }, sn(v))))] : null,
+      mon.restr?.length ? [h('p', { class: 'hint grp' }, 'Vigia das restrições'),
+        mon.restrNovas.length ? h('div', { class: 'errs' }, h('b', null, '⚠ O WhatsApp carregou agora a tela de:'), mon.restrNovas.map((i) => h('small', null, `${restrNome(i)} (${i})`))) : h('small', { class: 'iaok' }, '✔ Nenhuma tela de restrição foi aberta desde que o WhatsApp abriu.'),
+        h('small', { class: 'hint' }, `${mon.restr.length} telas de restrição existem no programa (banimento temporário, bloqueio para contatar pessoas novas, limite atingido, grupo suspenso…). O WhatsApp só carrega uma delas quando vai mostrar.`)] : null,
       sondaView(),
       h('small', { class: 'hint' }, 'Passar dos limites anti-spam põe o número da empresa em risco de banimento: o AtendeZap mostra, nunca muda.'));
   }
@@ -4306,6 +4321,9 @@
     let r; try { r = await monitorLer(); } catch (e) { return { ok: 'skip', d: 'não consegui ler: ' + e.message }; }
     const imp = r.mudancas.filter((x) => x.grupo !== 'outras'), outras = r.mudancas.length - imp.length;
     const tela = avisosNaTela(); if (tela.length) return { ok: 'warn', d: `o WhatsApp está mostrando um aviso de limite na tela (${tela.join(', ')}) — veja Diagnóstico › Limites` };
+    if (mon.teto?.leituras?.isUserCapped === true) return { ok: 'warn', d: 'o próprio WhatsApp diz que você está BARRADO pelo teto de contatos novos (Diagnóstico › Limites)' };
+    if (mon.teto?.leituras?.isUserWarned === true) return { ok: 'warn', d: 'o próprio WhatsApp diz que você foi AVISADO do teto de contatos novos (Diagnóstico › Limites)' };
+    if (mon.restrNovas?.length) return { ok: 'warn', d: `o WhatsApp carregou a tela de: ${mon.restrNovas.map(restrNome).join(', ')} (Diagnóstico › Limites)` };
     if (imp.length) return { ok: 'warn', d: `mudou desde que você viu: ${imp.slice(0, 3).map((x) => `${x.nome} ${fmtValor(x.antes)} → ${fmtValor(x.agora)}`).join('; ')}${imp.length > 3 ? '…' : ''} (Diagnóstico › Limites)` };
     return { ok: true, d: `${Object.keys(mon.atual.valores).length} limites acompanhados${outras ? ` · ${outras} ajuste(s) técnico(s) mudaram` : ''}${r.novos.length ? ` · ${r.novos.length} registro(s) novo(s) do WhatsApp` : ''}` };
   });
@@ -4652,6 +4670,7 @@ ${hist ? `<h2>Histórico de autotestes</h2><table><tr><td><b>Quando</b></td><td>
       const texto = JSON.stringify({ atendezap: chrome.runtime.getManifest().version, data: new Date().toISOString(), resumo: data.resumo, novidades: hist,
         referencias: ref?.stats ? { stats: ref.stats, indices: ref.ref, portoes: ref.portoes } : { erro: ref?.erro || 'não gerado' }, mapa,
         sondaLimites: await Promise.race([call('sondaLimites'), sleep(45000).then(() => ({ erro: 'demorou demais' }))]).then((s) => ({ ...s, tela: avisosNaTela() })).catch((e) => ({ erro: e.message })),   // v1.50
+        tetoOficial: await call('tetoOficial').catch((e) => ({ erro: e.message })), restricoes: await call('restricoes').catch((e) => ({ erro: e.message })),   // v1.51
         explorar: await Promise.race([call('explorar'), sleep(60000).then(() => ({ erro: 'demorou demais' }))]).catch((e) => ({ erro: e.message })),   // v1.50: o mapa completo por tema
         ...(await diagnosticoExtra(mapa)) });
       if (retornar === true) return texto;

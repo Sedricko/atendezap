@@ -1662,6 +1662,21 @@ async def main():
         mon2 = await page.evaluate(PBTXT + ".includes('Nada mudou desde que você viu')")
         await page.evaluate("() => { WPP.conn.getABProps = window.__abOrig; }")
         res['monitor'] = {'primeira_leitura': mon0, 'avisou': mon1, 'autoteste': mon_auto, 'entendi': mon2, 'registra': await page.evaluate(PBTXT + ".includes('O que o WhatsApp registra')")}
+        # v1.51: contador oficial do teto (só leituras, nunca fetch) e vigia das restrições (tela de banimento temporário carregada depois de abrir)
+        await page.evaluate("""() => { WPP.loader.moduleRequire.m.WAWebIndividualNewChatMessageCappingLimitUtils = 1; WPP.loader.moduleRequire.m['WAWebTempBanScreen.react'] = 1;
+          window.__lmOrig = WPP.loader.loadModule; window.__fetchChamado = false;
+          WPP.loader.loadModule = (id) => (id === 'WAWebIndividualNewChatMessageCappingLimitUtils' ? { isUserCapped: () => false, isUserWarned: () => false, getUsagePercentage: () => 12, fetchOrUpdateCapStatus: () => { window.__fetchChamado = true; }, getCappingData: (x) => x } : window.__lmOrig(id));
+          window.__mm = { 'WAWebTempBanScreen.react': { factoryFinished: false } }; window.__dbgOrig = WPP.loader.__debug; WPP.loader.__debug = () => ({ modulesMap: window.__mm }); }""")
+        await page.locator('#az-panel .sec', has_text='Monitor de limitações').locator('.ib').first.click(); await page.wait_for_timeout(1500)
+        t_ok = await page.evaluate(PBTXT + ".includes('Uso do teto (%)') && " + PBTXT + ".includes('Barrado pelo teto') && " + PBTXT + ".includes('Nenhuma tela de restrição foi aberta')")
+        await page.evaluate("() => { window.__mm['WAWebTempBanScreen.react'].factoryFinished = true; }")
+        await page.locator('#az-panel .sec', has_text='Monitor de limitações').locator('.ib').first.click(); await page.wait_for_timeout(1500)
+        t_ban = await page.evaluate(PBTXT + ".includes('O WhatsApp carregou agora a tela de:') && " + PBTXT + ".includes('banimento temporário')")
+        await ir(page, 'Diagnóstico'); await page.wait_for_timeout(3500)
+        t_auto = await page.evaluate(PBTXT + ".includes('o WhatsApp carregou a tela de: banimento temporário')")
+        res['teto_oficial'] = {'leu': t_ok, 'restricao': t_ban, 'autoteste': t_auto, 'nao_chamou_fetch': not await page.evaluate("window.__fetchChamado")}
+        await page.evaluate("() => { WPP.loader.loadModule = window.__lmOrig; WPP.loader.__debug = window.__dbgOrig; delete WPP.loader.moduleRequire.m.WAWebIndividualNewChatMessageCappingLimitUtils; delete WPP.loader.moduleRequire.m['WAWebTempBanScreen.react']; }")
+        await ir(page, 'Limites'); await page.wait_for_timeout(1200)
         # v1.50: Sonda de limitações — procura em tudo, mostra o resumo e vigia a tela (um aviso falso de teto com data-testid é detectado)
         await page.evaluate("() => { const d = document.createElement('div'); d.setAttribute('data-testid', 'capping-warning-banner'); d.id = 'capTeste'; document.body.append(d); }")
         await page.locator('#az-panel .gbtn', has_text='Procurar agora').click(); await page.wait_for_timeout(4000)
@@ -1859,6 +1874,7 @@ async def main():
             'rb_F_G_H_textos': lambda v: v == [1, 1, 0],
             'rb_sugestao': lambda v: v[0] == 0 and len(v[1]) == 1 and v[1][0][0] == 'responder',
             'rb_sug_manual_tudo': lambda v: v == 2,
+            'teto_oficial': lambda v: v == {'leu': True, 'restricao': True, 'autoteste': True, 'nao_chamou_fetch': True},   # v1.51
             'lab_explorar': lambda v: v == {'temas': True, 'resumo': True},   # v1.50
             'mapa_explorar': lambda v: v is True,   # v1.50
             'mapa_sonda': lambda v: v is True,   # v1.50

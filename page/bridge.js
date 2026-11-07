@@ -1099,6 +1099,31 @@
     }),
     ping: () => Date.now(),
     labList: () => ({ ...labEstado(), recursos: recursosInternos() }),
+    // v1.51: CONTADOR OFICIAL DO TETO — o que o próprio WhatsApp diz (barrado? avisado? % usada?). Só funções de LEITURA sem parâmetro
+    // (is/get/should/can), nunca fetch/update/clear/set/send/log/subscribe. Só números, liga/desliga e datas; nada de contato.
+    tetoOficial: async () => {
+      const ID = 'WAWebIndividualNewChatMessageCappingLimitUtils';
+      let rec = null; try { rec = WPP.loader.__debug?.().modulesMap?.[ID] || null; } catch { /* sem registro */ }
+      const m = rec?.factoryFinished && rec.exports ? rec.exports : loadMod(ID);
+      if (!m || typeof m !== 'object') return { existe: false };
+      const serial = (v) => { if (v == null || ['boolean', 'number', 'string'].includes(typeof v)) return typeof v === 'string' ? v.slice(0, 80) : v; try { const s = JSON.stringify(v); return s.length > 1500 ? s.slice(0, 1500) + '…' : JSON.parse(s); } catch { return typeof v; } };
+      const out = { existe: true, leituras: {}, parametros: {} };
+      for (const k of Object.keys(m)) {
+        const fn = m[k]; if (typeof fn !== 'function') continue;
+        out.parametros[k] = fn.length;
+        if (!/^(is|get|should|can)[A-Z]/.test(k) || /fetch|update|clear|set|send|log|subscri|mutat|delete|reset/i.test(k) || fn.length > 0) continue;
+        try { let r = fn(); if (r && typeof r.then === 'function') r = await Promise.race([r, sleep(2000).then(() => '(demorou)')]); out.leituras[k] = serial(r); }
+        catch (e) { out.leituras[k] = 'erro: ' + String(e?.message || e).slice(0, 60); }
+      }
+      return out;
+    },
+    // v1.51: VIGIA DAS RESTRIÇÕES — telas de banimento temporário, bloqueio para contatar pessoas novas, limite atingido, grupo suspenso…
+    // O WhatsApp só carrega o código dessas telas quando vai mostrar (ou preparar) uma delas: "carregada" aqui = sinal para olhar.
+    restricoes: () => {
+      let mm = null; try { mm = WPP.loader.__debug?.().modulesMap || null; } catch { /* sem registro */ }
+      const RX = /TempBan|ReachoutTimelock|NewChatCapped|NewChatMessageCapped|CappingWarning|SuspendedGroup|SuspendedOrTerminated|GroupAppeal|SuspendedCommunity|AccountBan|Banned|Terminated/;
+      return moduleIds().filter((i) => RX.test(i)).map((i) => ({ id: i.replace(/^WAWeb/, ''), carregada: !!mm?.[i]?.factoryFinished }));
+    },
     // v1.50: EXPLORADOR — mapeia TODOS os módulos do WhatsApp por tema (o que ele sabe fazer, guarda, busca, mostra, mede e esconde).
     // Ações e dados: também os NOMES do que cada módulo exporta (nunca chama nada). Só nomes técnicos; sem mensagens, contatos ou números.
     explorar: async () => {
@@ -1106,7 +1131,8 @@
       const TEMAS = { acoes: /(Action|Actions|Cmd)$/, dados: /(Store|Collection|Model|Table|Db)$/, recursos: /Gating|GateModel|ABProp|Experiment|Rollout|Eligib|FeatureFlag|Killswitch|KillSwitch/,
         telas: /\.react$|Loadable$/, servidor: /(Job|Query|Mutation|Subscription)$|^WAWebMex|Fetch[A-Z]|Iq[A-Z]|Api$/, registros: /WamEvent$/,
         limites: /Capping|Capped|Quota|Limit|Spam|Report|Block|Ban[A-Z]|Banned|Restrict|Integrity|Enforcement|RateLimit|Suspend|Abuse|Suspicious|Defense|Appeal|Violation|Throttl|Quarantine|Fraud|Scam/ };
-      const COM_EXPORTS = new Set(['acoes', 'dados', 'limites']), out = { temas: {}, total: ids.length }; let lidos = 0, cortado = false, mapaMods = null;
+      const COM_EXPORTS = new Set(['acoes', 'dados', 'limites', 'recursos', 'servidor', 'registros']),   // v1.51: telas ficam só com o nome (são milhares)
+      out = { temas: {}, total: ids.length }; let lidos = 0, cortado = false, mapaMods = null;
       try { mapaMods = WPP.loader.__debug?.().modulesMap || null; } catch { /* sem acesso */ }
       try { const um = mapaMods && Object.values(mapaMods).find((r) => r && typeof r === 'object'); out.camposDoRegistro = um ? Object.keys(um).slice(0, 20) : null; } catch { out.camposDoRegistro = null; }   // para o próximo ajuste
       for (const [tema, rx] of Object.entries(TEMAS)) {
