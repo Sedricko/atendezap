@@ -4,6 +4,9 @@
 > Para o estado ATUAL e as regras, leia `SKILL.md`. Consulte este arquivo só para achar o motivo de uma decisão antiga.
 
 
+## v1.52.5 (07/11/2026) — Equipe sem conversa aberta; versões como texto
+O pacote que o Johon mandou para a planilha trouxe o erro exato da Equipe (null.info sem conversa aberta). A planilha mostrava a versão do WhatsApp como número. Ambos corrigidos, com testes.
+
 ## v1.52.4 (07/11/2026) — tela com erro não some com o painel
 Print do Johon: depois de clicar em Equipe, só a faixa escura do painel. Tela com exceção agora mostra o erro e o registra; causa exata da Equipe a confirmar pelo próximo pacote.
 

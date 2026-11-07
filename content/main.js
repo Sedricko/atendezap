@@ -2397,7 +2397,8 @@
     if (!eqCfg()?.segredo) return [topo, h('p', { class: 'hint' }, 'O administrador ainda não liberou a Central da equipe (linha "equipeCentral" na planilha) ou falta atualizar o script da planilha. Depois, clique em Configurações › Acesso da equipe › Atualizar agora.')];
     const id = S.active?.id, ehInd = !!EQ.numeroDe(id), eu = S.acessoEstado?.config?.nome || '', colegas = (eqCfg().colegas || []).filter((c) => c.nome !== eu);
     if (ehInd && eqp.atual?.id !== id && eqp.pend !== id) { eqp.pend = id; setTimeout(() => eqAoAbrir(id).finally(() => { if (eqp.pend === id) eqp.pend = null; }), 0); }   // v1.52.3: uma consulta por vez
-    const inf = eqp.atual?.id === id ? eqp.atual.info : null, av = inf && EQ.aviso(inf, eu);
+    // v1.52.5: sem conversa aberta (id vazio) a comparação dava "igual" e quebrava a tela inteira
+    const inf = ehInd && eqp.atual?.id === id ? eqp.atual.info : null, av = inf && EQ.aviso(inf, eu);
     const dono = !ehInd ? h('p', { class: 'hint' }, 'Abra uma conversa individual (com número) para ver de quem é o cliente.')
       : !inf ? h('p', { class: 'hint' }, eqp.atual?.erro ? 'Não consegui falar com a planilha: ' + eqp.atual.erro : 'Consultando a planilha…')
       : h('div', { class: 'col' }, h('div', { class: 'kv' }, h('span', null, 'Dono deste cliente'), h('b', { class: inf.dono && inf.dono !== eu ? 'dan' : null }, inf.dono ? (inf.dono === eu ? `você (${eu})` : inf.dono) : 'ninguém ainda (fica com quem responder primeiro)')),

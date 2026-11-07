@@ -1218,6 +1218,10 @@ async def main():
         await sub_atend(page, 'Ajustes')
         res['ac_todos_robo'] = {'audio': await page.evaluate(PBTXT + ".includes('Áudios dos clientes')"), 'automatico_livre': automatico_livre}
         # v1.52: Central da equipe — ninguém é dono ainda; passar para o Joao (com o contato dele ao cliente); a planilha só recebe a impressão digital
+        await page.evaluate("window.__semConversa = true"); await page.wait_for_timeout(3500)   # v1.52.5: sem conversa aberta a tela quebrava inteira no WhatsApp real
+        await ir(page, 'Equipe'); await page.wait_for_timeout(1800)
+        res['equipe_sem_conversa'] = {'pede_conversa': await page.evaluate(PBTXT + ".includes('Abra uma conversa individual')"), 'sem_erro': not await page.evaluate(PBTXT + ".includes('Esta tela deu erro')")}
+        await page.evaluate("window.__semConversa = false"); await ir(page, 'Respostas rápidas'); await page.wait_for_timeout(3500)
         await ir(page, 'Equipe'); await page.wait_for_timeout(1800)
         eq0 = await page.evaluate(PBTXT + ".includes('ninguém ainda')")
         await page.locator('#az-panel select.in').select_option('Joao'); await page.wait_for_timeout(300)
@@ -1909,6 +1913,7 @@ async def main():
             'rb_F_G_H_textos': lambda v: v == [1, 1, 0],
             'rb_sugestao': lambda v: v[0] == 0 and len(v[1]) == 1 and v[1][0][0] == 'responder',
             'rb_sug_manual_tudo': lambda v: v == 2,
+            'equipe_sem_conversa': lambda v: v['pede_conversa'] and v['sem_erro'],   # v1.52.5
             'pacote_planilha': lambda v: v['partes'] and v['formato'] == 'atendezap-pacote-1' and {'mapa.json', 'relatorio.html', 'erros.json', 'ponte.json', 'estrutura.json'} <= set(v['arquivos']),   # v1.52.1
             'modo_leve': lambda v: v == [True, False],   # v1.52.1
             'equipe': lambda v: v == {'sem_dono': True, 'passou': True, 'so_digital': True, 'avisou_cliente': True, 'dono_agora': True},   # v1.52

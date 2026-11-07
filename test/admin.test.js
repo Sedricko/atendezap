@@ -82,7 +82,7 @@ assert.equal(r.ok, true); assert.equal(r.nome, 'Maria'); assert.equal(r.perfil, 
 assert.equal(r.limites.roboModoMax, 'sugerir'); assert.equal(r.limites.roboMaxPorHora, '25'); assert.equal(r.limites.roboMaxPorContatoDia, '15'); assert.equal(r.global.emergencia, 'sim'); assert.equal(r.global.emergenciaMensagem, 'Pausa para ajuste');
 assert.ok(!JSON.stringify(r).includes('ADMINCODIGO') && !JSON.stringify(r).includes('BIACODIGO') && !JSON.stringify(r).includes('Bia'));   // cada um vê só o que é seu
 const ef = A.normalizar(r); assert.equal(ef.recursos.atendente, 'ligado'); assert.equal(ef.limites.roboModoMax, 'sugerir'); assert.equal(ef.limites.roboMaxPorHora, 25); assert.equal(ef.global.emergencia, true); assert.equal(ef.global.consultaMin, 15); assert.equal(ef.global.validadeOfflineDias, 7);   // o contrato fecha
-assert.equal(s.abas.Usuarios[1][6], '1.34.0'); assert.equal(s.abas.Usuarios[1][7], 'inst-abc'); assert.ok(s.abas.Usuarios[1][5] instanceof s.run('Date'));   // última consulta, versão e instalação registradas
+assert.equal(s.abas.Usuarios[1][6], "'1.34.0"); assert.equal(s.abas.Usuarios[1][7], 'inst-abc'); assert.ok(s.abas.Usuarios[1][5] instanceof s.run('Date'));   // última consulta, versão e instalação registradas
 const r2 = s.post({ acao: 'config', codigo: 'MARIACODIGO123456' }); assert.equal(r2.hash, r.hash);                                                              // mesmo conteúdo = mesmo hash
 s.abas.Global[4][1] = 'Reunião às 14h'; assert.notEqual(s.post({ acao: 'config', codigo: 'MARIACODIGO123456' }).hash, r.hash);                                  // mudou: hash muda
 const rb = s.post({ acao: 'config', codigo: 'BIACODIGO1234567890' }); assert.equal(rb.recursos.atendente, 'bloqueado'); assert.equal(rb.recursos.lab, 'bloqueado'); assert.equal(rb.limites.roboModoMax, 'desligado');
@@ -114,7 +114,7 @@ for (const [v, esp] of [['', false], [null, false], ['lixo', false], ['01/01/200
 const dados = A.montarSaude({ v: '1.34.0', wa: '2.3000.1', autoteste: { ok: 46, warn: 0, bad: 1, skip: 6, ruins: ['Envio de mídia'] }, robo: { modo: 'sugerir', ativo: true, respondeu24h: 12, humano24h: 2, ignorado24h: 3, iaFalhou24h: 1, pendencias: 1 }, tempos: { iaS: 3.4, esperouS: 12 }, ia: { usoHoje: 22, falhas: { instavel: 2 }, chaves: 2 } });
 s.abas.Global[5][1] = 'nao'; assert.deepEqual(s.post({ acao: 'saude', codigo: 'MARIACODIGO123456', dados }), { ok: true, ignorado: true }); assert.equal(s.abas.Saude.length, 1);   // administrador desligou a coleta
 s.abas.Global[5][1] = 'sim'; assert.equal(s.post({ acao: 'saude', codigo: 'MARIACODIGO123456', dados }).ok, true);
-const ln = s.abas.Saude[1]; assert.equal(ln[1], 'Maria'); assert.equal(ln[2], '1.34.0'); assert.equal(ln[4], 46); assert.equal(ln[6], 1); assert.equal(ln[8], 'Envio de mídia'); assert.equal(ln[9], 'sugerir'); assert.equal(ln[10], 'sim'); assert.equal(ln[11], 12); assert.equal(ln[16], 3.4); assert.equal(ln[18], 'instavel x2');
+const ln = s.abas.Saude[1]; assert.equal(ln[1], 'Maria'); assert.equal(ln[2], "'1.34.0"); assert.equal(ln[4], 46); assert.equal(ln[6], 1); assert.equal(ln[8], 'Envio de mídia'); assert.equal(ln[9], 'sugerir'); assert.equal(ln[10], 'sim'); assert.equal(ln[11], 12); assert.equal(ln[16], 3.4); assert.equal(ln[18], 'instavel x2');
 assert.equal(s.abas.Usuarios[1][8], 'ligado (sugerir)'); assert.ok(s.abas.Usuarios[1][9] instanceof s.run('Date'));
 s.post({ acao: 'saude', codigo: 'MARIACODIGO123456', dados: 'texto solto' }); s.post({ acao: 'saude', codigo: 'MARIACODIGO123456', dados: { v: 'x'.repeat(5000) } }); s.post({ acao: 'saude', codigo: 'MARIACODIGO123456' }); assert.equal(s.abas.Saude.length, 2);   // não é o nosso formato: ignora
 assert.equal(s.post({ acao: 'saude', codigo: 'CODIGOQUENAOEXISTE12345', dados }).ok, false);
@@ -278,7 +278,7 @@ for (const v of ['sim', 'Sim', 'on', 'liberado', 'não', 'NAO', 'off', 'negado',
   }
   // (d) planilha NOVA já nasce organizada, e Usuarios/Global/Legenda também ficam padronizadas
   { const sd = nova(); const p = sd.abas.Perfis.map((l) => l[0]); assert.equal(p[1], '▸ ATENDIMENTO'); assert.ok(p.indexOf('diag') > p.indexOf('▸ DIAGNÓSTICO') && p.indexOf('lab') > p.indexOf('▸ DIAGNÓSTICO') && p.indexOf('lab') < p.indexOf('▸ CONFIGURAÇÕES'));   // cada função no bloco do seu assunto
-  assert.ok(p.indexOf('apagar') > p.indexOf('▸ PRIVACIDADE') && p.indexOf('recuperar') < p.indexOf('▸ DIAGNÓSTICO') && p.indexOf('ocultas') > p.indexOf('▸ PRIVACIDADE') && p.indexOf('vagas') > p.indexOf('▸ GRUPOS') && p.indexOf('vagas') < p.indexOf('▸ FERRAMENTAS') && p.indexOf('cargas') < p.indexOf('▸ GRUPOS')); assert.ok(sd.abas.Legenda && sd.abas.Legenda[2][0] === 'LEGENDA DA ABA PERFIS' && /^SCRIPT DA PLANILHA: versão 1\.52\.4/.test(sd.abas.Legenda[0][0]));
+  assert.ok(p.indexOf('apagar') > p.indexOf('▸ PRIVACIDADE') && p.indexOf('recuperar') < p.indexOf('▸ DIAGNÓSTICO') && p.indexOf('ocultas') > p.indexOf('▸ PRIVACIDADE') && p.indexOf('vagas') > p.indexOf('▸ GRUPOS') && p.indexOf('vagas') < p.indexOf('▸ FERRAMENTAS') && p.indexOf('cargas') < p.indexOf('▸ GRUPOS')); assert.ok(sd.abas.Legenda && sd.abas.Legenda[2][0] === 'LEGENDA DA ABA PERFIS' && /^SCRIPT DA PLANILHA: versão 1\.52\.5/.test(sd.abas.Legenda[0][0]));
     assert.match(sd.abas.Legenda.find((l) => l[0] === 'desligado')[1], /NÃO é "desativado"/);                                                                           // a armadilha do "desligado" está explicada
     const u = sd.reg.valids.filter((v) => v.aba === 'Usuarios'); const col = (c) => u.find((v) => v.c === c);
     assert.deepEqual(col(3).d.lista, ['Novo', 'Básico', 'Com robô', 'Administrador']); assert.deepEqual(col(4).d.lista, ['sim', 'não']); assert.deepEqual(col(12).d.num, [1, 20]);   // Perfil, Ativo e Máx. computadores com lista/faixa
@@ -365,5 +365,6 @@ for (const v of ['sim', 'Sim', 'on', 'liberado', 'não', 'NAO', 'off', 'negado',
 // v1.52.3: versão do WhatsApp com 17+ caracteres chega inteira na Saude e no Monitor (limite 40)
 { const sw = nova(); sw.abas.Usuarios.push(['Ana', 'ANAVERSAO1234567AB', 'Administrador', 'sim']); sw.post({ acao: 'config', codigo: 'ANAVERSAO1234567AB' });
   const wa = '2.3000.1053538009.12345'; sw.post({ acao: 'saude', codigo: 'ANAVERSAO1234567AB', dados: { v: '1.52.3', wa, autoteste: { ok: 49 } } });
-  assert.equal(sw.abas.Saude.at(-1)[3], wa); assert.equal(sw.abas.Monitor[1][5], wa); }
+  assert.equal(sw.abas.Saude.at(-1)[3], "'" + wa); assert.equal(sw.abas.Monitor[1][5], "'" + wa);   // o ' faz o Google guardar como texto (não aparece na célula)
+  assert.equal(sw.run("admTxt_('2.3000.1053538009')"), "'2.3000.1053538009"); assert.equal(sw.run("admTxt_('')"), ''); assert.equal(sw.run("admTxt_(\"'1.2\")"), "'1.2"); }   // v1.52.5: vai como TEXTO (o Google virava número)
 console.log('script da planilha administrativa: todos os casos ok (preparar, convites, perfis, exceções, acesso negado, validade, saúde, limpeza, vigia, coexistência e aviso de planilha com outro uso)');

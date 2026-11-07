@@ -31,7 +31,7 @@
  * Mudou só células da planilha? Vale na hora: nada a reimplantar.
  */
 
-var ADM_VERSAO = '1.52.4';   // v1.52.2: o MESMO número da extensão (o teste confere): cada atualização muda a versão, e a extensão mostra qual script está publicado
+var ADM_VERSAO = '1.52.5';   // v1.52.2: o MESMO número da extensão (o teste confere): cada atualização muda a versão, e a extensão mostra qual script está publicado
 var ADM_ABA = { usuarios: 'Usuarios', perfis: 'Perfis', excecoes: 'Excecoes', global: 'Global', saude: 'Saude', computadores: 'Computadores', legenda: 'Legenda', equipe: 'Equipe', pacotes: 'Pacotes', monitor: 'Monitor' };
 // v1.52.1: MONITOR — uma linha por computador, atualizada a cada resumo de saúde; o vigia marca quem sumiu e manda e-mail quando fica 🔴.
 var ADM_CAB_MONITOR = ['Situação', 'Pessoa', 'Computador', 'Último resumo', 'Versão', 'WhatsApp', 'Autoteste (ok / avisos / problemas)', 'Risco hoje', 'Msgs hoje', 'Pronto (s)', 'Atraso msgs (s)', 'Memória (MB)', 'Último pacote', 'Alertado', 'O WhatsApp diz', 'Motivos'];   // v1.52.2: textos grandes no fim
@@ -117,6 +117,7 @@ function admJson_(o) { return ContentService.createTextOutput(JSON.stringify(o))
 function admHash_(s) { var h = 5381, i; for (i = 0; i < s.length; i++) h = ((h << 5) + h + s.charCodeAt(i)) | 0; return (h >>> 0).toString(36); }
 function admNovoCodigo_() { return 'A' + Utilities.getUuid().replace(/-/g, '').slice(0, 15).toUpperCase(); }   // começa com letra: a planilha nunca o converte em número
 // texto que veio da extensão: nunca vira fórmula na planilha (=, +, -, @ no início)
+function admTxt_(v) { var t = String(v == null ? '' : v); return t ? "'" + t.replace(/^'+/, '') : ''; }   // v1.52.5: versão é TEXTO (o Google transformava 2.3000.1053538009 em 230.001.053.538.009)
 function admCel_(v) { var t = String(v == null ? '' : v); return /^[=+\-@]/.test(t) ? "'" + t : t; }
 function admCodificarConvite_(url, codigo) { return 'AZ1.' + Utilities.base64EncodeWebSafe(JSON.stringify({ u: url, c: codigo }), Utilities.Charset.UTF_8).replace(/=+$/, ''); }
 function admDataBR_(d) { return Utilities.formatDate(d, 'America/Sao_Paulo', 'dd/MM/yyyy HH:mm'); }
@@ -179,7 +180,7 @@ function admGarantirComputadores_() {
 }
 // Confere e registra o computador desta consulta. Devolve { recusa } (resposta pronta) ou { pcs: {emUso, max} }.
 function admChecarComputador_(u, nome, codigo, b, agora, acao) {
-  var inst = String(b.inst == null ? '' : b.inst).trim(), sh, vals, regs = [], r, max, d, maq = admCel_(String(b.maquina || '').slice(0, 40)), ver = admCel_(String(b.versao || '').slice(0, 40)), emUso;
+  var inst = String(b.inst == null ? '' : b.inst).trim(), sh, vals, regs = [], r, max, d, maq = admCel_(String(b.maquina || '').slice(0, 40)), ver = admTxt_(String(b.versao || '').slice(0, 40)), emUso;
   if (!/^[A-Za-z0-9_-]{6,60}$/.test(inst)) return { recusa: { ok: false, erro: 'extensão desatualizada' } };   // sem identificador não há como contar computadores
   sh = admGarantirComputadores_(); vals = sh.getDataRange().getValues(); max = admMaxPc_(u[ADM_U.MAXPC - 1]);
   for (r = 1; r < vals.length; r++) if (String(vals[r][1]).trim() === codigo) regs.push({ linha: r + 1, inst: String(vals[r][2]).trim(), situacao: vals[r][7] });
@@ -272,7 +273,7 @@ function admAtualizarMonitor_(nome, inst, d, agora, versaoMinima) {
   var sh = admMonitorAba_(), vals = sh.getDataRange().getValues(), s = admSituacao_(d, versaoMinima), a = d.autoteste || {}, k = d.risco || {}, w = d.whatsapp || {}, dp = d.desempenho || {}, r, linha = -1;
   var n = function (v) { return typeof v === 'number' && isFinite(v) ? v : ''; }, sn = function (v) { return v === true ? 'sim' : v === false ? 'não' : '—'; };
   for (r = 1; r < vals.length; r++) if (String(vals[r][ADM_MO.PESSOA - 1]) === nome && String(vals[r][ADM_MO.PC - 1]) === inst) { linha = r; break; }
-  var row = [s.sinal, admCel_(nome), admCel_(inst), agora, admCel_(String(d.v || '').slice(0, 40)), admCel_(String(d.wa || '').slice(0, 40)),
+  var row = [s.sinal, admCel_(nome), admCel_(inst), agora, admTxt_(String(d.v || '').slice(0, 40)), admTxt_(String(d.wa || '').slice(0, 40)),
     n(a.ok) + ' / ' + n(a.warn) + ' / ' + n(a.bad), admCel_(String(k.nivel || '').slice(0, 10)), n(k.mensagens), n(dp.prontoS), n(dp.atrasoS), n(dp.memMB),
     linha > 0 ? vals[linha][ADM_MO.PACOTE - 1] : '', linha > 0 ? vals[linha][ADM_MO.ALERTADO - 1] : '',
     admCel_('teto barrado: ' + sn(w.tetoBarrado) + ' · avisado: ' + sn(w.tetoAvisado) + ' · bloqueio p/ novos: ' + sn(w.bloqueioNovos)), admCel_(s.motivos.join('; ') || 'tudo certo')];
@@ -583,7 +584,7 @@ function doPost(e) {
     if (acao === 'config' || acao === 'saude') { pc = admChecarComputador_(u, nome, codigo, b, agora, acao); if (pc.recusa) return admJson_(pc.recusa); }   // limite de computadores por convite
     var global = admLerAba_(ADM_ABA.global), cfg = admMontarConfig_(perfil, codigo, admLerAba_(ADM_ABA.perfis), admLerAba_(ADM_ABA.excecoes), global);
     if (acao === 'config') {
-      sh.getRange(linha + 1, ADM_U.ULTIMA, 1, 3).setValues([[agora, admCel_(String(b.versao || '').slice(0, 40)), admCel_(String(b.inst || '').slice(0, 40))]]);
+      sh.getRange(linha + 1, ADM_U.ULTIMA, 1, 3).setValues([[agora, admTxt_(String(b.versao || '').slice(0, 40)), admCel_(String(b.inst || '').slice(0, 40))]]);
       var corpo = { nome: nome, perfil: perfil, recursos: cfg.recursos, limites: cfg.limites, global: cfg.global };
       var eq = cfg.recursos.equipeCentral && cfg.recursos.equipeCentral !== 'bloqueado' ? { segredo: admSegredoEquipe_(), colegas: admColegas_(vals) } : null;   // v1.52: só para quem tem a Central liberada
       return admJson_({ ok: true, nome: nome, perfil: perfil, recursos: cfg.recursos, limites: cfg.limites, global: cfg.global, pcs: pc.pcs, hash: admHash_(JSON.stringify(corpo)), agora: agora.getTime(), equipe: eq, versaoScript: ADM_VERSAO });
@@ -615,7 +616,7 @@ function admRegistrarSaude_(shUsuarios, linhaUsuario, nome, d, agora) {
   if (sh.getLastRow() === 0) sh.getRange(1, 1, 1, ADM_CAB_SAUDE.length).setValues([ADM_CAB_SAUDE]);   // (planilha antiga: admAba_ já pôs as colunas na ordem nova)
   var falhas = []; for (var k in (ia.falhas || {})) falhas.push(String(k).slice(0, 14) + ' x' + n(ia.falhas[k]));
   var ruins = (Array.isArray(a.ruins) ? a.ruins : []).slice(0, 8).map(function (x) { return String(x).slice(0, 60); }).join('; ');
-  sh.appendRow([agora, nome, admCel_(String(d.v || '').slice(0, 40)), admCel_(String(d.wa || '').slice(0, 40)), n(a.ok), n(a.warn), n(a.bad), n(a.skip), admCel_(ruins), admCel_(String(r.modo || '').slice(0, 12)), r.ativo === true ? 'sim' : 'nao',
+  sh.appendRow([agora, nome, admTxt_(String(d.v || '').slice(0, 40)), admTxt_(String(d.wa || '').slice(0, 40)), n(a.ok), n(a.warn), n(a.bad), n(a.skip), admCel_(ruins), admCel_(String(r.modo || '').slice(0, 12)), r.ativo === true ? 'sim' : 'nao',
     n(r.respondeu24h), n(r.humano24h), n(r.ignorado24h), n(r.iaFalhou24h), n(r.pendencias), n(t.iaS), n(t.esperouS), admCel_(falhas.join(', ')),
     n(dp.prontoS), n(dp.atrasoS), n(dp.memMB), n(dp.pct), admCel_(dp.lenta ? String(dp.lenta).slice(0, 30) + ' (' + n(dp.lentaMs) + ' ms)' : ''), admCel_(String(rk.nivel || '').slice(0, 10)), n(rk.mensagens), n(rk.conversas),
     admCel_(['teto barrado: ' + sn(wz.tetoBarrado), 'avisado: ' + sn(wz.tetoAvisado), 'bloqueio p/ pessoas novas: ' + sn(wz.bloqueioNovos)].join(' · ')), admCel_(txt)]);

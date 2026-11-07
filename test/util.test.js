@@ -1278,3 +1278,8 @@ const cifrar = (obj, senha) => { // mesmo formato do CryptoJS/OpenSSL ("Salted__
   assert.equal(zlib.gunzipSync(Buffer.from(partes.join(''), 'base64')).toString('utf8'), txt);   // juntando as partes, volta exatamente igual
   console.log('pacote compactado ok');
 })().catch((e) => { console.error(e); process.exit(1); });
+// v1.52.5: todo arquivo da extensão precisa compilar (um comentário no meio de uma linha já quebrou o painel inteiro)
+{ const fs = require('fs'), path = require('path'), vm = require('vm'), raiz = path.join(__dirname, '..'), man = JSON.parse(fs.readFileSync(path.join(raiz, 'manifest.json'), 'utf8'));
+  const arqs = new Set(['background.js', ...man.content_scripts.flatMap((c) => c.js)]);
+  for (const a of arqs) new vm.Script(fs.readFileSync(path.join(raiz, a), 'utf8'), { filename: a });
+  console.log('sintaxe dos ' + arqs.size + ' arquivos da extensão ok'); }
