@@ -46,6 +46,7 @@ Grau: ✅ confirmada no seu WhatsApp (autoteste ✔ real e/ou uso real) · 🟡 
 | Apagar para todos, a qualquer tempo | Privacidade › Apagar | `apagar` | 🧪 (falta saber se o servidor aceita as antigas) |
 | Recuperar apagadas | Privacidade › Recuperar | `recuperar` | 🧪 (falta o teste com um contato apagando) |
 | Limpar conversas antigas (individuais por 30–360 dias parados; grupos: mensagens antigas só para você) | Privacidade › Limpar | `limpeza` | 🧪 (v1.48; regras em `lib/limpeza.js`) |
+| Central da equipe (de quem é o cliente, passar cliente para um colega) | Atendimento › Equipe | `equipeCentral` | 🧪 (v1.52; planilha só com impressão digital) |
 | Risco de banimento (o que o AtendeZap enviou hoje × faixas de cautela + teto do WhatsApp) | Diagnóstico › Limites | `cfgLimites` | ✅ regra simples (v1.50) |
 | Sonda de limitações e Explorar o WhatsApp (mapa de todos os módulos por tema) | Diagnóstico › Limites / Laboratório › Explorar | `cfgLimites` / `lab` | 🧪 (v1.50; só leitura) |
 | Monitor de limitações (o que mudou desde que você viu) e o que o WhatsApp registra | Diagnóstico › Limites | `cfgLimites` | ✅ só leitura (v1.49) |

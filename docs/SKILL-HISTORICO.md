@@ -4,6 +4,9 @@
 > Para o estado ATUAL e as regras, leia `SKILL.md`. Consulte este arquivo só para achar o motivo de uma decisão antiga.
 
 
+## v1.52.0 (07/11/2026) — Central da equipe e bloqueio para pessoas novas
+O Johon escolheu "dividir clientes na equipe"; a atribuição oficial do WhatsApp só vale num mesmo número e a equipe usa números diferentes, então a Central usa a planilha (funciona nos dois casos). Decisão de privacidade: nenhum telefone na planilha (impressão digital com senha guardada no script).
+
 ## v1.51.0 (07/11/2026) — contador oficial do teto e vigia das restrições
 Primeiros relatórios com sonda/explorador: saúde 56/56; 452 módulos sobre limites (312 lidos); explorador 12.131 módulos, 7 temas. Achados: `IndividualNewChatMessageCappingLimitUtils` (isUserCapped=false, isUserWarned=false), telas de banimento temporário e bloqueio para contatar pessoas novas, `MexFetchIntegritySignals`.
 
