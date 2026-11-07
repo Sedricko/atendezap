@@ -782,6 +782,7 @@ const cifrar = (obj, senha) => { // mesmo formato do CryptoJS/OpenSSL ("Salted__
   // com convite e configuração recente
   const ac = { url: URL, codigo: 'K7P2M9Q4X8N3B5C1' }, est = (cf, t = T0, extra = {}) => ({ config: cf, t, ...extra });
   const ef = A.avaliar(ac, est(cfg), T0 + 5 * 60000); assert.equal(ef.conectado, true); assert.equal(ef.valido, true); assert.equal(ef.restrito, false); assert.equal(ef.nome, 'Maria'); assert.equal(ef.idadeMin, 5); assert.equal(ef.emergencia, true);
+  assert.equal(A.normalizar({ versaoScript: '1.52.2' }).versaoScript, '1.52.2'); assert.equal(A.normalizar({ versaoScript: '=HYPERLINK(1)' }).versaoScript, ''); assert.equal(A.avaliar(ac, est(A.normalizar({ ...cfg, versaoScript: '1.52.2' })), T0 + 5 * 60000).versaoScript, '1.52.2'); assert.ok(A.versaoMenor('1.52.1', '1.52.2') && !A.versaoMenor('1.52.2', '1.52.2'));   // v1.52.2: versão do script da planilha (só número)
   assert.equal(A.liberado(ef, 'lab', true), false); assert.equal(A.liberado(ef, 'atendente', false), true); assert.equal(A.liberado(ef, 'vagas', false), false); assert.equal(A.liberado(ef, 'vagas', true), true); assert.equal(A.liberado(ef, 'pins', undefined), false);   // sem marcação do administrador = BLOQUEADO (nada vem liberado de fábrica)
   // sem configuração ainda / configuração velha demais = restrito (o robô fica desligado), mas os demais recursos seguem
   const semCfg = A.avaliar(ac, null, T0); assert.equal(semCfg.valido, false); assert.equal(semCfg.restrito, true);

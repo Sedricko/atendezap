@@ -3740,7 +3740,8 @@
   async function acessoOrigemSaude() {
     const est = (await chrome.storage.local.get('diagEstado')).diagEstado || {}, h0 = (est.historico || [])[0] || {}, r = atendResumo(), a = r.acoes24h || {}, tm = r.tempos24h || {};
     const hoje = S.iaUso?.data === new Date().toISOString().slice(0, 10) ? S.iaUso : {};
-    return { v: acessoVersao(), wa: h0.whatsapp, autoteste: { ok: h0.ok, warn: h0.warn, bad: h0.bad, skip: h0.skip, ruins: h0.afetadas },
+    if (!mon.teto) mon.teto = await call('tetoOficial').catch(() => null);   // v1.52.2: o 1º resumo saía antes da 1ª leitura e ia com "—"
+    return { v: acessoVersao(), wa: h0.whatsapp || (await chrome.storage.local.get('diagUltimo')).diagUltimo?.ver || '', autoteste: { ok: h0.ok, warn: h0.warn, bad: h0.bad, skip: h0.skip, ruins: h0.afetadas },
       robo: { modo: r.modo, ativo: r.ativoAgora, ultimaMsgMin: r.ultimoEventoMin, respondeu24h: (a.respondeu || 0) + (a['respondeu e avisou você'] || 0), humano24h: a['passou para humano'] || 0, ignorado24h: (a.ignorado || 0) + (a['fora do escopo'] || 0), iaFalhou24h: a['IA falhou'] || 0, pendencias: (S.atendSug || []).length, pausas: r.pausasAtivas, travado: !!atend.bloqueado },
       tempos: { iaS: tm.iaS, esperouS: tm.clienteEsperouS, atendenteS: tm.atendenteS },
       ia: { usoHoje: hoje.n || 0, falhas: hoje.falhas || {}, chaves: chavesDe(S.iaCfg).filter((k) => String(k || '').trim()).length, reserva: !!S.iaCfg?.modeloReserva },
@@ -3816,7 +3817,8 @@
     return h('div', { class: 'sec' }, h('div', { class: 'sh' }, tile('users'), h('b', { class: 'grow' }, 'Acesso da equipe')),
       h('p', null, h('b', null, ef.nome || 'Sua conta'), ` · perfil ${ef.perfil || '—'}`),
       h('small', { class: ef.valido && !ef.desativado ? 'iaok' : 'dan' }, ef.desativado ? (/computador/.test(ef.motivo || '') ? '✖ Este computador não está autorizado: ' + ef.motivo + '.' : '✖ Acesso desativado pelo administrador.') : ef.valido ? `✔ Conectado · confirmado ${ago}` : `⚠ Não confirmado (${S.acessoEstado?.erro || 'sem resposta'}): o robô fica desligado até confirmar.`),
-      h('small', { class: 'hint' }, `Este computador: ${acessoMaquina()} · id ${String(S.instId || '').slice(0, 4)}` + (ef.pcs ? ` · computadores deste convite: ${ef.pcs.emUso} de ${ef.pcs.max}` : '')),
+      h('small', { class: 'hint' }, `Este computador: ${acessoMaquina()} · id ${String(S.instId || '').slice(0, 4)}` + (ef.pcs ? ` · computadores deste convite: ${ef.pcs.emUso} de ${ef.pcs.max}` : '') + (ef.versaoScript ? ` · script da planilha ${ef.versaoScript}` : '')),
+      ef.versaoScript && AC.versaoMenor(ef.versaoScript, acessoVersao()) ? h('small', { class: 'dan' }, `⚠ O script da planilha (${ef.versaoScript}) é mais velho que a extensão (${acessoVersao()}): peça ao administrador para colar o AdminControle.gs novo e publicar uma "Nova versão".`) : null,
       AC.RECURSOS.some((k) => AC.liberado(ef, k, undefined)) ? null : h('small', { class: 'dan' }, 'O administrador ainda não liberou nenhuma parte para o seu perfil. Peça a ele para liberar o que você precisa.'),
       (L.roboModoMax || L.roboMaxPorContatoDia || L.roboMaxPorHora || L.chavesMax || L.retencaoMaxDias) ? h('small', { class: 'hint' }, 'Limites do administrador: ' + [L.roboModoMax && `robô até "${L.roboModoMax}"`, L.roboMaxPorContatoDia && `${L.roboMaxPorContatoDia} respostas/contato/dia`, L.roboMaxPorHora && `${L.roboMaxPorHora}/hora`, L.chavesMax && `${L.chavesMax} chave(s) da IA`, L.retencaoMaxDias && `dados por até ${L.retencaoMaxDias} dias`].filter(Boolean).join(' · ') + '.') : null,
       ef.global.coletarSaude ? h('label', { class: 'chk' }, h('input', { type: 'checkbox', checked: S.acessoCfg?.saude === true, onchange: async (e) => { S.acessoCfg = { ...S.acessoCfg, saude: e.target.checked }; await save('acessoCfg'); if (e.target.checked) acessoEnviarSaude(true); renderPanel(); } }), 'Enviar o resumo técnico de saúde ao administrador')
