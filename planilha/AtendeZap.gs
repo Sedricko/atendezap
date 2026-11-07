@@ -1,5 +1,5 @@
 /**
- * VERSÃO 1.52.5 (o MESMO número da extensão: toda atualização muda; a extensão mostra qual está publicada em Atendente IA › Memória IA)
+ * VERSÃO 1.52.6 (o MESMO número da extensão: toda atualização muda; a extensão mostra qual está publicada em Atendente IA › Memória IA)
  *
  * AtendeZap — entrega os textos do Gerador de Anúncios para o WhatsApp (botão 🚚 da extensão) e guarda o APRENDIZADO DA IA.
  *
@@ -33,7 +33,7 @@ var ABAS_IA_ = {
   'IA - Conversas': ['Data', 'Pergunta (sem dados pessoais)', 'Resposta (sem dados pessoais)', 'Quem respondeu'],   // v4: banco de conhecimento (escuta automática do AtendeZap)
   'IA - Avaliação': ['Data', 'Período (dias)', 'Trocas', 'Com memória', 'Bateram com a memória', 'Diferentes da memória', 'Sem memória', 'Sem resposta', 'Tempo mediano (s)']   // v5: avaliação do atendimento (só números)
 };
-var VERSAO_ = '1.52.5';   // v1.52.3: igual ao manifest.json da extensão (o teste confere)
+var VERSAO_ = '1.52.6';   // v1.52.3: igual ao manifest.json da extensão (o teste confere)
 var VERSAO_IA_ = 5;   // o AtendeZap confere esta versão ao "Testar conexão" para avisar se o script está desatualizado
 
 function doGet(e) {
