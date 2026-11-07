@@ -891,7 +891,9 @@
       return;
     }
     if (!ligado(ui.sec)) ui.sec = visiveis()[0][0];
-    const body = { memoria: memoriaView, atendente: atendView, config: configView, replies: view.editing ? editorView : repliesView, sig: sigView, start: startView, lote: loteView, pedidos: pedidosView, unicos: unicosView, fila: filaView, pins: pinsView, ocultas: ocultasView, apagar: apagarView, recuperar: recuperarView, limpeza: limpezaView, equipe: equipeView, lab: () => [h('div', { class: 'eh' }, h('b', null, 'Laboratório')), labView()], gruposAj: gruposAjView, frete: freteView, limites: limitesSecaoView, resumo: resumoView, avaliacao: avaliacaoView, iaenvios: iaEnviosView, contato: contatoView, exportar: exportarView, backup: backupView, diag: diagView }[ui.sec]();
+    let body; try { body = { memoria: memoriaView, atendente: atendView, config: configView, replies: view.editing ? editorView : repliesView, sig: sigView, start: startView, lote: loteView, pedidos: pedidosView, unicos: unicosView, fila: filaView, pins: pinsView, ocultas: ocultasView, apagar: apagarView, recuperar: recuperarView, limpeza: limpezaView, equipe: equipeView, lab: () => [h('div', { class: 'eh' }, h('b', null, 'Laboratório')), labView()], gruposAj: gruposAjView, frete: freteView, limites: limitesSecaoView, resumo: resumoView, avaliacao: avaliacaoView, iaenvios: iaEnviosView, contato: contatoView, exportar: exportarView, backup: backupView, diag: diagView }[ui.sec](); } catch (e) {   // v1.52.3: tela com erro não apaga o painel inteiro (antes ficava só a faixa escura)
+      logErr('tela ' + ui.sec, (e && e.stack || e).toString().split('\n').slice(0, 3).join(' | '));
+      body = [h('div', { class: 'eh' }, h('b', null, 'Esta tela deu erro')), h('p', { class: 'dan' }, String(e && e.message || e)), h('p', { class: 'hint' }, 'O erro foi guardado e vai no próximo pacote de diagnóstico. Use outra tela enquanto isso.'), h('div', { class: 'rowf' }, h('button', { class: 'gbtn sm', onclick: () => { ui.sec = visiveis()[0][0]; renderPanel(); } }, 'Voltar ao início'))]; }
     panelRoot.prepend(h('div', { class: 'panel ' + lado, style: lado === 'topo' ? '' : `width:${painelW()}px` },
       h('div', { class: 'ph' },
         h('button', { class: 'tb close', 'data-tip': 'Recolher (Alt+Z)', onclick: closePanel }, icon(LADOS[lado][2], 20)),
@@ -2394,7 +2396,7 @@
     if (!acessoConectado()) return [topo, h('p', { class: 'hint' }, 'A Central da equipe usa a planilha do administrador: conecte o convite em Configurações › Acesso da equipe.')];
     if (!eqCfg()?.segredo) return [topo, h('p', { class: 'hint' }, 'O administrador ainda não liberou a Central da equipe (linha "equipeCentral" na planilha) ou falta atualizar o script da planilha. Depois, clique em Configurações › Acesso da equipe › Atualizar agora.')];
     const id = S.active?.id, ehInd = !!EQ.numeroDe(id), eu = S.acessoEstado?.config?.nome || '', colegas = (eqCfg().colegas || []).filter((c) => c.nome !== eu);
-    if (ehInd && eqp.atual?.id !== id) setTimeout(() => eqAoAbrir(id), 0);
+    if (ehInd && eqp.atual?.id !== id && eqp.pend !== id) { eqp.pend = id; setTimeout(() => eqAoAbrir(id).finally(() => { if (eqp.pend === id) eqp.pend = null; }), 0); }   // v1.52.3: uma consulta por vez
     const inf = eqp.atual?.id === id ? eqp.atual.info : null, av = inf && EQ.aviso(inf, eu);
     const dono = !ehInd ? h('p', { class: 'hint' }, 'Abra uma conversa individual (com número) para ver de quem é o cliente.')
       : !inf ? h('p', { class: 'hint' }, eqp.atual?.erro ? 'Não consegui falar com a planilha: ' + eqp.atual.erro : 'Consultando a planilha…')

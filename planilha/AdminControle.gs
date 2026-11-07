@@ -31,7 +31,7 @@
  * Mudou só células da planilha? Vale na hora: nada a reimplantar.
  */
 
-var ADM_VERSAO = '1.52.3';   // v1.52.2: o MESMO número da extensão (o teste confere): cada atualização muda a versão, e a extensão mostra qual script está publicado
+var ADM_VERSAO = '1.52.4';   // v1.52.2: o MESMO número da extensão (o teste confere): cada atualização muda a versão, e a extensão mostra qual script está publicado
 var ADM_ABA = { usuarios: 'Usuarios', perfis: 'Perfis', excecoes: 'Excecoes', global: 'Global', saude: 'Saude', computadores: 'Computadores', legenda: 'Legenda', equipe: 'Equipe', pacotes: 'Pacotes', monitor: 'Monitor' };
 // v1.52.1: MONITOR — uma linha por computador, atualizada a cada resumo de saúde; o vigia marca quem sumiu e manda e-mail quando fica 🔴.
 var ADM_CAB_MONITOR = ['Situação', 'Pessoa', 'Computador', 'Último resumo', 'Versão', 'WhatsApp', 'Autoteste (ok / avisos / problemas)', 'Risco hoje', 'Msgs hoje', 'Pronto (s)', 'Atraso msgs (s)', 'Memória (MB)', 'Último pacote', 'Alertado', 'O WhatsApp diz', 'Motivos'];   // v1.52.2: textos grandes no fim

@@ -4,6 +4,9 @@
 > Para o estado ATUAL e as regras, leia `SKILL.md`. Consulte este arquivo só para achar o motivo de uma decisão antiga.
 
 
+## v1.52.4 (07/11/2026) — tela com erro não some com o painel
+Print do Johon: depois de clicar em Equipe, só a faixa escura do painel. Tela com exceção agora mostra o erro e o registra; causa exata da Equipe a confirmar pelo próximo pacote.
+
 ## v1.52.3 (07/11/2026) — versão do WhatsApp no resumo
 Lendo a planilha real depois da 1.52.2: tudo chegou, menos a versão do WhatsApp (17 caracteres; o filtro aceitava 15). Corrigido e com teste que falha sem a correção.
 
