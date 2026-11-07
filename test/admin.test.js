@@ -38,7 +38,7 @@ function carrega({ url = URL_EXEC } = {}) {
   const ui = { resposta: 'YES', perguntas: [], ButtonSet: { YES_NO: 'yn', OK_CANCEL: 'oc' }, Button: { YES: 'YES', NO: 'NO', OK: 'OK' }, textoPrompt: '', botaoPrompt: 'OK', prompt() { return { getSelectedButton: () => ui.botaoPrompt, getResponseText: () => ui.textoPrompt }; }, alert(m, texto) { alertas.push(m); if (texto !== undefined) { ui.perguntas.push([m, texto]); return ui.resposta; } }, menus: 0, createMenu() { const m = { addItem() { return m; }, addToUi() { ui.menus++; } }; return m; } };
   const ctx = {
     ContentService: { createTextOutput: (t) => ({ _t: t, setMimeType() { return this; } }), MimeType: { JSON: 'json' } },
-    LockService: { getScriptLock: () => ({ waitLock() {}, releaseLock() {} }) },
+    LockService: { getScriptLock: () => ({ waitLock() {}, releaseLock() {}, hasLock: () => false, tryLock: () => true }) },
     SpreadsheetApp: { getActiveSpreadsheet: () => ({ getSheetByName: (n) => (abas[n] ? folha(n) : null), insertSheet: (n) => { abas[n] = []; ordem.push(n); return folha(n); }, getSheets: () => { Object.keys(abas).forEach((k) => { if (!ordem.includes(k)) ordem.push(k); }); for (let i = ordem.length - 1; i >= 0; i--) if (!(ordem[i] in abas)) ordem.splice(i, 1); return ordem.map(folha); },
       setActiveSheet: (f) => { ativa.n = f.getName(); }, moveActiveSheet: (pos) => { Object.keys(abas).forEach((k) => { if (!ordem.includes(k)) ordem.push(k); }); ordem.splice(ordem.indexOf(ativa.n), 1); ordem.splice(pos - 1, 0, ativa.n); }, deleteSheet: (f) => { ordem.splice(ordem.indexOf(f.getName()), 1); delete abas[f.getName()]; } }), WrapStrategy: { CLIP: 'clip' }, getUi: () => ui, newDataValidation: novaValidacao, newConditionalFormatRule: novaRegra },
     PropertiesService: { getScriptProperties: () => ({ getProperty: (k) => (k in props ? props[k] : null), setProperty: (k, v) => { props[k] = String(v); } }) },
@@ -58,7 +58,9 @@ const pessoa = (s, nome, cod, perfil, ativo = 'sim', validade = '') => s.abas.Us
 // 1) preparar planilha: cria o que falta, com cabeçalhos e perfis de exemplo; rodar de novo não apaga o que você mexeu
 let s = nova();
 assert.deepEqual(Object.keys(s.abas).sort(), ['Computadores', 'Excecoes', 'Global', 'Legenda', 'Perfis', 'Saude', 'Usuarios']);
-assert.equal(s.abas.Usuarios[0][1], 'Código'); assert.equal(s.abas.Perfis[0].slice(2).join(), 'Novo,Básico,Com robô,Administrador'); assert.equal(s.abas.Perfis.length, 1 + 7 + 34 + 5);   // cabeçalho + 7 blocos (6 assuntos + limites) + 23 recursos + 5 limites assert.ok(s.abas.Perfis.slice(1).every((l) => l[2] === ''));   // o perfil "Novo" nasce em branco assert.equal(s.abas.Global.length, 1 + 10); assert.equal(s.abas.Saude[0].length, 20);
+assert.equal(s.abas.Usuarios[0][1], 'Código'); assert.equal(s.abas.Perfis[0].slice(2).join(), 'Novo,Básico,Com robô,Administrador'); assert.equal(s.abas.Perfis.length, 1 + 7 + 34 + 5);   // cabeçalho + 7 blocos (6 assuntos + limites) + 34 recursos + 5 limites
+assert.ok(s.abas.Perfis.slice(1).every((l) => (l[2] || '') === ''));   // o perfil "Novo" nasce em branco
+assert.equal(s.abas.Global.length, 1 + s.run('ADM_GLOBAL.length')); assert.deepEqual(s.abas.Saude[0], s.run('ADM_CAB_SAUDE'));   // v1.52.6: estas 3 conferências estavam desligadas por engano (num comentário)
 s.abas.Perfis[1][3] = 'obrigatorio'; s.abas.Global[1][1] = 'sim'; s.run('admPrepararPlanilha()'); assert.equal(s.abas.Perfis[1][3], 'obrigatorio'); assert.equal(s.abas.Global[1][1], 'sim'); assert.equal(s.abas.Usuarios.length, 2);   // exemplo + cabeçalho, sem duplicar
 // 2) contrato com a extensão: as mesmas chaves nos dois lados
 const recScript = s.run('ADM_RECURSOS.map(function (r) { return r[0]; })'), limScript = s.run('ADM_LIMITES.map(function (r) { return r[0]; })'), globScript = s.run('ADM_GLOBAL.map(function (r) { return r[0]; })');
@@ -128,9 +130,9 @@ s = nova(); s.abas.Saude.push([s.data(Date.now() - 90 * 864e5), 'a'], [s.data(Da
 s = nova(); s.abas.Usuarios.length = 1; const agora = Date.now(), min = (n) => s.data(agora - n * 60000);
 s.abas.Usuarios.push(['A', 'AAAAAAAAAAAAAAAA', 'Com robô', 'sim', '', '', '', '', 'ligado (automatico)', min(40), ''], ['B', 'BBBBBBBBBBBBBBBB', 'Com robô', 'sim', '', '', '', '', 'desligado (sugerir)', min(400), ''],
   ['C', 'CCCCCCCCCCCCCCCC', 'Com robô', 'sim', '', '', '', '', 'ligado (sugerir)', min(2), ''], ['D', 'DDDDDDDDDDDDDDDD', 'Com robô', 'não', '', '', '', '', 'ligado (automatico)', min(90), ''], ['E', 'EEEEEEEEEEEEEEEE', 'Com robô', 'sim', '', '', '', '', 'ligado (sugerir)', min(30), min(20)]);
-s.abas.Global[10][1] = 'dono@exemplo.com'; let v = s.run('admVigiar()');
+s.abas.Global[10][1] = 'dono@exemplo.com'; s.abas.Global.find((l) => l[0] === 'consultaMin')[1] = '5';   /* limite = maior entre vigiaMin (15) e 2 consultas */ let v = s.run('admVigiar()');
 assert.deepEqual({ alertados: v.alertados, voltaram: v.voltaram }, { alertados: 1, voltaram: 0 });                                                  // só A: robô ligado, 40 min sem sinal. E já tinha sido alertado: não repete
-assert.deepEqual(s.emails.map((x) => x.assunto), ['AtendeZap: robô de A sem sinal']); assert.equal(s.emails[0].para, 'dono@exemplo.com'); assert.match(s.emails[0].corpo, /40 minutos|mais de 15 minutos/);
+assert.deepEqual(s.emails.map((x) => x.assunto), ['AtendeZap: robô de A sem sinal']); assert.equal(s.emails[0].para, 'dono@exemplo.com'); assert.match(s.emails[0].corpo, /mais de 15 minutos/);
 assert.ok(s.abas.Usuarios[1][10] instanceof s.run('Date')); assert.equal(s.abas.Usuarios[2][10] || '', ''); assert.equal(s.abas.Usuarios[3][10] || '', ''); assert.equal(s.abas.Usuarios[4][10] || '', '');   // B (robô desligado), C (com sinal) e D (desativado) nunca alertam
 v = s.run('admVigiar()'); assert.deepEqual({ alertados: v.alertados, voltaram: v.voltaram }, { alertados: 0, voltaram: 0 }); assert.equal(s.emails.length, 1);   // não repete o alerta
 s.abas.Usuarios[1][9] = min(1); v = s.run('admVigiar()'); assert.deepEqual({ alertados: v.alertados, voltaram: v.voltaram }, { alertados: 0, voltaram: 1 }); assert.equal(s.emails[1].assunto, 'AtendeZap: robô de A voltou'); assert.equal(s.abas.Usuarios[1][10], '');   // voltou: limpa e avisa
@@ -317,7 +319,8 @@ for (const v of ['sim', 'Sim', 'on', 'liberado', 'não', 'NAO', 'off', 'negado',
   assert.deepEqual(cab, sd.run('ADM_CAB_SAUDE')); assert.equal(cab[19], 'Pronto (s)'); assert.deepEqual(l.slice(19, 28), [12.3, 2, 410, 0.2, 'Fixar (40 ms)', 'amarelo', 420, 160, 'teto barrado: não · avisado: não · bloqueio p/ pessoas novas: não']); assert.match(l[28], /^\{"v":"1\.52\.1"/);
   assert.equal(sd.abas.Saude[1][28], '{"v":"1.47.0"}'); assert.equal(sd.abas.Saude[1][17], 7); assert.equal(sd.abas.Saude[1][19] || '', ''); }   // v1.52.2: a linha antiga foi junto (o JSON grande foi para o fim)
 // v1.52.1: pacote de diagnóstico na planilha — partes; só o último de cada computador; recusa o que não é base64; respeita coletarPacote
-{ const sp = nova(); sp.abas.Usuarios.push(['Ana', 'ANAPACOTE12345678A', 'Administrador', 'sim']); sp.post({ acao: 'config', codigo: 'ANAPACOTE12345678A' });
+{ const sp = nova(); sp.abas.Usuarios.push(['Ana', 'ANAPACOTE12345678A', 'Administrador', 'sim', '', '', '', '', '', '', '', 2]); sp.post({ acao: 'config', codigo: 'ANAPACOTE12345678A' }); sp.post({ acao: 'config', codigo: 'ANAPACOTE12345678A', inst: 'outro-pc' });
+  assert.equal(sp.post({ acao: 'pacote', codigo: 'ANAPACOTE12345678A', inst: 'pc-desconhecido', partes: ['H4sIAAAA'] }).erro, 'computador não registrado');   // v1.52.6: computador revogado/não registrado não manda pacote
   const env = (partes, inst = 'inst-abc') => sp.post({ acao: 'pacote', codigo: 'ANAPACOTE12345678A', inst, partes });
   assert.equal(env(['H4sIAAAA', 'QUJD']).partes, 2); assert.equal(env(['H4sIBBBB']).partes, 1); assert.equal(env(['H4sICCCC'], 'outro-pc').ok, true);
   const linhas = sp.abas.Pacotes.slice(1); assert.deepEqual(linhas.map((l) => [l[2], l[3], l[4], l[5]]), [['inst-abc', 1, 1, 'H4sIBBBB'], ['outro-pc', 1, 1, 'H4sICCCC']]);   // o novo substitui o antigo do mesmo computador
@@ -367,4 +370,13 @@ for (const v of ['sim', 'Sim', 'on', 'liberado', 'não', 'NAO', 'off', 'negado',
   const wa = '2.3000.1053538009.12345'; sw.post({ acao: 'saude', codigo: 'ANAVERSAO1234567AB', dados: { v: '1.52.3', wa, autoteste: { ok: 49 } } });
   assert.equal(sw.abas.Saude.at(-1)[3], "'" + wa); assert.equal(sw.abas.Monitor[1][5], "'" + wa);   // o ' faz o Google guardar como texto (não aparece na célula)
   assert.equal(sw.run("admTxt_('2.3000.1053538009')"), "'2.3000.1053538009"); assert.equal(sw.run("admTxt_('')"), ''); assert.equal(sw.run("admTxt_(\"'1.2\")"), "'1.2"); }   // v1.52.5: vai como TEXTO (o Google virava número)
+// v1.52.6 (revisão): cabeçalho encurtado numa planilha JÁ na ordem nova não desalinha; a consulta é sinal de vida; aba Saude apagada volta sozinha; pacote em bloco
+{ const sn = carrega(); sn.run('admPrepararPlanilha()'); const cab = sn.run('ADM_CAB_USUARIOS').slice(); cab[11] = 'Máx. computadores';
+  sn.abas.Usuarios = [cab, ['Rui', 'RUIREVISAO123456AB', 'Administrador', 'sim', '', '', '', '', '', '', '', 2, '', 'obs', 'conv']]; sn.run('ADM_ARRUMADA = {}');
+  assert.equal(sn.post({ acao: 'config', codigo: 'RUIREVISAO123456AB', inst: 'pc-um-123' }).pcs.max, 2); assert.equal(sn.abas.Usuarios[0][11], 'Máx. computadores (vazio = 1)'); assert.equal(sn.abas.Usuarios[1][14], 'conv');
+  assert.ok(sn.abas.Usuarios[1][9] instanceof sn.run('Date'));                                                                                                     // Último sinal veio da consulta
+  delete sn.abas.Saude; sn.post({ acao: 'saude', codigo: 'RUIREVISAO123456AB', inst: 'pc-um-123', dados: { v: '1.52.6', autoteste: { ok: 50 } } }); assert.equal(sn.abas.Saude.length, 2); assert.equal(sn.abas.Saude[0][0], 'Data');
+  const sp2 = nova(); sp2.abas.Usuarios.push(['Ze', 'ZEPACOTE12345678AB', 'Administrador', 'sim']); sp2.post({ acao: 'config', codigo: 'ZEPACOTE12345678AB' });
+  const pk = (n) => sp2.post({ acao: 'pacote', codigo: 'ZEPACOTE12345678AB', inst: 'inst-abc', partes: Array.from({ length: n }, (_, i) => 'QUJD' + i) });
+  pk(5); pk(3); assert.deepEqual(sp2.abas.Pacotes.slice(1).map((l) => l[5]), ['QUJD0', 'QUJD1', 'QUJD2']); }
 console.log('script da planilha administrativa: todos os casos ok (preparar, convites, perfis, exceções, acesso negado, validade, saúde, limpeza, vigia, coexistência e aviso de planilha com outro uso)');

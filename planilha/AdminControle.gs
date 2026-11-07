@@ -1,5 +1,5 @@
 /**
- * AtendeZap — PAINEL DE CONTROLE DA EQUIPE (v1.34)
+ * AtendeZap — PAINEL DE CONTROLE DA EQUIPE (a versão está em ADM_VERSAO, logo abaixo, e na 1ª linha da aba Legenda)
  *
  * Esta planilha é SÓ SUA. Ela diz, para cada pessoa da equipe, o que a extensão pode usar,
  * e recebe de volta um resumo técnico de saúde (nunca conversas, nomes ou telefones).
@@ -22,10 +22,15 @@
  *     NADA vem liberado de fábrica: quem entra só vê o "Acesso da equipe". Você libera o que cada perfil pode usar na aba Perfis (célula vazia = bloqueado).
  *     Perfil em branco, ou que não existe na aba Perfis, também significa "só o acesso".
  *     Colou uma versão nova deste script? Ao reabrir a planilha ele acrescenta sozinho, na aba Perfis, as linhas de recursos novos (sem mexer no que você preencheu).
- *     Menu "7. Conferir perfis" avisa combinações que não funcionam (ex.: Laboratório liberado sem o Diagnóstico, onde ele mora; robô sem a chave do Gemini).
+ *     Menu "7. Conferir perfis" avisa combinações que não funcionam (ex.: robô sem a chave do Gemini; arquivos para suporte sem o Diagnóstico).
  *  7b) Cada convite vale para 1 COMPUTADOR por padrão (o 2º computador é recusado). Para a pessoa usar mais de um, escreva o número na coluna "Máx. computadores" da aba Usuarios.
  *     A aba Computadores mostra quem se conectou de onde. Pessoa trocou de computador? Menu "8. Liberar computadores de uma pessoa" desconecta os antigos para ela se conectar no novo.
- *  8) (Opcional) Menu "4. Ligar o vigia do robô": avisa por e-mail se o robô de alguém ficar mudo. Preencha emailAlerta na aba Global.
+ *  8) (Opcional) Menu "4. Ligar o vigia do robô": avisa por e-mail se o robô de alguém ficar mudo e quando um computador fica 🔴 na aba Monitor. Preencha emailAlerta na aba Global.
+ *
+ * ABAS QUE O SCRIPT CRIA E CUIDA SOZINHO: Monitor (situação de cada computador), Saude (histórico dos resumos, "saudeDias" na Global),
+ *   Pacotes (o último pacote de diagnóstico de cada computador, para o Claude ler), Equipe (Central da equipe: só a impressão digital do
+ *   cliente, nunca o telefone; a senha da equipe fica em Propriedades do script › AZ_SEGREDO_EQUIPE), Computadores e Legenda.
+ *   Ao abrir, a planilha se organiza (ordem das abas, colunas, chaves novas da Global) sem apagar dado. Menu "10. Organizar a planilha inteira" faz o mesmo na hora.
  *
  * Mudou algo no código depois? Implantar > Gerenciar implantações > lápis > Versão: Nova versão.
  * Mudou só células da planilha? Vale na hora: nada a reimplantar.
@@ -131,7 +136,7 @@ function admEstado_(v) {
   if (['desligado', 'desligada', 'padrao desligado'].indexOf(x) >= 0) return 'desligado';
   return '';
 }
-// Combinações que NÃO funcionam na extensão (ex.: Laboratório liberado sem o Diagnóstico, onde ele mora). vals = toda a aba Perfis (com cabeçalho). Devolve uma lista de avisos.
+// Combinações que NÃO funcionam na extensão (ex.: robô sem a chave do Gemini). vals = toda a aba Perfis (com cabeçalho). Devolve uma lista de avisos.
 function admProblemasPerfis_(vals) {
   var out = [], cab = vals[0] || [], c, r, k, est, lim, nome, ok, algum;
   for (c = 2; c < cab.length; c++) {
@@ -185,11 +190,11 @@ function admChecarComputador_(u, nome, codigo, b, agora, acao) {
   sh = admGarantirComputadores_(); vals = sh.getDataRange().getValues(); max = admMaxPc_(u[ADM_U.MAXPC - 1]);
   for (r = 1; r < vals.length; r++) if (String(vals[r][1]).trim() === codigo) regs.push({ linha: r + 1, inst: String(vals[r][2]).trim(), situacao: vals[r][7] });
   d = admDecidirComputador_(regs, inst, max, acao === 'config' && b.conectar === true);
-  if (acao === 'saude' && d.acao !== 'ok') return { recusa: { ok: false, erro: 'computador não registrado' } };
+  if (acao !== 'config' && d.acao !== 'ok') return { recusa: { ok: false, erro: 'computador não registrado' } };
   if (d.acao === 'recusar') return { recusa: { ok: false, erro: d.erro, limite: max, emUso: d.ativos } };
   emUso = d.ativos;
   if (acao === 'config') {
-    if (d.acao === 'registrar') { sh.appendRow([nome, codigo, admCel_(inst), maq, agora, agora, ver, 'Liberado']); emUso++; }
+    if (d.acao === 'registrar') { sh.appendRow([admCel_(nome), codigo, admCel_(inst), maq, agora, agora, ver, 'Liberado']); emUso++; }
     else {
       sh.getRange(d.linha, 6, 1, 2).setValues([[agora, ver]]);
       if (maq) sh.getRange(d.linha, 4).setValue(maq);
@@ -219,13 +224,11 @@ function admLiberarComputadores() {
   ui.alert(n < 0 ? 'Não achei essa pessoa na aba Usuarios (escreva o nome exatamente como está na coluna Nome, ou o código).' : n + ' computador(es) desconectado(s). A pessoa pode colar o convite de novo, até o limite dela.');
   return n;
 }
-// Planilha de versão antiga: cria a aba Computadores e o título da coluna "Máx. computadores" na aba Usuarios (nunca mexe nos seus dados).
+// Planilha de versão antiga: cria a aba Computadores e completa a Global (as colunas novas de Usuarios quem põe é o admAba_). Nunca mexe nos seus dados.
 function admCompletar_() {
   var us = admAba_(ADM_ABA.usuarios);
   if (!us) return;
   admGarantirComputadores_();
-  if (String(us.getRange(1, ADM_U.MAXPC).getValue() || '') === '') us.getRange(1, ADM_U.MAXPC).setValue(ADM_CAB_USUARIOS[ADM_U.MAXPC - 1]).setFontWeight('bold');
-  if (String(us.getRange(1, ADM_U.WHATS).getValue() || '') === '') us.getRange(1, ADM_U.WHATS).setValue(ADM_CAB_USUARIOS[ADM_U.WHATS - 1]).setFontWeight('bold');   // v1.52
   var gl = admAba_(ADM_ABA.global), gv, tem = {}, r;   // v1.52.2: chave nova da Global aparece sozinha (com o valor de fábrica), sem mexer nas que você preencheu
   if (gl && gl.getLastRow() > 0) { gv = gl.getDataRange().getValues(); for (r = 1; r < gv.length; r++) tem[String(gv[r][0]).trim()] = 1;
     for (r = 0; r < ADM_GLOBAL.length; r++) if (!tem[ADM_GLOBAL[r][0]]) gl.appendRow(ADM_GLOBAL[r]); }
@@ -238,9 +241,9 @@ function admGuardarPacote_(nome, b, agora) {
   var ss = SpreadsheetApp.getActiveSpreadsheet(), sh = ss.getSheetByName(ADM_ABA.pacotes), vals, r;
   if (!sh) sh = ss.insertSheet(ADM_ABA.pacotes);
   if (sh.getLastRow() === 0) { sh.getRange(1, 1, 1, ADM_CAB_PACOTES.length).setValues([ADM_CAB_PACOTES]); sh.getRange(1, 1, 1, ADM_CAB_PACOTES.length).setFontWeight('bold'); sh.setFrozenRows(1); }
-  vals = sh.getDataRange().getValues();
-  for (r = vals.length - 1; r >= 1; r--) if (String(vals[r][1]) === nome && String(vals[r][2]) === inst) sh.deleteRows(r + 1, 1);   // fica só o último deste computador
-  for (i = 0; i < partes.length; i++) sh.appendRow([agora, admCel_(nome), admCel_(inst), i + 1, partes.length, admCel_(partes[i])]);
+  vals = sh.getLastRow() > 1 ? sh.getRange(2, 2, sh.getLastRow() - 1, 2).getValues() : [];   // só Pessoa e Computador (o conteúdo é enorme)
+  for (r = vals.length - 1; r >= 0; r--) { if (String(vals[r][0]) !== nome || String(vals[r][1]) !== inst) continue; var ini = r; while (ini > 0 && String(vals[ini - 1][0]) === nome && String(vals[ini - 1][1]) === inst) ini--; sh.deleteRows(ini + 2, r - ini + 1); r = ini; }   // fica só o último deste computador (apaga em blocos)
+  sh.getRange(sh.getLastRow() + 1, 1, partes.length, 6).setValues(partes.map(function (p, k) { return [agora, admCel_(nome), admCel_(inst), k + 1, partes.length, p]; }));   // uma gravação só (base64 nunca começa com = + - @)
   try { var mo = admAba_(ADM_ABA.monitor), mv = mo ? mo.getDataRange().getValues() : []; for (r = 1; r < mv.length; r++) if (String(mv[r][1]) === nome && String(mv[r][2]) === inst) mo.getRange(r + 1, ADM_MO.PACOTE).setValue(agora); } catch (eP) { /* sem monitor ainda */ }
   return { ok: true, partes: partes.length, caracteres: total };
 }
@@ -430,7 +433,7 @@ function admFormatarPerfis_() {
 }
 // Usuarios: lista de perfis (os da aba Perfis), sim/não em verde/vermelho e número de computadores de 1 a 20.
 function admFormatarUsuarios_() {
-  var sh = admAba_(ADM_ABA.usuarios), pf = admAba_(ADM_ABA.perfis), nomes = [], vals, c, n = 1000, ativo, sim, nao;
+  var sh = admAba_(ADM_ABA.usuarios), pf = admAba_(ADM_ABA.perfis), nomes = [], vals, c, n = 1000, ativo;
   if (!sh) return;
   sh.getRange(1, 1, 1, ADM_CAB_USUARIOS.length).setFontWeight('bold').setBackground('#202124').setFontColor('#ffffff'); sh.setFrozenRows(1);
   if (pf && pf.getLastRow() >= 1) { vals = pf.getDataRange().getValues(); for (c = 2; c < vals[0].length; c++) if (String(vals[0][c] == null ? '' : vals[0][c]).trim()) nomes.push(String(vals[0][c]).trim()); }
@@ -532,7 +535,11 @@ function admQuemAlertar_(linhas, agora, vigiaMin) {
 }
 function admAba_(nome) {
   var sh = SpreadsheetApp.getActiveSpreadsheet().getSheetByName(nome), o = ADM_ORDEM[nome];
-  if (sh && o && !ADM_ARRUMADA[nome]) { ADM_ARRUMADA[nome] = true; try { admArrumarColunas_(sh, o[0], o[1], o[2]); } catch (e) { /* a ordem das colunas nunca derruba nada */ } }
+  if (sh && o && !ADM_ARRUMADA[nome]) {
+    ADM_ARRUMADA[nome] = true;
+    var lk = LockService.getScriptLock(), tinha = lk.hasLock();   // o doPost já tem a trava; o abrir da planilha e o vigia, não: sem ela, dois reordenariam juntos
+    if (tinha || lk.tryLock(20000)) { try { admArrumarColunas_(sh, o[0], o[1], o[2]); } catch (e) { /* a ordem das colunas nunca derruba nada */ } finally { if (!tinha) lk.releaseLock(); } }
+  }
   return sh;
 }
 // v1.52.2: abas cujas colunas o script lê pela POSIÇÃO. Planilha antiga (outra ordem, coluna faltando) é posta na ordem nova movendo as colunas inteiras:
@@ -546,9 +553,10 @@ function admArrumarColunas_(sh, cab, chaves, antigo) {
   var lc = sh.getLastColumn(); if (!lc) return false;
   var h = sh.getRange(1, 1, 1, lc).getValues()[0].map(function (x) { return String(x == null ? '' : x).trim(); }), i, j, mudou = false;
   if (h.slice(0, cab.length).join('\u0001') === cab.join('\u0001')) return false;
+  for (i = 0; i < chaves.length; i++) if (h.indexOf(chaves[i]) < 0) return false;   // não é a nossa aba (ou renomearam a coluna-chave): não mexe
   antigo = antigo || ADM_ORDEM[sh.getName()] && ADM_ORDEM[sh.getName()][2] || [];
-  for (j = 0; j < h.length; j++) if (cab.indexOf(h[j]) < 0 && antigo[j] && h.indexOf(antigo[j]) < 0) { h[j] = antigo[j]; sh.getRange(1, j + 1).setValue(h[j]); mudou = true; }   // devolve o nome certo
-  for (i = 0; i < chaves.length; i++) if (h.indexOf(chaves[i]) < 0) return mudou;
+  var bate = function (ref) { var n = 0; for (var k = 0; k < h.length; k++) if (h[k] && h[k] === ref[k]) n++; return n; }, ref = bate(cab) > bate(antigo) ? cab : antigo;   // em qual layout a planilha está (empate = a antiga, que é a que já existia)
+  for (j = 0; j < h.length; j++) if (cab.indexOf(h[j]) < 0 && ref[j] && h.indexOf(ref[j]) < 0) { h[j] = ref[j]; sh.getRange(1, j + 1).setValue(h[j]); mudou = true; }   // cabeçalho encurtado: devolve o nome certo pela posição
   for (i = 0; i < cab.length; i++) {
     j = h.indexOf(cab[i]); if (j === i) continue;
     if (j < 0) {   // coluna nova: entra vazia nesta posição
@@ -581,10 +589,11 @@ function doPost(e) {
     if (!admSim_(u[ADM_U.ATIVO - 1])) return admJson_({ ok: false, desativado: true, erro: 'desativado' });
     if (admVenceu_(u[ADM_U.VALIDADE - 1], agora)) return admJson_({ ok: false, desativado: true, erro: 'validade vencida' });
     var pc = { pcs: null };
-    if (acao === 'config' || acao === 'saude') { pc = admChecarComputador_(u, nome, codigo, b, agora, acao); if (pc.recusa) return admJson_(pc.recusa); }   // limite de computadores por convite
+    pc = admChecarComputador_(u, nome, codigo, b, agora, acao); if (pc.recusa) return admJson_(pc.recusa);   // limite de computadores por convite (toda ação: computador revogado não manda pacote nem mexe na Equipe)
     var global = admLerAba_(ADM_ABA.global), cfg = admMontarConfig_(perfil, codigo, admLerAba_(ADM_ABA.perfis), admLerAba_(ADM_ABA.excecoes), global);
     if (acao === 'config') {
       sh.getRange(linha + 1, ADM_U.ULTIMA, 1, 3).setValues([[agora, admTxt_(String(b.versao || '').slice(0, 40)), admCel_(String(b.inst || '').slice(0, 40))]]);
+      sh.getRange(linha + 1, ADM_U.SINAL).setValue(agora);   // a consulta também é sinal de vida (antes só o resumo de 30 em 30 min contava, e o vigia alertava à toa)
       var corpo = { nome: nome, perfil: perfil, recursos: cfg.recursos, limites: cfg.limites, global: cfg.global };
       var eq = cfg.recursos.equipeCentral && cfg.recursos.equipeCentral !== 'bloqueado' ? { segredo: admSegredoEquipe_(), colegas: admColegas_(vals) } : null;   // v1.52: só para quem tem a Central liberada
       return admJson_({ ok: true, nome: nome, perfil: perfil, recursos: cfg.recursos, limites: cfg.limites, global: cfg.global, pcs: pc.pcs, hash: admHash_(JSON.stringify(corpo)), agora: agora.getTime(), equipe: eq, versaoScript: ADM_VERSAO });
@@ -609,14 +618,14 @@ function doPost(e) {
   } finally { try { lock.releaseLock(); } catch (x) { /* sem trava */ } }
 }
 
-function admRegistrarSaude_(shUsuarios, linhaUsuario, nome, d, agora) {
+function admRegistrarSaude_(shUsuarios, linhaUsuario, nome, d, agora) {   // se apagaram a aba Saude, ela nasce de novo
   if (!d || typeof d !== 'object') return;
   var txt = JSON.stringify(d); if (txt.length > 4000) return;   // resumo é pequeno; maior que isso não é o nosso formato
-  var a = d.autoteste || {}, r = d.robo || {}, t = d.tempos || {}, ia = d.ia || {}, dp = d.desempenho || {}, rk = d.risco || {}, wz = d.whatsapp || {}, sh = admAba_(ADM_ABA.saude), n = function (v) { return typeof v === 'number' && isFinite(v) ? v : ''; }, sn = function (v) { return v === true ? 'sim' : v === false ? 'não' : '—'; };
+  var a = d.autoteste || {}, r = d.robo || {}, t = d.tempos || {}, ia = d.ia || {}, dp = d.desempenho || {}, rk = d.risco || {}, wz = d.whatsapp || {}, sh = admAba_(ADM_ABA.saude) || SpreadsheetApp.getActiveSpreadsheet().insertSheet(ADM_ABA.saude), n = function (v) { return typeof v === 'number' && isFinite(v) ? v : ''; }, sn = function (v) { return v === true ? 'sim' : v === false ? 'não' : '—'; };
   if (sh.getLastRow() === 0) sh.getRange(1, 1, 1, ADM_CAB_SAUDE.length).setValues([ADM_CAB_SAUDE]);   // (planilha antiga: admAba_ já pôs as colunas na ordem nova)
   var falhas = []; for (var k in (ia.falhas || {})) falhas.push(String(k).slice(0, 14) + ' x' + n(ia.falhas[k]));
   var ruins = (Array.isArray(a.ruins) ? a.ruins : []).slice(0, 8).map(function (x) { return String(x).slice(0, 60); }).join('; ');
-  sh.appendRow([agora, nome, admTxt_(String(d.v || '').slice(0, 40)), admTxt_(String(d.wa || '').slice(0, 40)), n(a.ok), n(a.warn), n(a.bad), n(a.skip), admCel_(ruins), admCel_(String(r.modo || '').slice(0, 12)), r.ativo === true ? 'sim' : 'nao',
+  sh.appendRow([agora, admCel_(nome), admTxt_(String(d.v || '').slice(0, 40)), admTxt_(String(d.wa || '').slice(0, 40)), n(a.ok), n(a.warn), n(a.bad), n(a.skip), admCel_(ruins), admCel_(String(r.modo || '').slice(0, 12)), r.ativo === true ? 'sim' : 'nao',
     n(r.respondeu24h), n(r.humano24h), n(r.ignorado24h), n(r.iaFalhou24h), n(r.pendencias), n(t.iaS), n(t.esperouS), admCel_(falhas.join(', ')),
     n(dp.prontoS), n(dp.atrasoS), n(dp.memMB), n(dp.pct), admCel_(dp.lenta ? String(dp.lenta).slice(0, 30) + ' (' + n(dp.lentaMs) + ' ms)' : ''), admCel_(String(rk.nivel || '').slice(0, 10)), n(rk.mensagens), n(rk.conversas),
     admCel_(['teto barrado: ' + sn(wz.tetoBarrado), 'avisado: ' + sn(wz.tetoAvisado), 'bloqueio p/ pessoas novas: ' + sn(wz.bloqueioNovos)].join(' · ')), admCel_(txt)]);
@@ -655,7 +664,7 @@ function admOrganizar_() {
     if (lr > 1 && (ADM_ORG[i][0] === 'Pacotes' || ADM_ORG[i][0] === 'Saude')) sh.setRowHeightsForced(2, lr - 1, 21);
   }
   var todas = ss.getSheets();   // a aba vazia que o Google cria junto com a planilha
-  for (i = 0; i < todas.length; i++) if (/^(P[áa]gina|Planilha|Sheet)\s?1$/.test(todas[i].getName()) && todas[i].getLastRow() === 0 && todas[i].getLastColumn() === 0 && ss.getSheets().length > 1) ss.deleteSheet(todas[i]);
+  for (i = 0; i < todas.length; i++) if (/^(P[áa]gina|Planilha|Sheet)\s?1$/.test(todas[i].getName()) && todas[i].getLastRow() === 0 && todas[i].getLastColumn() === 0 && !(todas[i].getCharts && todas[i].getCharts().length) && ss.getSheets().length > 1) ss.deleteSheet(todas[i]);
   sh = admAba_(ADM_ABA.monitor) || admAba_(ADM_ABA.usuarios); if (sh) ss.setActiveSheet(sh);   // abre no Monitor
 }
 function admOutrosDados_(ss) {
@@ -758,7 +767,7 @@ function admLimparSaudeAntiga(dias) {   // pelo menu (sem número) usa "saudeDia
   dias = typeof dias === 'number' ? dias : admDiasSaude_();
   var sh = admAba_(ADM_ABA.saude), corte = new Date(new Date().getTime() - dias * 864e5), vals, n = 0;
   if (!sh || sh.getLastRow() < 2) return 0;
-  vals = sh.getDataRange().getValues();
+  vals = [[]].concat(sh.getRange(2, 1, sh.getLastRow() - 1, 1).getValues());   // só a coluna Data (a aba pode ter milhares de linhas com JSON)
   while (n < vals.length - 1 && vals[n + 1][0] instanceof Date && vals[n + 1][0].getTime() < corte.getTime()) n++;   // as linhas mais antigas ficam no começo
   if (n > 0) sh.deleteRows(2, n);
   return n;
@@ -774,7 +783,7 @@ function admVigiar() {
   var sh = admAba_(ADM_ABA.usuarios); if (!sh || sh.getLastRow() < 2) return { alertados: 0, voltaram: 0 };
   var glob = {}, gv = admLerAba_(ADM_ABA.global), r, vals = sh.getRange(2, 1, sh.getLastRow() - 1, ADM_CAB_USUARIOS.length).getValues(), agora = new Date();
   for (r = 1; r < gv.length; r++) glob[String(gv[r][0]).trim()] = gv[r][1];
-  var vigiaMin = Number(glob.vigiaMin) > 0 ? Number(glob.vigiaMin) : 15, email = String(glob.emailAlerta || '').trim();
+  var vigiaMin = Math.max(Number(glob.vigiaMin) > 0 ? Number(glob.vigiaMin) : 15, 2 * (Number(glob.consultaMin) > 0 ? Number(glob.consultaMin) : 15)), email = String(glob.emailAlerta || '').trim();   // nunca menos que 2 consultas: um atraso normal não vira alerta
   var q = admQuemAlertar_(vals, agora, vigiaMin), i;
   for (i = 0; i < q.alertar.length; i++) {
     var l = vals[q.alertar[i]];

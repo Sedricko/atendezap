@@ -38,7 +38,7 @@ var VERSAO_IA_ = 5;   // o AtendeZap confere esta versão ao "Testar conexão" p
 
 function doGet(e) {
   var p = (e && e.parameter) || {};
-  if (p.acao === 'memoria') return memoriaIA_(p);
+  if (p.acao === 'memoria') { try { return memoriaIA_(p); } catch (eM) { return json_({ ok: false, erro: String(eM && eM.message || eM).slice(0, 120) }); } }   // erro vira JSON (antes voltava a página de erro do Google)
   var texto;
   try {
     if (typeof leituraNova_ === 'function') leituraNova_();   // mesma leitura "fresca" que o painel faz
@@ -114,8 +114,8 @@ function robo_(b, liberar) {
 }
 // Limpeza (LGPD): apaga das abas de demanda, aprendizado e tempos as linhas mais antigas que N dias (coluna A = data). A memória aprovada não é tocada.
 function limpar_(b) {
-  var dias = Math.max(1, Math.min(3650, Number(b.dias) || 0));
-  if (!Number(b.dias)) return json_({ ok: false, erro: 'informe quantos dias manter' });
+  if (!(Number(b.dias) >= 1)) return json_({ ok: false, erro: 'informe quantos dias manter (1 ou mais)' });   // negativo apagava quase tudo
+  var dias = Math.min(3650, Math.floor(Number(b.dias)));
   var limite = Date.now() - dias * 86400000, ss = SpreadsheetApp.getActiveSpreadsheet(), total = 0;
   var lock = LockService.getScriptLock(); lock.waitLock(20000);
   try {

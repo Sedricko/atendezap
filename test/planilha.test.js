@@ -80,6 +80,7 @@ const cab = ['Data', 'x'];
 s = carrega(SENHA, { 'IA - Demanda': [cab, ['01/01/2020, 10:00', 'velha1'], ['15/06/2021, 08:30', 'velha2'], [dia(40), 'velha3'], [dia(5), 'nova1'], [dia(1), 'nova2']],
   'IA - Tempos': [cab, [dia(100), 'velha'], [dia(2), 'nova']], 'IA - Aprendizado': [cab], 'IA - Memória': [['ID', 'Data', 'Tipo', 'Conteúdo', 'Ativo'], ['a', '01/01/2020, 10:00', 'fato', 'Regra A', 'Sim']] });
 assert.equal(s.post({ token: SENHA, aba: 'limpar' }).ok, false);                                                              // sem "dias" não apaga nada
+assert.equal(s.post({ token: SENHA, aba: 'limpar', dias: -30 }).ok, false); assert.equal(s.post({ token: SENHA, aba: 'limpar', dias: 0.5 }).ok, false);   // v1.52.6: negativo/fração não apaga nada
 assert.equal(s.post({ token: 'errada-errada-1', aba: 'limpar', dias: 30 }).ok, false);
 r = s.post({ token: SENHA, aba: 'limpar', dias: 30 }); assert.equal(r.ok, true); assert.equal(r.removidas, 4);
 assert.deepEqual(s.abas['IA - Demanda'].map((l) => l[1]), ['x', 'nova1', 'nova2']); assert.deepEqual(s.abas['IA - Tempos'].map((l) => l[1]), ['x', 'nova']);
