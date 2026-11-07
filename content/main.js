@@ -104,6 +104,9 @@
   const RISCO_MET = new Set(['sendText', 'sendFile', 'sendContact', 'sendEspecial', 'sendStatus', 'startChat']);   // v1.50: envios contados no Risco de banimento
   const call = (method, ...args) => new Promise((res, rej) => {
     if (RISCO_MET.has(method)) riscoReg(method, args[0]);
+    else if (method === 'sendActive') riscoReg('sendText', S.active?.id);   // v1.52.6: assinatura e convites também são mensagens enviadas (o Risco não contava)
+    else if (method === 'enviarConvite') riscoReg('sendText', args[0]);
+    else if (method === 'enviarConvites') for (const c of (args[0] || []).slice(0, 20)) riscoReg('sendText', c?.id);
     if (method === 'sendText' || method === 'sendFile') eqEnviou(args[0]);   // v1.52: quem responde primeiro vira o dono
     const id = ++seq;
     pending.set(id, { res, rej, method, t0: performance.now() });
