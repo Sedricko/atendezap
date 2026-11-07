@@ -4,6 +4,9 @@
 > Para o estado ATUAL e as regras, leia `SKILL.md`. Consulte este arquivo só para achar o motivo de uma decisão antiga.
 
 
+## v1.52.6 (07/11/2026) — revisão completa
+Pedido: revisar tudo de forma autônoma e entregar às 6:00. Cinco revisores independentes; ~70 achados conferidos e corrigidos (detalhe no SKILL.md). Os mais graves eram de REGRA: sondas de visualização única no mapa, Laboratório podendo desligar o teto anti-spam do WhatsApp, áudio de visualização única transcrito pelo robô, texto do robô dentro do relatório/pacote.
+
 ## v1.52.5 (07/11/2026) — Equipe sem conversa aberta; versões como texto
 O pacote que o Johon mandou para a planilha trouxe o erro exato da Equipe (null.info sem conversa aberta). A planilha mostrava a versão do WhatsApp como número. Ambos corrigidos, com testes.
 
