@@ -1218,10 +1218,10 @@ async def main():
         await sub_atend(page, 'Ajustes')
         res['ac_todos_robo'] = {'audio': await page.evaluate(PBTXT + ".includes('Áudios dos clientes')"), 'automatico_livre': automatico_livre}
         # v1.52: Central da equipe — ninguém é dono ainda; passar para o Joao (com o contato dele ao cliente); a planilha só recebe a impressão digital
-        await page.evaluate("window.__semConversa = true"); await page.wait_for_timeout(3500)   # v1.52.5: sem conversa aberta a tela quebrava inteira no WhatsApp real
+        await page.evaluate("window.__semConversa = true; window.__ev['chat.active_chat'](null)"); await page.wait_for_timeout(800)   # v1.52.5: sem conversa aberta a tela quebrava inteira no WhatsApp real
         await ir(page, 'Equipe'); await page.wait_for_timeout(1800)
         res['equipe_sem_conversa'] = {'pede_conversa': await page.evaluate(PBTXT + ".includes('Abra uma conversa individual')"), 'sem_erro': not await page.evaluate(PBTXT + ".includes('Esta tela deu erro')")}
-        await page.evaluate("window.__semConversa = false"); await ir(page, 'Respostas rápidas'); await page.wait_for_timeout(3500)
+        await page.evaluate("window.__semConversa = false; window.__ev['chat.active_chat'](window.WPP.chat.getActiveChat())"); await ir(page, 'Respostas rápidas'); await page.wait_for_timeout(800)
         await ir(page, 'Equipe'); await page.wait_for_timeout(1800)
         eq0 = await page.evaluate(PBTXT + ".includes('ninguém ainda')")
         await page.locator('#az-panel select.in').select_option('Joao'); await page.wait_for_timeout(300)
