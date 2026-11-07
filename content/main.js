@@ -2147,14 +2147,16 @@
   // v1.48.1: durante uma ação EM MASSA do AtendeZap (limpar, ocultar várias), esconde os avisos do próprio WhatsApp que têm "Desfazer".
   // Eles se empilhavam por cima do painel, e um clique sem querer desfazia o lote. Fora dessas ações, nada muda.
   let semAvisosN = 0; const semAvisosOcultos = new Set();
-  const semAvisosObs = new MutationObserver((ms) => { for (const m of ms) for (const n of m.addedNodes) {
+  const semAvisosVer = (ms) => { for (const m of ms) for (const n of m.addedNodes) {
     if (n.nodeType !== 1 || n.closest?.('[id^="az-"]') || (n.textContent || '').length > 200) continue;
     if ([...(n.querySelectorAll?.('button, [role=button]') || [])].some((b) => /^(desfazer|undo)$/i.test((b.textContent || '').trim()))) { n.style.display = 'none'; semAvisosOcultos.add(n); }
-  } });
+  } };
+  const semAvisosObs = new MutationObserver(semAvisosVer);
   async function semAvisosWA(fn) {
     if (!semAvisosN++) semAvisosObs.observe(document.body, { childList: true, subtree: true });
     try { return await fn(); } finally {
-      if (!--semAvisosN) { semAvisosObs.disconnect(); setTimeout(() => { if (semAvisosN) return; for (const n of semAvisosOcultos) n.style.display = ''; semAvisosOcultos.clear(); }, 8000); }   // devolve o que escondeu (o aviso em si já sumiu; a caixa deles volta a aparecer)
+      if (!--semAvisosN) setTimeout(() => { if (semAvisosN) return; semAvisosVer(semAvisosObs.takeRecords()); semAvisosObs.disconnect();   // v1.52.5: o aviso do último item chega depois do fim; disconnect descartava o pendente
+        setTimeout(() => { if (semAvisosN) return; for (const n of semAvisosOcultos) n.style.display = ''; semAvisosOcultos.clear(); }, 8000); }, 3000);   // devolve o que escondeu (o aviso em si já sumiu; a caixa deles volta a aparecer)
     }
   }
   async function garantirOcultas() {
