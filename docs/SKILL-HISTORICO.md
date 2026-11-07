@@ -4,6 +4,9 @@
 > Para o estado ATUAL e as regras, leia `SKILL.md`. Consulte este arquivo só para achar o motivo de uma decisão antiga.
 
 
+## v1.52.3 (07/11/2026) — versão do WhatsApp no resumo
+Lendo a planilha real depois da 1.52.2: tudo chegou, menos a versão do WhatsApp (17 caracteres; o filtro aceitava 15). Corrigido e com teste que falha sem a correção.
+
 ## v1.52.2 (07/11/2026) — planilha organizada e versão em tudo
 Pedidos: "organize a planilha para que cada função funcione como deve e seja controlada pela planilha", "informações maiores no final", "que não cresça a aba nem a coluna", "tudo que atualiza mude a versão". Lido na planilha real (sem abrir Usuarios inteira): abas fora de ordem, Página1 vazia, Global sem coletarPacote/emailAlerta vazio, Saude sem linhas e sem cabeçalho fixo, Monitor com WhatsApp e 'O WhatsApp diz' vazios (1º resumo saía antes da leitura do teto). Feito: ordem das colunas com migração automática por cabeçalho (e pela posição antiga se renomeado), organizador ao abrir, Global auto-completa, saudeDias, CLIP, versão do script = da extensão e exibida no Acesso.
 
