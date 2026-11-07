@@ -4,6 +4,9 @@
 > Para o estado ATUAL e as regras, leia `SKILL.md`. Consulte este arquivo só para achar o motivo de uma decisão antiga.
 
 
+## v1.52.1 (07/11/2026) — abertura leve, Modo leve, pacote e Monitor na planilha
+O Johon confirmou (teste A/B) que o WhatsApp abre mais rápido sem a extensão. Tarefas pesadas passaram a esperar o WhatsApp sossegar; Modo leve opcional sem perda de coleta. Pedido: "deixa completo na planilha, de hora em hora ou no botão; enquanto não enviar, guarda" → aba Pacotes (último por computador) + pendente reenviado; log de erros e ponte persistidos. Pedido: "constante monitoramento" → aba Monitor (🔴/🟡/🟢/⚪ com motivos) e e-mails do vigia só na virada para 🔴 e na volta para 🟢. Regras do 🔴: bloqueio para pessoas novas, teto barrado, risco vermelho, função com problema. 🟡: risco amarelo, teto avisado, aviso no autoteste, memória >800 MB, pronto >60 s, atraso das mensagens >10 s, extensão abaixo da versão mínima.
+
 ## v1.52.0 (07/11/2026) — Central da equipe e bloqueio para pessoas novas
 O Johon escolheu "dividir clientes na equipe"; a atribuição oficial do WhatsApp só vale num mesmo número e a equipe usa números diferentes, então a Central usa a planilha (funciona nos dois casos). Decisão de privacidade: nenhum telefone na planilha (impressão digital com senha guardada no script).
 
