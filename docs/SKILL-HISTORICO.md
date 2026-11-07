@@ -4,6 +4,9 @@
 > Para o estado ATUAL e as regras, leia `SKILL.md`. Consulte este arquivo só para achar o motivo de uma decisão antiga.
 
 
+## v1.51.0 (07/11/2026) — contador oficial do teto e vigia das restrições
+Primeiros relatórios com sonda/explorador: saúde 56/56; 452 módulos sobre limites (312 lidos); explorador 12.131 módulos, 7 temas. Achados: `IndividualNewChatMessageCappingLimitUtils` (isUserCapped=false, isUserWarned=false), telas de banimento temporário e bloqueio para contatar pessoas novas, `MexFetchIntegritySignals`.
+
 ## v1.50.0 (07/11/2026) — risco de banimento, sonda e explorador
 Pedidos do Johon: painel à esquerda por padrão; alerta de risco de banimento (prévia aprovada); ver direto no WhatsApp quando ele muda limites; uma sonda que procure por tudo e encontre outras possibilidades. O mapa de 06/11 mostrou o sistema de teto de contatos novos completo (21 módulos), desligado na conta.
 
