@@ -1663,6 +1663,11 @@ async def main():
         card = page.locator('#az-panel .sec', has_text='Chamadas ao WhatsApp mais lentas')
         res['desempenho_card'] = (await card.inner_text()).replace('\n', ' | ') if await card.count() else None
         if await card.count(): await card.screenshot(path=f'{OUT}/previa-desempenho.png')
+        # v1.52.1: Modo leve liga e desliga pelo card Desempenho e fica gravado
+        await card.locator('label.chk', has_text='Modo leve').click(); await page.wait_for_timeout(600)
+        leve1 = await sw.evaluate("chrome.storage.local.get('modoLeve').then((d) => d.modoLeve)")
+        await page.locator('#az-panel .sec', has_text='Chamadas ao WhatsApp mais lentas').locator('label.chk', has_text='Modo leve').click(); await page.wait_for_timeout(600)
+        res['modo_leve'] = [leve1, await sw.evaluate("chrome.storage.local.get('modoLeve').then((d) => d.modoLeve)")]
         # v1.49: monitor de limitações — 1ª leitura = visto; o WhatsApp liga o teto de contatos novos → aviso no card e no autoteste; "Entendi" zera
         await ir(page, 'Limites'); await page.wait_for_timeout(1500)
         mon0 = await page.evaluate(PBTXT + ".includes('Monitor de limitações') && " + PBTXT + ".includes('Nada mudou desde que você viu')")
@@ -1890,6 +1895,7 @@ async def main():
             'rb_F_G_H_textos': lambda v: v == [1, 1, 0],
             'rb_sugestao': lambda v: v[0] == 0 and len(v[1]) == 1 and v[1][0][0] == 'responder',
             'rb_sug_manual_tudo': lambda v: v == 2,
+            'modo_leve': lambda v: v == [True, False],   # v1.52.1
             'equipe': lambda v: v == {'sem_dono': True, 'passou': True, 'so_digital': True, 'avisou_cliente': True, 'dono_agora': True},   # v1.52
             'teto_oficial': lambda v: v == {'leu': True, 'restricao': True, 'autoteste': True, 'nao_chamou_fetch': True},   # v1.51
             'lab_explorar': lambda v: v == {'temas': True, 'resumo': True},   # v1.50

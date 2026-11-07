@@ -264,7 +264,7 @@
     ['lote', 'Destinos salvos do envio para vários', ['loteDestinos']],
     ['ocultas', 'Conversas ocultas', ['conversasOcultas']],
     ['config', 'Configuração do backup automático', ['backupAutomatico']],
-    ['ajustes', 'Configurações do painel (partes ligadas, link da lista de frete)', ['modulos', 'listaCargasUrl', 'vagasCfg', 'gruposSoCfg', 'recuperarCfg', 'atendCfg', 'memFatos', 'conhecCfg', 'ligCfg', 'avCfg', 'resumoAceitou', 'comecarOculto']],
+    ['ajustes', 'Configurações do painel (partes ligadas, link da lista de frete)', ['modulos', 'listaCargasUrl', 'vagasCfg', 'gruposSoCfg', 'recuperarCfg', 'atendCfg', 'memFatos', 'conhecCfg', 'ligCfg', 'avCfg', 'resumoAceitou', 'comecarOculto', 'modoLeve']],
     ['conhecimento', 'Banco de conhecimento (trocas já sem dados pessoais) — fica de fora, a não ser que você marque', ['conhecBanco', 'conhecVistos', 'conhecEstado']],
   ];
   // chaves que NUNCA vão para um arquivo de backup (segredos e identificação deste computador), nem no backup completo

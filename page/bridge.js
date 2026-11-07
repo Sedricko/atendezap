@@ -251,7 +251,8 @@
       const out = [];
       for (const id of ids) {
         try {
-          const c = await WPP.chat.find(toWid(id));
+          let c = null; try { c = WPP.whatsapp.ChatStore?.get?.(toWid(id)) || null; } catch { /* sem a memória */ }   // v1.52.1: memória do WhatsApp primeiro (era média de 1,4 s perguntando ao servidor)
+          if (!c) c = await WPP.chat.find(toWid(id));
           if (c) out.push(info(c));
           else out.push({ id, name: id.split('@')[0], unread: 0, t: 0, missing: true });
         } catch {

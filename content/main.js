@@ -22,12 +22,12 @@
   // ---------- Estado + storage ----------
   const KEYS = {
     respostasRapidas: 'replies', categorias: 'cats', assinatura: 'sig',
-    pinChat: 'pins', backupAutomatico: 'backup', loteDestinos: 'loteDest', conversasOcultas: 'ocultas', modulos: 'mods', listaCargasUrl: 'cargasUrl', vagasCfg: 'vagasCfg', iaCfg: 'iaCfg', iaUso: 'iaUso', atendCfg: 'atendCfg', atendEst: 'atendEst', atendLog: 'atendLog', atendSug: 'atendSug', memFatos: 'memFatos', memSug: 'memSug', memDemanda: 'memDemanda', memPerfis: 'memPerfis', memFila: 'memFila', memPend: 'memPend', atendVida: 'atendVida', memTempos: 'memTempos', iaChaveEstado: 'iaChaveEstado', gruposSoCfg: 'gruposSoCfg', acessoCfg: 'acessoCfg', acessoEstado: 'acessoEstado', acessoAplicado: 'acessoAplicado', acessoExigir: 'acessoExigir', recuperarCfg: 'recuperarCfg', recuperarVisto: 'recuperarVisto', conhecCfg: 'conhecCfg', conhecBanco: 'conhecBanco', conhecVistos: 'conhecVistos', conhecEstado: 'conhecEstado', atendEnv: 'atendEnv', ligCfg: 'ligCfg', ligEstado: 'ligEstado', resumoAceitou: 'resumoAceitou', avCfg: 'avCfg', avUltimo: 'avUltimo', comecarOculto: 'comecarOculto', instId: 'instId', arqFora: 'arqFora',
+    pinChat: 'pins', backupAutomatico: 'backup', loteDestinos: 'loteDest', conversasOcultas: 'ocultas', modulos: 'mods', listaCargasUrl: 'cargasUrl', vagasCfg: 'vagasCfg', iaCfg: 'iaCfg', iaUso: 'iaUso', atendCfg: 'atendCfg', atendEst: 'atendEst', atendLog: 'atendLog', atendSug: 'atendSug', memFatos: 'memFatos', memSug: 'memSug', memDemanda: 'memDemanda', memPerfis: 'memPerfis', memFila: 'memFila', memPend: 'memPend', atendVida: 'atendVida', memTempos: 'memTempos', iaChaveEstado: 'iaChaveEstado', gruposSoCfg: 'gruposSoCfg', acessoCfg: 'acessoCfg', acessoEstado: 'acessoEstado', acessoAplicado: 'acessoAplicado', acessoExigir: 'acessoExigir', recuperarCfg: 'recuperarCfg', recuperarVisto: 'recuperarVisto', conhecCfg: 'conhecCfg', conhecBanco: 'conhecBanco', conhecVistos: 'conhecVistos', conhecEstado: 'conhecEstado', atendEnv: 'atendEnv', ligCfg: 'ligCfg', ligEstado: 'ligEstado', resumoAceitou: 'resumoAceitou', avCfg: 'avCfg', avUltimo: 'avUltimo', comecarOculto: 'comecarOculto', modoLeve: 'modoLeve', instId: 'instId', arqFora: 'arqFora',
     pinAbas: 'pinAbas', gruposUnicos: 'unicos', // v1.12: aba de cada fixada · conjuntos de grupos "sem duplicar"
   };
   const SIG_DEFAULT = { ativo: false, nome: '', estilo: 'negrito', posicao: 'linha' };
   const S = {
-    replies: [], cats: [], sig: { ...SIG_DEFAULT }, pins: [], loteDest: [], ocultas: [], mods: {}, cargasUrl: '', pinAbas: {}, unicos: [], vagasCfg: { ate: 0 }, iaCfg: { chave: '', modelo: '', limiteDia: 100 }, iaUso: {}, atendCfg: {}, atendEst: {}, atendLog: [], atendSug: [], memFatos: [], memSug: [], memDemanda: [], memPerfis: {}, memFila: [], memPend: {}, atendVida: {}, memTempos: [], iaChaveEstado: {}, gruposSoCfg: { janela: 'escolher' }, acessoCfg: {}, acessoEstado: null, acessoAplicado: {}, acessoExigir: globalThis.AZACESSO.EXIGIR_CONVITE, recuperarCfg: globalThis.AZREC.cfgPadrao(), recuperarVisto: 0, conhecCfg: { ligado: false, aceitou: false, intervaloMin: 60, auto: true, aprovacao: 'manual', minVezes: 3 }, conhecBanco: [], conhecVistos: [], conhecEstado: {}, atendEnv: [], ligCfg: globalThis.AZLIG.cfgPadrao(), ligEstado: { ult: {}, enviadas: 0, motivo: '' }, resumoAceitou: false, avCfg: { auto: false }, avUltimo: null, comecarOculto: false, instId: '', arqFora: null,
+    replies: [], cats: [], sig: { ...SIG_DEFAULT }, pins: [], loteDest: [], ocultas: [], mods: {}, cargasUrl: '', pinAbas: {}, unicos: [], vagasCfg: { ate: 0 }, iaCfg: { chave: '', modelo: '', limiteDia: 100 }, iaUso: {}, atendCfg: {}, atendEst: {}, atendLog: [], atendSug: [], memFatos: [], memSug: [], memDemanda: [], memPerfis: {}, memFila: [], memPend: {}, atendVida: {}, memTempos: [], iaChaveEstado: {}, gruposSoCfg: { janela: 'escolher' }, acessoCfg: {}, acessoEstado: null, acessoAplicado: {}, acessoExigir: globalThis.AZACESSO.EXIGIR_CONVITE, recuperarCfg: globalThis.AZREC.cfgPadrao(), recuperarVisto: 0, conhecCfg: { ligado: false, aceitou: false, intervaloMin: 60, auto: true, aprovacao: 'manual', minVezes: 3 }, conhecBanco: [], conhecVistos: [], conhecEstado: {}, atendEnv: [], ligCfg: globalThis.AZLIG.cfgPadrao(), ligEstado: { ult: {}, enviadas: 0, motivo: '' }, resumoAceitou: false, avCfg: { auto: false }, avUltimo: null, comecarOculto: false, modoLeve: false, instId: '', arqFora: null,
     backup: { ativo: true, recorrencia: 'diario', hora: '10:30', ultimo: null },
     ready: false, active: null, labels: [],
   };
@@ -140,7 +140,7 @@
     atendMigrar(); atendBatida(); setInterval(atendBatida, 60000);
     acessoCiclo(); setInterval(acessoCiclo, 30000);
     quandoSossegar(() => autoDiag('WhatsApp aberto'));
-    setInterval(() => autoDiag('periódico (30 min)'), 30 * 60000);
+    let periodicos = 0; setInterval(() => { if (S.modoLeve && periodicos++ % 2) return; autoDiag(S.modoLeve ? 'periódico (1 h, modo leve)' : 'periódico (30 min)'); }, 30 * 60000);   // v1.52.1: no Modo leve, de hora em hora (nada deixa de ser gravado)
   }
   let lastPins = [];
   // Partes que o usuário pode desligar em Configurações (desligada = some do painel e para de agir)
@@ -712,8 +712,10 @@
       b.className = 'az-vagas ' + classeVagas(v); b.dataset.id = id; b.textContent = numVagas(v); b.title = tituloVagas(v);
     }
   }
-  async function atualizarVagas() {
+  let vgLeve = 0;
+  async function atualizarVagas(rolou) {
     if (vgBusy || !S.ready || document.hidden) return; // aba em segundo plano: nada a desenhar
+    if (S.modoLeve && !rolou && Date.now() - vgLeve < 10000) return; vgLeve = Date.now();   // v1.52.1: Modo leve = a cada 10 s (ao rolar, na hora)
     const precisaMarcar = ligado('vagas') || (ligado('ocultas') && S.ocultas.length > 0); // as Ocultas também usam o id da linha
     if (!precisaMarcar) { desenharVagas(); return; }
     vgBusy = true;
@@ -723,7 +725,7 @@
       if (!ligado('vagas')) { desenharVagas(); return; }
       const ids = new Set([...document.querySelectorAll('#side [data-az-chat$="@g.us"]')].map((r) => r.getAttribute('data-az-chat')));
       const ativo = S.active?.id; if (String(ativo).endsWith('@g.us')) ids.add(ativo);
-      const falta = [...ids].filter((id) => !vg.has(id) || Date.now() - vg.get(id).t > 30000);
+      const falta = [...ids].filter((id) => !vg.has(id) || Date.now() - vg.get(id).t > (S.modoLeve ? 300000 : 30000));   // Modo leve: cada grupo é consultado a cada 5 min
       if (falta.length) {
         const d = await call('vagasGrupos', falta).catch(() => ({}));
         for (const id of falta) vg.set(id, { ...(d[id] || vg.get(id) || {}), t: Date.now() });
@@ -733,7 +735,7 @@
       if (sig !== vgSigHead) { vgSigHead = sig; renderHead(); }
     } finally { vgBusy = false; }
   }
-  document.addEventListener('scroll', (e) => { if (e.target?.closest?.('#pane-side') && !vgTimer) vgTimer = setTimeout(() => { vgTimer = null; atualizarVagas(); }, 300); }, true);
+  document.addEventListener('scroll', (e) => { if (e.target?.closest?.('#pane-side') && !vgTimer) vgTimer = setTimeout(() => { vgTimer = null; atualizarVagas(true); }, 300); }, true);
   setInterval(T('vagas a cada 2,5 s (inclui a ponte)', atualizarVagas), 2500);
 
   // ---------- Fixar ----------
@@ -2032,6 +2034,7 @@
       ligado('cfgIA') ? iaCard() : null,
       !ligado('cfgPartes') ? null : h('div', { class: 'sec' }, h('div', { class: 'sh' }, tile('shapes'), h('b', { class: 'grow' }, 'Partes do painel')),
         h('p', { class: 'hint' }, 'Desligada, a parte some do painel e para de funcionar. Seus dados ficam guardados para quando religar. Organizadas por assunto; 🧪 = ainda em teste.'),
+        h('label', { class: 'chk' }, h('input', { type: 'checkbox', checked: !!S.modoLeve, onchange: async (e) => { S.modoLeve = e.target.checked; await save('modoLeve'); toast(S.modoLeve ? 'Modo leve ligado.' : 'Modo leve desligado.'); renderPanel(); } }), 'Modo leve: menos trabalho em segundo plano (vagas a cada 10 s, autoteste de hora em hora); nada deixa de ser registrado'),   // v1.52.1
         h('div', { class: 'col' }, (() => {
           const linha = ([k, nome, desc, tipo]) => h('label', { class: 'modr' + (ligado(k) ? '' : ' off') }, // o que o administrador bloqueou nem aparece aqui
           tile(MOD_ICONE[k] || 'shapes'),
@@ -5224,6 +5227,8 @@ ${hist ? `<h2>Histórico de autotestes</h2><table><tr><td><b>Quando</b></td><td>
         h('p', { class: 'hint grp' }, 'Chamadas ao WhatsApp mais lentas' + (d.ontem ? ` (antes = ${d.ontem.split('-').reverse().join('/')})` : '')),
         d.lentas.length ? d.lentas.map((x) => kv(`${NOME[x.metodo] || METHOD_FEAT[x.metodo] || x.metodo} · ${x.n.toLocaleString('pt-BR')}×`, `média ${tempo(x.mediaMs)} · pior ${tempo(x.maxMs)}${x.antes != null ? ' · antes ' + tempo(x.antes) : ''}`, x.aviso))
           : h('small', { class: 'hint' }, 'Ainda sem chamadas suficientes para medir.'),
+        h('label', { class: 'chk' }, h('input', { type: 'checkbox', checked: !!S.modoLeve, onchange: async (e) => { S.modoLeve = e.target.checked; await save('modoLeve'); toast(S.modoLeve ? 'Modo leve ligado: vagas a cada 10 s (grupos a cada 5 min) e autoteste de hora em hora. Nada deixa de ser registrado.' : 'Modo leve desligado.', 6000); renderPanel(); } }),
+          'Modo leve (menos trabalho em segundo plano: vagas a cada 10 s, cada grupo consultado a cada 5 min, autoteste de hora em hora; nada deixa de ser registrado)'),
         h('small', { class: 'hint' }, `Medido neste computador desde que o WhatsApp abriu. Aviso: peso acima de ${L.pct}%, memória acima de ${L.memMB} MB ou chamada com média acima de ${L.mediaMs / 1000} s. Um resumo por dia fica guardado por 7 dias (só tempos).`)));
   }
   function diagView() {
