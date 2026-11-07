@@ -379,4 +379,8 @@ for (const v of ['sim', 'Sim', 'on', 'liberado', 'não', 'NAO', 'off', 'negado',
   const sp2 = nova(); sp2.abas.Usuarios.push(['Ze', 'ZEPACOTE12345678AB', 'Administrador', 'sim']); sp2.post({ acao: 'config', codigo: 'ZEPACOTE12345678AB' });
   const pk = (n) => sp2.post({ acao: 'pacote', codigo: 'ZEPACOTE12345678AB', inst: 'inst-abc', partes: Array.from({ length: n }, (_, i) => 'QUJD' + i) });
   pk(5); pk(3); assert.deepEqual(sp2.abas.Pacotes.slice(1).map((l) => l[5]), ['QUJD0', 'QUJD1', 'QUJD2']); }
+// v1.52.6: arrumação silenciosa da aba Perfis (recurso novo) guarda cópia quando há anotação sua que não cabe na arrumação
+{ const sq = nova(); const n0 = Object.keys(sq.abas).length; sq.run('admOrganizarPerfis_(true)'); assert.equal(Object.keys(sq.abas).length, n0);   // nada a perder: sem cópia
+  sq.abas.Perfis.push(['', 'minha anotação importante']); sq.run('admOrganizarPerfis_(true)');
+  const cp = Object.keys(sq.abas).find((x) => x.startsWith('Perfis (cópia')); assert.ok(cp && sq.abas[cp].some((l) => l[1] === 'minha anotação importante')); }
 console.log('script da planilha administrativa: todos os casos ok (preparar, convites, perfis, exceções, acesso negado, validade, saúde, limpeza, vigia, coexistência e aviso de planilha com outro uso)');

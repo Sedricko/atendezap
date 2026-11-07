@@ -373,9 +373,13 @@ function admOrganizarPerfis_(semPergunta) {
     try { ui = SpreadsheetApp.getUi(); } catch (e) { return -1; }
     if (ui.alert('Organizar a aba Perfis?', 'As linhas serão colocadas em grupos, com lista de escolha e cores (verde = ativo, vermelho = bloqueado). TODOS os seus valores são mantidos e uma cópia da aba atual fica guardada. Continuar?', ui.ButtonSet.YES_NO) !== ui.Button.YES) return 0;
   }
-  for (r = 1; r < vals.length; r++) { k = String(vals[r][0] == null ? '' : vals[r][0]).trim(); if (!k || k.charAt(0) === '▸') continue; if (!porChave[k]) porChave[k] = vals[r]; }
+  var perderia = false;   // anotação sua sem chave, chave repetida ou texto numa linha de grupo (▸) não cabem na arrumação: então guarda cópia mesmo sem perguntar
+  for (r = 1; r < vals.length; r++) { k = String(vals[r][0] == null ? '' : vals[r][0]).trim();
+    if (!k) { if (vals[r].some(function (x) { return String(x == null ? '' : x).trim() !== ''; })) perderia = true; continue; }
+    if (k.charAt(0) === '▸') { if (vals[r].slice(2).some(function (x) { return String(x == null ? '' : x).trim() !== ''; })) perderia = true; continue; }
+    if (porChave[k]) perderia = true; else porChave[k] = vals[r]; }
   linhas = admMontarPerfis_(cab, porChave);
-  if (!semPergunta) { bk = ss.insertSheet('Perfis (cópia ' + Utilities.formatDate(new Date(), 'America/Sao_Paulo', 'yyyy-MM-dd HH.mm.ss') + ')'); bk.getRange(1, 1, vals.length, cab.length).setValues(vals); }
+  if (!semPergunta || perderia) { bk = ss.insertSheet('Perfis (cópia ' + Utilities.formatDate(new Date(), 'America/Sao_Paulo', 'yyyy-MM-dd HH.mm.ss') + ')'); bk.getRange(1, 1, vals.length, cab.length).setValues(vals); }
   sh.clear();
   // As regras de validação (lista, "número de 1 a 365"...) têm de sair ANTES de gravar: clear() NÃO as remove, e uma regra do layout anterior recusa o texto novo
   // (foi o erro "Exception: Número de 1 a 365" que parou o menu 9 no meio, deixando a aba pela metade).
