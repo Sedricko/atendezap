@@ -1101,11 +1101,11 @@
     labList: () => ({ ...labEstado(), recursos: recursosInternos() }),
     // v1.51: CONTADOR OFICIAL DO TETO — o que o próprio WhatsApp diz (barrado? avisado? % usada?). Só funções de LEITURA sem parâmetro
     // (is/get/should/can), nunca fetch/update/clear/set/send/log/subscribe. Só números, liga/desliga e datas; nada de contato.
-    tetoOficial: async () => {
-      const ID = 'WAWebIndividualNewChatMessageCappingLimitUtils';
+    // v1.52: também o BLOQUEIO PARA CONTATAR PESSOAS NOVAS (ReachoutTimelockUtils), achado no relatório de 07/11: vem em "timelock".
+    tetoOficial: async (ID = 'WAWebIndividualNewChatMessageCappingLimitUtils') => {
       let rec = null; try { rec = WPP.loader.__debug?.().modulesMap?.[ID] || null; } catch { /* sem registro */ }
       const m = rec?.factoryFinished && rec.exports ? rec.exports : loadMod(ID);
-      if (!m || typeof m !== 'object') return { existe: false };
+      if (!m || typeof m !== 'object') return { existe: false, ...(ID === 'WAWebIndividualNewChatMessageCappingLimitUtils' ? { timelock: await api.tetoOficial('WAWebReachoutTimelockUtils') } : {}) };
       const serial = (v) => { if (v == null || ['boolean', 'number', 'string'].includes(typeof v)) return typeof v === 'string' ? v.slice(0, 80) : v; try { const s = JSON.stringify(v); return s.length > 1500 ? s.slice(0, 1500) + '…' : JSON.parse(s); } catch { return typeof v; } };
       const out = { existe: true, leituras: {}, parametros: {} };
       for (const k of Object.keys(m)) {
@@ -1115,6 +1115,7 @@
         try { let r = fn(); if (r && typeof r.then === 'function') r = await Promise.race([r, sleep(2000).then(() => '(demorou)')]); out.leituras[k] = serial(r); }
         catch (e) { out.leituras[k] = 'erro: ' + String(e?.message || e).slice(0, 60); }
       }
+      if (ID === 'WAWebIndividualNewChatMessageCappingLimitUtils') out.timelock = await api.tetoOficial('WAWebReachoutTimelockUtils');
       return out;
     },
     // v1.51: VIGIA DAS RESTRIÇÕES — telas de banimento temporário, bloqueio para contatar pessoas novas, limite atingido, grupo suspenso…

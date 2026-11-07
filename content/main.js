@@ -1911,14 +1911,15 @@
       clearTimeout(risco.salvarT); risco.salvarT = setTimeout(() => chrome.storage.local.set({ riscoDia: risco.est }).catch(() => {}), 2000); };
     if (risco.est === undefined) chrome.storage.local.get('riscoDia').then((d) => { if (risco.est === undefined) risco.est = d.riscoDia || null; fazer(); }).catch(fazer); else fazer();
   }
-  const tetoLigado = () => mon.atual?.valores?.wa_individual_new_chat_msg_capping_enabled === true || limW.dados?.vigia?.tetoNovas === true || mon.teto?.leituras?.isUserCapped === true || mon.teto?.leituras?.isUserWarned === true;
+  const tetoLigado = () => mon.atual?.valores?.wa_individual_new_chat_msg_capping_enabled === true || limW.dados?.vigia?.tetoNovas === true || mon.teto?.leituras?.isUserCapped === true || mon.teto?.leituras?.isUserWarned === true || bloqueadoNovos();
+  const bloqueadoNovos = () => mon.teto?.timelock?.leituras?.isUserReachoutTimelocked === true;   // v1.52: bloqueio oficial para contatar pessoas novas
   // v1.51: nomes em português das telas de restrição (o nome técnico vem do WhatsApp)
   const RESTR_NOME = [[/TempBan/, 'banimento temporário'], [/ReachoutTimelock/, 'bloqueio temporário para contatar pessoas novas'], [/NewChat.*Capped|NewChatMessageCapped/, 'limite de contatos novos atingido'], [/CappingWarning/, 'aviso do teto de contatos novos'],
     [/GroupAppeal/, 'recurso de grupo suspenso'], [/SuspendedOrTerminated|Terminated/, 'grupo suspenso ou encerrado'], [/SuspendedGroup/, 'grupo suspenso'], [/SuspendedCommunity/, 'comunidade suspensa'], [/Ban/, 'banimento']];
   const restrNome = (id) => (RESTR_NOME.find(([rx]) => rx.test(id)) || [null, id])[1];
   const sn = (v) => (v === true ? 'sim' : v === false ? 'não' : v == null ? '—' : typeof v === 'object' ? JSON.stringify(v).slice(0, 60) : String(v));
   const RISCO_COR = { verde: ['iaok', '🟢 Tranquilo'], amarelo: ['warn', '🟡 Atenção'], vermelho: ['dan', '🔴 Cuidado'] };
-  const riscoTexto = (m) => (m.k === 'teto' ? 'o WhatsApp LIGOU o teto de mensagens para contatos novos na sua conta' : `${m.valor.toLocaleString('pt-BR')} ${RK.NOMES[m.k]} (cautela a partir de ${m.faixa.toLocaleString('pt-BR')})`);
+  const riscoTexto = (m) => (m.k === 'teto' ? (bloqueadoNovos() ? 'o WhatsApp BLOQUEOU temporariamente você de iniciar conversa com pessoas novas' : 'o WhatsApp LIGOU o teto de mensagens para contatos novos na sua conta') : `${m.valor.toLocaleString('pt-BR')} ${RK.NOMES[m.k]} (cautela a partir de ${m.faixa.toLocaleString('pt-BR')})`);
   function riscoCard() {
     if (!ligado('cfgLimites')) return null;
     if (risco.est === undefined) { chrome.storage.local.get('riscoDia').then((d) => { if (risco.est === undefined) { risco.est = d.riscoDia || null; renderPanel(); } }); }
@@ -1929,7 +1930,7 @@
       h('div', { class: 'col' }, kv('Conversas diferentes que receberam', v.destinos, 'destinos'), kv('Mensagens enviadas pelo AtendeZap', v.mensagens, 'mensagens'),
         kv('Pico num minuto', v.porMinuto, 'porMinuto'), kv('Conversas novas iniciadas', v.iniciadas, 'iniciadas'), kv('Status publicados', v.status, 'status')),
       h('small', { class: 'hint' }, 'Conta só o que sai pelo AtendeZap (robô, respostas rápidas, Enviar para vários, Iniciar conversa, Status), neste computador, desde a meia-noite. As faixas são cautela nossa: o WhatsApp não publica os limites. O que mais pesa para ele são denúncias e bloqueios de quem recebe, e mensagens para quem não tem você na agenda.'),
-      mon.teto?.existe ? h('small', { class: mon.teto.leituras?.isUserCapped || mon.teto.leituras?.isUserWarned ? 'dan' : 'hint' }, `O próprio WhatsApp diz: barrado pelo teto: ${sn(mon.teto.leituras?.isUserCapped)} · avisado: ${sn(mon.teto.leituras?.isUserWarned)}${typeof mon.teto.leituras?.getUsagePercentage === 'number' ? ` · usado: ${mon.teto.leituras.getUsagePercentage}%` : ''}.`) : null,
+      mon.teto?.existe ? h('small', { class: mon.teto.leituras?.isUserCapped || mon.teto.leituras?.isUserWarned ? 'dan' : 'hint' }, `O próprio WhatsApp diz: barrado pelo teto: ${sn(mon.teto.leituras?.isUserCapped)} · avisado: ${sn(mon.teto.leituras?.isUserWarned)}${mon.teto.timelock?.existe ? ` · bloqueado para pessoas novas: ${sn(mon.teto.timelock.leituras?.isUserReachoutTimelocked)}` : ''}${typeof mon.teto.leituras?.getUsagePercentage === 'number' ? ` · usado: ${mon.teto.leituras.getUsagePercentage}%` : ''}.`) : null,
       a.nivel !== 'verde' ? h('small', { class: 'hint' }, 'Para baixar o risco: espace os envios (Enviar para vários › intervalo maior), prefira quem já conversa com você e pare por hoje se estiver no vermelho.') : null);
   }
   // ----- v1.49: Monitor de limitações e "o que o WhatsApp registra" (só LÊ; regras em lib/monitor.js) -----
@@ -1998,7 +1999,8 @@
         h('small', { class: 'hint' }, 'São os módulos de telemetria do próprio programa do WhatsApp (…WamEvent). O nome diz o assunto; o que cada um mede exatamente o AtendeZap não consegue ler.'),
         Object.entries(ev).sort((a, b) => b[1].length - a[1].length).map(([assunto, l]) => h('div', { class: 'kv' }, h('span', null, assunto, h('small', { class: 'hint' }, ' — ' + l.slice(0, 6).join(', ') + (l.length > 6 ? '…' : ''))), h('b', null, String(l.length))))),
       mon.teto?.existe ? [h('p', { class: 'hint grp' }, 'O que o próprio WhatsApp diz do teto'),
-        Object.entries(mon.teto.leituras).map(([k, v]) => h('div', { class: 'kv' }, h('span', null, { isUserCapped: 'Barrado pelo teto', isUserWarned: 'Avisado do teto', getUsagePercentage: 'Uso do teto (%)', getCappingWarningLevel: 'Nível de aviso', getCappingStatus: 'Situação', getCappingStatusType: 'Tipo de situação', getCappingData: 'Dados do teto', isOTEEligible: 'Elegível a liberação extra', shouldShowNewChatsStartedSettingsEntry: 'Mostra "conversas iniciadas" nas configurações' }[k] || k), h('b', { class: (k === 'isUserCapped' || k === 'isUserWarned') && v === true ? 'dan' : null }, sn(v))))] : null,
+        Object.entries(mon.teto.leituras).map(([k, v]) => h('div', { class: 'kv' }, h('span', null, { isUserCapped: 'Barrado pelo teto', isUserWarned: 'Avisado do teto', getUsagePercentage: 'Uso do teto (%)', getCappingWarningLevel: 'Nível de aviso', getCappingStatus: 'Situação', getCappingStatusType: 'Tipo de situação', getCappingData: 'Dados do teto', isOTEEligible: 'Elegível a liberação extra', shouldShowNewChatsStartedSettingsEntry: 'Mostra "conversas iniciadas" nas configurações' }[k] || k), h('b', { class: (k === 'isUserCapped' || k === 'isUserWarned') && v === true ? 'dan' : null }, sn(v)))),
+        mon.teto.timelock?.existe ? Object.entries(mon.teto.timelock.leituras).map(([k, v]) => h('div', { class: 'kv' }, h('span', null, { isUserReachoutTimelocked: 'Bloqueado para contatar pessoas novas', isUserReachoutTimelockedAndVisible: '…com aviso na tela', isUserReachoutTimelockedAndHidden: '…sem aviso na tela', getReachoutTimelockEnforcementType: 'Tipo de bloqueio', isCPVEnforcement: 'Bloqueio por verificação' }[k] || k), h('b', { class: v === true ? 'dan' : null }, sn(v)))) : null] : null,
       mon.restr?.length ? [h('p', { class: 'hint grp' }, 'Vigia das restrições'),
         mon.restrNovas.length ? h('div', { class: 'errs' }, h('b', null, '⚠ O WhatsApp carregou agora a tela de:'), mon.restrNovas.map((i) => h('small', null, `${restrNome(i)} (${i})`))) : h('small', { class: 'iaok' }, '✔ Nenhuma tela de restrição foi aberta desde que o WhatsApp abriu.'),
         h('small', { class: 'hint' }, `${mon.restr.length} telas de restrição existem no programa (banimento temporário, bloqueio para contatar pessoas novas, limite atingido, grupo suspenso…). O WhatsApp só carrega uma delas quando vai mostrar.`)] : null,
@@ -4382,6 +4384,7 @@
     let r; try { r = await monitorLer(); } catch (e) { return { ok: 'skip', d: 'não consegui ler: ' + e.message }; }
     const imp = r.mudancas.filter((x) => x.grupo !== 'outras'), outras = r.mudancas.length - imp.length;
     const tela = avisosNaTela(); if (tela.length) return { ok: 'warn', d: `o WhatsApp está mostrando um aviso de limite na tela (${tela.join(', ')}) — veja Diagnóstico › Limites` };
+    if (bloqueadoNovos()) return { ok: 'warn', d: 'o próprio WhatsApp diz que você está BLOQUEADO temporariamente para iniciar conversa com pessoas novas (Diagnóstico › Limites)' };
     if (mon.teto?.leituras?.isUserCapped === true) return { ok: 'warn', d: 'o próprio WhatsApp diz que você está BARRADO pelo teto de contatos novos (Diagnóstico › Limites)' };
     if (mon.teto?.leituras?.isUserWarned === true) return { ok: 'warn', d: 'o próprio WhatsApp diz que você foi AVISADO do teto de contatos novos (Diagnóstico › Limites)' };
     if (mon.restrNovas?.length) return { ok: 'warn', d: `o WhatsApp carregou a tela de: ${mon.restrNovas.map(restrNome).join(', ')} (Diagnóstico › Limites)` };

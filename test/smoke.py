@@ -1680,10 +1680,11 @@ async def main():
         # v1.51: contador oficial do teto (só leituras, nunca fetch) e vigia das restrições (tela de banimento temporário carregada depois de abrir)
         await page.evaluate("""() => { WPP.loader.moduleRequire.m.WAWebIndividualNewChatMessageCappingLimitUtils = 1; WPP.loader.moduleRequire.m['WAWebTempBanScreen.react'] = 1;
           window.__lmOrig = WPP.loader.loadModule; window.__fetchChamado = false;
-          WPP.loader.loadModule = (id) => (id === 'WAWebIndividualNewChatMessageCappingLimitUtils' ? { isUserCapped: () => false, isUserWarned: () => false, getUsagePercentage: () => 12, fetchOrUpdateCapStatus: () => { window.__fetchChamado = true; }, getCappingData: (x) => x } : window.__lmOrig(id));
+          WPP.loader.loadModule = (id) => (id === 'WAWebIndividualNewChatMessageCappingLimitUtils' ? { isUserCapped: () => false, isUserWarned: () => false, getUsagePercentage: () => 12, fetchOrUpdateCapStatus: () => { window.__fetchChamado = true; }, getCappingData: (x) => x }
+            : id === 'WAWebReachoutTimelockUtils' ? { isUserReachoutTimelocked: () => false, fetchReachoutTimelock: () => { window.__fetchChamado = true; } } : window.__lmOrig(id));
           window.__mm = { 'WAWebTempBanScreen.react': { factoryFinished: false } }; window.__dbgOrig = WPP.loader.__debug; WPP.loader.__debug = () => ({ modulesMap: window.__mm }); }""")
         await page.locator('#az-panel .sec', has_text='Monitor de limitações').locator('.ib').first.click(); await page.wait_for_timeout(1500)
-        t_ok = await page.evaluate(PBTXT + ".includes('Uso do teto (%)') && " + PBTXT + ".includes('Barrado pelo teto') && " + PBTXT + ".includes('Nenhuma tela de restrição foi aberta')")
+        t_ok = await page.evaluate(PBTXT + ".includes('Uso do teto (%)') && " + PBTXT + ".includes('Barrado pelo teto') && " + PBTXT + ".includes('Bloqueado para contatar pessoas novas') && " + PBTXT + ".includes('Nenhuma tela de restrição foi aberta')")
         await page.evaluate("() => { window.__mm['WAWebTempBanScreen.react'].factoryFinished = true; }")
         await page.locator('#az-panel .sec', has_text='Monitor de limitações').locator('.ib').first.click(); await page.wait_for_timeout(1500)
         t_ban = await page.evaluate(PBTXT + ".includes('O WhatsApp carregou agora a tela de:') && " + PBTXT + ".includes('banimento temporário')")
