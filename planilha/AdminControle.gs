@@ -32,7 +32,9 @@
  */
 
 var ADM_VERSAO = 3;
-var ADM_ABA = { usuarios: 'Usuarios', perfis: 'Perfis', excecoes: 'Excecoes', global: 'Global', saude: 'Saude', computadores: 'Computadores', legenda: 'Legenda', equipe: 'Equipe' };
+var ADM_ABA = { usuarios: 'Usuarios', perfis: 'Perfis', excecoes: 'Excecoes', global: 'Global', saude: 'Saude', computadores: 'Computadores', legenda: 'Legenda', equipe: 'Equipe', pacotes: 'Pacotes' };
+// v1.52.1: o pacote de diagnóstico completo, compactado (gzip + base64) e em partes de até 45 mil caracteres. Fica só o ÚLTIMO de cada computador.
+var ADM_CAB_PACOTES = ['Data', 'Pessoa', 'Computador', 'Parte', 'Total', 'Conteúdo (pacote compactado; quem lê é o Claude)'];
 // v1.52: Central da equipe. A aba Equipe NUNCA guarda telefone: só a "impressão digital" do cliente (SHA-256 com a senha da equipe, que fica nas propriedades do script, fora da planilha).
 var ADM_CAB_EQUIPE = ['Cliente (impressão digital, sem telefone)', 'Dono', 'Desde', 'Passado por', 'Motivo', 'Quando passou'];
 // colunas de Usuarios (1 = A)
@@ -86,7 +88,8 @@ var ADM_GLOBAL = [
   ['versaoMinima', '', 'Ex.: 1.34.0 — quem estiver com versão menor vê um aviso para atualizar'], ['aviso', '', 'Recado que aparece na tela de todos'],
   ['coletarSaude', 'sim', 'sim = a extensão pode enviar o resumo de saúde (cada pessoa ainda precisa aceitar)'], ['consultaMin', '15', 'De quantos em quantos minutos a extensão consulta esta planilha (5-120)'],
   ['saudeMin', '30', 'De quantos em quantos minutos envia o resumo de saúde (10-240)'], ['validadeOfflineDias', '7', 'Dias que a última configuração vale se a internet/planilha falhar (depois o robô desliga)'],
-  ['vigiaMin', '15', 'Minutos sem sinal de um robô LIGADO para você receber o alerta'], ['emailAlerta', '', 'Seu e-mail para os alertas do vigia']
+  ['vigiaMin', '15', 'Minutos sem sinal de um robô LIGADO para você receber o alerta'], ['emailAlerta', '', 'Seu e-mail para os alertas do vigia'],
+  ['coletarPacote', 'sim', 'sim = junto com o resumo, de hora em hora, o pacote de diagnóstico completo (aba Pacotes; só o último de cada computador)']   // v1.52.1: no fim, para não mudar a posição das outras
 ];
 // perfis de exemplo: [Novo, Básico, Com robô, Administrador]. CÉLULA VAZIA = BLOQUEADO (nada vem liberado de fábrica: o administrador marca o que cada perfil pode usar).
 // Limites vazios = sem teto (o robô, porém, fica em "só sugerir" se roboModoMax estiver vazio).
@@ -216,6 +219,19 @@ function admCompletar_() {
   admGarantirComputadores_();
   if (String(us.getRange(1, ADM_U.MAXPC).getValue() || '') === '') us.getRange(1, ADM_U.MAXPC).setValue(ADM_CAB_USUARIOS[ADM_U.MAXPC - 1]).setFontWeight('bold');
   if (String(us.getRange(1, ADM_U.WHATS).getValue() || '') === '') us.getRange(1, ADM_U.WHATS).setValue(ADM_CAB_USUARIOS[ADM_U.WHATS - 1]).setFontWeight('bold');   // v1.52
+}
+// ---------------------------------------------------------------- v1.52.1: pacote de diagnóstico na planilha
+function admGuardarPacote_(nome, b, agora) {
+  var partes = b.partes, inst = String(b.inst || '').replace(/[^A-Za-z0-9_-]/g, '').slice(0, 40), total = 0, i;
+  if (!Array.isArray(partes) || !partes.length || partes.length > 80) return { ok: false, erro: 'pacote inválido' };
+  for (i = 0; i < partes.length; i++) { if (typeof partes[i] !== 'string' || partes[i].length > 45000 || !/^[A-Za-z0-9+\/=]+$/.test(partes[i])) return { ok: false, erro: 'pacote inválido' }; total += partes[i].length; }
+  var ss = SpreadsheetApp.getActiveSpreadsheet(), sh = ss.getSheetByName(ADM_ABA.pacotes), vals, r;
+  if (!sh) sh = ss.insertSheet(ADM_ABA.pacotes);
+  if (sh.getLastRow() === 0) { sh.getRange(1, 1, 1, ADM_CAB_PACOTES.length).setValues([ADM_CAB_PACOTES]); sh.getRange(1, 1, 1, ADM_CAB_PACOTES.length).setFontWeight('bold'); sh.setFrozenRows(1); }
+  vals = sh.getDataRange().getValues();
+  for (r = vals.length - 1; r >= 1; r--) if (String(vals[r][1]) === nome && String(vals[r][2]) === inst) sh.deleteRows(r + 1, 1);   // fica só o último deste computador
+  for (i = 0; i < partes.length; i++) sh.appendRow([agora, admCel_(nome), admCel_(inst), i + 1, partes.length, admCel_(partes[i])]);
+  return { ok: true, partes: partes.length, caracteres: total };
 }
 // ---------------------------------------------------------------- v1.52: Central da equipe
 function admSegredoEquipe_() {
@@ -442,7 +458,7 @@ function admMontarConfig_(perfil, codigo, perfisVals, excecoesVals, globalVals) 
   for (r = 1; r < globalVals.length; r++) { k = String(globalVals[r][0] || '').trim(); if (k) glob[k] = globalVals[r][1]; }
   return { recursos: recursos, limites: limites, global: {
     emergencia: admSim_(glob.emergencia) ? 'sim' : 'nao', emergenciaMensagem: String(glob.emergenciaMensagem || ''), versaoMinima: String(glob.versaoMinima || ''), aviso: String(glob.aviso || ''),
-    coletarSaude: admSim_(glob.coletarSaude) ? 'sim' : 'nao', consultaMin: glob.consultaMin, saudeMin: glob.saudeMin, validadeOfflineDias: glob.validadeOfflineDias } };
+    coletarSaude: admSim_(glob.coletarSaude) ? 'sim' : 'nao', coletarPacote: glob.coletarPacote == null || glob.coletarPacote === '' || admSim_(glob.coletarPacote) ? 'sim' : 'nao', consultaMin: glob.consultaMin, saudeMin: glob.saudeMin, validadeOfflineDias: glob.validadeOfflineDias } };
 }
 // Quem precisa de alerta: robô LIGADO sem sinal há mais de vigiaMin e ainda não alertado; e quem VOLTOU (alertado e com sinal recente). linhas = valores da aba Usuarios (sem cabeçalho).
 function admQuemAlertar_(linhas, agora, vigiaMin) {
@@ -490,6 +506,10 @@ function doPost(e) {
       if (cfg.global.coletarSaude !== 'sim') return admJson_({ ok: true, ignorado: true });
       admRegistrarSaude_(sh, linha + 1, nome, b.dados, agora);
       return admJson_({ ok: true });
+    }
+    if (acao === 'pacote') {   // v1.52.1: o pacote de diagnóstico completo, em partes
+      if (cfg.global.coletarSaude !== 'sim' || cfg.global.coletarPacote !== 'sim') return admJson_({ ok: true, ignorado: true });
+      return admJson_(admGuardarPacote_(nome, b, agora));
     }
     if (/^equipe(Ver|Marcar|Passar)$/.test(acao)) {   // v1.52
       if (!cfg.recursos.equipeCentral || cfg.recursos.equipeCentral === 'bloqueado') return admJson_({ ok: false, erro: 'Central da equipe bloqueada para o seu perfil' });

@@ -818,7 +818,7 @@ const cifrar = (obj, senha) => { // mesmo formato do CryptoJS/OpenSSL ("Salted__
   assert.ok(s.autoteste.ruins.every((x) => x.length <= 60)); assert.equal(Object.keys(s.robo).includes('ultimas'), false); assert.deepEqual(s.ia.falhas, { instavel: 2, 'cota-dia': 1 });
   const vazio = A.montarSaude(); assert.equal(vazio.robo.modo, 'desligado'); assert.equal(vazio.v, ''); assert.equal(A.montarSaude({ robo: { modo: 'xpto', respondeu24h: -5 } }).robo.modo, 'desligado'); assert.equal(A.montarSaude({ robo: { respondeu24h: -5 } }).robo.respondeu24h, 0);
   { const g = JSON.stringify(U.BACKUP_GROUPS); assert.ok(!g.includes('acessoCfg') && !g.includes('acessoEstado') && !g.includes('acessoAplicado')); }   // o código da pessoa não vai para o arquivo de backup
-  assert.ok(A.descreverEnvio(s).join('\n').includes('NUNCA é enviado') && A.descreverEnvio(s).length === 7);
+  assert.ok(A.descreverEnvio(s).join('\n').includes('NUNCA é enviado') && A.descreverEnvio(s).length === 8);
   { const s2 = A.montarSaude({ desempenho: { prontoS: 12.34, atrasoS: 3, memMB: 410, pct: 0.2, lenta: 'Fixar 5511999990001', lentaMs: 40 }, risco: { nivel: 'amarelo', mensagens: 420, conversas: 160 }, whatsapp: { tetoBarrado: false, bloqueioNovos: 'x' } });   // v1.52.1
     assert.deepEqual(s2.desempenho, { prontoS: 12.3, atrasoS: 3, memMB: 410, pct: 0.2, lenta: 'Fixar …', lentaMs: 40 }); assert.deepEqual(s2.risco, { nivel: 'amarelo', mensagens: 420, conversas: 160 }); assert.deepEqual(s2.whatsapp, { tetoBarrado: false, tetoAvisado: null, bloqueioNovos: null });
     assert.equal(A.montarSaude({ risco: { nivel: 'qualquer' } }).risco.nivel, ''); }
@@ -1266,4 +1266,13 @@ const cifrar = (obj, senha) => { // mesmo formato do CryptoJS/OpenSSL ("Salted__
   assert.equal(E.textoPassar({ nome: 'Maria' }), null); assert.equal(E.textoPassar({ nome: 'Maria', whatsapp: '5511988887777' }), 'A partir de agora quem vai te atender é Maria: https://wa.me/5511988887777');
   assert.deepEqual(E.limparColegas([{ nome: ' Ana ', whatsapp: '+55 (11) 9 8888-7777' }, { nome: '' }]), [{ nome: 'Ana', whatsapp: '5511988887777' }]);
   console.log('central da equipe ok');
+})().catch((e) => { console.error(e); process.exit(1); });
+// ---- v1.52.1: pacote para a planilha — compactar em partes e voltar igual ----
+(async () => {
+  require('../lib/diagnostico.js'); const G = globalThis.AZDIAG, zlib = require('zlib');
+  const txt = JSON.stringify({ formato: 'atendezap-pacote-1', arquivos: { 'mapa.json': 'x'.repeat(300000) + 'ação ✔ fim' } });
+  const partes = await G.compactarPartes(txt, 1000);
+  assert.ok(partes.length >= 1 && partes.every((p) => p.length <= 1000 && /^[A-Za-z0-9+/=]+$/.test(p)));
+  assert.equal(zlib.gunzipSync(Buffer.from(partes.join(''), 'base64')).toString('utf8'), txt);   // juntando as partes, volta exatamente igual
+  console.log('pacote compactado ok');
 })().catch((e) => { console.error(e); process.exit(1); });

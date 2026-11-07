@@ -306,4 +306,12 @@ for (const v of ['sim', 'Sim', 'on', 'liberado', 'não', 'NAO', 'off', 'negado',
   sd.post({ acao: 'saude', codigo: 'ANASAUDE123456789A', dados: { v: '1.52.1', autoteste: { ok: 56 }, desempenho: { prontoS: 12.3, atrasoS: 2, memMB: 410, pct: 0.2, lenta: 'Fixar', lentaMs: 40 }, risco: { nivel: 'amarelo', mensagens: 420, conversas: 160 }, whatsapp: { tetoBarrado: false, tetoAvisado: false, bloqueioNovos: false } } });
   const cab = sd.abas.Saude[0], l = sd.abas.Saude.at(-1);
   assert.equal(cab.length, 29); assert.equal(cab[20], 'Pronto (s)'); assert.deepEqual(l.slice(20), [12.3, 2, 410, 0.2, 'Fixar (40 ms)', 'amarelo', 420, 160, 'teto barrado: não · avisado: não · bloqueio p/ pessoas novas: não']); }
+// v1.52.1: pacote de diagnóstico na planilha — partes; só o último de cada computador; recusa o que não é base64; respeita coletarPacote
+{ const sp = nova(); sp.abas.Usuarios.push(['Ana', 'ANAPACOTE12345678A', 'Administrador', 'sim']); sp.post({ acao: 'config', codigo: 'ANAPACOTE12345678A' });
+  const env = (partes, inst = 'inst-abc') => sp.post({ acao: 'pacote', codigo: 'ANAPACOTE12345678A', inst, partes });
+  assert.equal(env(['H4sIAAAA', 'QUJD']).partes, 2); assert.equal(env(['H4sIBBBB']).partes, 1); assert.equal(env(['H4sICCCC'], 'outro-pc').ok, true);
+  const linhas = sp.abas.Pacotes.slice(1); assert.deepEqual(linhas.map((l) => [l[2], l[3], l[4], l[5]]), [['inst-abc', 1, 1, 'H4sIBBBB'], ['outro-pc', 1, 1, 'H4sICCCC']]);   // o novo substitui o antigo do mesmo computador
+  assert.equal(env(['=IMAGE(1)']).erro, 'pacote inválido'); assert.equal(env([]).erro, 'pacote inválido'); assert.equal(env(['x'.repeat(45001)]).erro, 'pacote inválido');
+  const linhaG = sp.abas.Global.findIndex((l) => l[0] === 'coletarPacote'); assert.ok(linhaG > 0); sp.abas.Global[linhaG][1] = 'nao';
+  assert.deepEqual(env(['H4sIDDDD']), { ok: true, ignorado: true }); }
 console.log('script da planilha administrativa: todos os casos ok (preparar, convites, perfis, exceções, acesso negado, validade, saúde, limpeza, vigia, coexistência e aviso de planilha com outro uso)');

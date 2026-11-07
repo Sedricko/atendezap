@@ -552,6 +552,7 @@ async def main():
                   if (b.acao === 'equipePassar') E[b.cliente] = { dono: b.para, passadoPor: 'Maria', motivo: b.motivo || '', quando: Date.now() };
                   return resp({ ok: true, info: E[b.cliente] || {} }); }
                 if (b.acao === 'saude') return resp({ ok: true });
+                if (b.acao === 'pacote') { self.__pacote = b.partes; return resp({ ok: true, partes: (b.partes || []).length }); }   // v1.52.1
                 return resp({ ok: false, erro: 'ação desconhecida' });
               }
               if (init && init.method === 'POST') { const b = JSON.parse(init.body); self.__sheetLog.push({ aba: b.aba, token: b.token, linhas: b.linhas, inst: b.inst, dias: b.dias });
@@ -1226,6 +1227,19 @@ async def main():
         passe = [x for x in eqlog if x['acao'] == 'equipePassar']
         res['equipe'] = {'sem_dono': eq0, 'passou': bool(passe) and passe[0]['para'] == 'Joao' and passe[0]['motivo'] == 'carga para SP', 'so_digital': bool(passe) and bool(re.fullmatch(r'[0-9a-f]{32}', passe[0]['cliente'] or '')) and '558599990000' not in json.dumps(eqlog),
                          'avisou_cliente': await page.evaluate("window.__log.some((l) => l[0] === 'text' && l.slice(1).some((x) => String(x).includes('wa.me/5511977776666')))"), 'dono_agora': await page.evaluate(PBTXT + ".includes('Dono deste cliente') && " + PBTXT + ".includes('Joao')")}
+        # v1.52.1: pacote completo para a planilha pelo botão — juntando as partes e descompactando, volta o mesmo pacote do .zip
+        await sw.evaluate("chrome.storage.local.get('acessoCfg').then((d) => chrome.storage.local.set({ acessoCfg: { ...d.acessoCfg, saude: true } }))"); await page.wait_for_timeout(800)   # já aceito: nenhuma pergunta abre
+        await admin({'recursos': TODOS, 'limites': {'roboModoMax': 'automatico', 'chavesMax': '6'}, 'global': {**G1, 'coletarSaude': 'sim'}}); await atualizar()
+        await ir(page, 'Diagnóstico'); await page.wait_for_timeout(3500)
+        await page.locator('#az-panel details.maisdiag summary').click(); await page.wait_for_timeout(400)
+        await page.locator('#az-panel .gbtn', has_text='Enviar pacote para a planilha').click(); await page.wait_for_timeout(15000)
+        partes = await sw.evaluate("self.__pacote || null")
+        try:
+            import base64, gzip
+            pk = json.loads(gzip.decompress(base64.b64decode(''.join(partes))).decode('utf-8')) if partes else {}
+        except Exception as e:
+            pk = {'erro': str(e)}
+        res['pacote_planilha'] = {'partes': bool(partes) and all(len(p) <= 45000 for p in partes), 'formato': pk.get('formato'), 'arquivos': sorted((pk.get('arquivos') or {}).keys())}
         await sw.evaluate("chrome.storage.local.set({ acessoExigir: false, acessoCfg: {}, acessoEstado: null, acessoAplicado: {}, modulos: {}, atendCfg: {}, atendEst: {}, atendLog: [], atendSug: [] }); self.__admin = {}"); await page.wait_for_timeout(1200)
         # v1.36: LIMITE DE COMPUTADORES por convite — o servidor recusa o excedente; a extensão explica e nada trava por engano
         await sw.evaluate("chrome.storage.local.set({ instId: '', acessoExigir: true, acessoCfg: {}, acessoEstado: null, acessoAplicado: {}, modulos: {}, atendCfg: %s, atendEst: {}, atendLog: [], atendSug: [] }); self.__adminLog = []" % json.dumps(cfgA)); await page.wait_for_timeout(1500)
@@ -1895,6 +1909,7 @@ async def main():
             'rb_F_G_H_textos': lambda v: v == [1, 1, 0],
             'rb_sugestao': lambda v: v[0] == 0 and len(v[1]) == 1 and v[1][0][0] == 'responder',
             'rb_sug_manual_tudo': lambda v: v == 2,
+            'pacote_planilha': lambda v: v['partes'] and v['formato'] == 'atendezap-pacote-1' and {'mapa.json', 'relatorio.html', 'erros.json', 'ponte.json', 'estrutura.json'} <= set(v['arquivos']),   # v1.52.1
             'modo_leve': lambda v: v == [True, False],   # v1.52.1
             'equipe': lambda v: v == {'sem_dono': True, 'passou': True, 'so_digital': True, 'avisou_cliente': True, 'dono_agora': True},   # v1.52
             'teto_oficial': lambda v: v == {'leu': True, 'restricao': True, 'autoteste': True, 'nao_chamou_fetch': True},   # v1.51

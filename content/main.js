@@ -81,6 +81,7 @@
   const logErr = (onde, msg) => {
     LOG.unshift({ t: new Date().toLocaleTimeString('pt-BR'), onde, msg: String(msg).slice(0, 300) });
     LOG.length = Math.min(LOG.length, 30);
+    clearTimeout(logErr.t); logErr.t = setTimeout(() => chrome.storage.local.set({ logErros: LOG.slice(0, 30) }).catch(() => {}), 3000);   // v1.52.1: o erro não some ao recarregar (vai no próximo pacote)
     // 3 erros desde o último autoteste => roda o autodiagnóstico (o WhatsApp pode ter mudado)
     if (onde !== 'autoDiag' && typeof AUTO !== 'undefined' && ++AUTO.errosDesde === 3) setTimeout(() => autoDiag('erros seguidos'), 2000);
   };
@@ -89,6 +90,13 @@
   const AZ_TK = Array.from(crypto.getRandomValues(new Uint8Array(12)), (x) => x.toString(16).padStart(2, '0')).join(''); // chave do painel (a ponte recusa pedidos que enviam/bloqueiam/removem sem ela)
   const PONTE = {};   // v1.47: por método da ponte: quantas chamadas, quantos erros e quanto tempo levaram (vai para o pacote de diagnóstico)
   const ponteReg = (m, ms, erro) => { const x = (PONTE[m] ||= { n: 0, erros: 0, ms: 0, max: 0 }); x.n++; if (erro) x.erros++; x.ms += ms; if (ms > x.max) x.max = ms; };
+  // v1.52.1: enquanto o pacote não sai, os dados ACUMULAM: erros e tempos da ponte do dia sobrevivem à recarga da aba
+  chrome.storage.local.get(['logErros', 'ponteDia']).then((d) => {
+    for (const e of d.logErros || []) if (LOG.length < 30 && !LOG.includes(e)) LOG.push(e);
+    if (d.ponteDia?.dia === new Date().toDateString()) for (const [m, x] of Object.entries(d.ponteDia.dados || {})) { const y = (PONTE[m] ||= { n: 0, erros: 0, ms: 0, max: 0 }); y.n += x.n || 0; y.erros += x.erros || 0; y.ms += x.ms || 0; y.max = Math.max(y.max, x.max || 0); }
+  }).catch(() => {});
+  const pontePersistir = () => chrome.storage.local.set({ ponteDia: { dia: new Date().toDateString(), dados: PONTE } }).catch(() => {});
+  setInterval(pontePersistir, 5 * 60000); document.addEventListener('visibilitychange', () => { if (document.hidden) pontePersistir(); });
   const RISCO_MET = new Set(['sendText', 'sendFile', 'sendContact', 'sendEspecial', 'sendStatus', 'startChat']);   // v1.50: envios contados no Risco de banimento
   const call = (method, ...args) => new Promise((res, rej) => {
     if (RISCO_MET.has(method)) riscoReg(method, args[0]);
@@ -140,6 +148,7 @@
     atendMigrar(); atendBatida(); setInterval(atendBatida, 60000);
     acessoCiclo(); setInterval(acessoCiclo, 30000);
     quandoSossegar(() => autoDiag('WhatsApp aberto'));
+    quandoSossegar(() => setTimeout(() => pacoteParaPlanilha(false), 5 * 60000)); setInterval(() => quandoSossegar(() => pacoteParaPlanilha(false)), 60 * 60000);   // v1.52.1
     let periodicos = 0; setInterval(() => { if (S.modoLeve && periodicos++ % 2) return; autoDiag(S.modoLeve ? 'periódico (1 h, modo leve)' : 'periódico (30 min)'); }, 30 * 60000);   // v1.52.1: no Modo leve, de hora em hora (nada deixa de ser gravado)
   }
   let lastPins = [];
@@ -4738,7 +4747,7 @@ ${hist ? `<h2>Histórico de autotestes</h2><table><tr><td><b>Quando</b></td><td>
     if (retornar !== true) toast('Gerando o mapa do WhatsApp…');
     try {
       const mapa = await Promise.race([call('mapa'), sleep(20000).then(() => { throw new Error('demorou demais'); })]);
-      toast('Cruzando chaves e módulos do WhatsApp…', 4000);
+      if (retornar !== true) toast('Cruzando chaves e módulos do WhatsApp…', 4000);
       let ref; // v1.16: onde o nome de cada chave aparece no código (índices em "mapa.modulos")
       try { ref = await Promise.race([call('referencias'), sleep(60000).then(() => { throw new Error('a leitura demorou demais'); })]); await salvarRefs(ref, mapa.whatsapp || null); }
       catch (e) { ref = { erro: e.message }; }
@@ -4760,13 +4769,40 @@ ${hist ? `<h2>Histórico de autotestes</h2><table><tr><td><b>Quando</b></td><td>
   async function pacoteDiagnostico(pronto) {
     toast('Montando o pacote de diagnóstico… (leva uns 30 segundos; deixe a tela como está o problema)', 6000);
     try {
+      const ent = await montarPacoteEnt(pronto);
+      const z = AZZIP.montar(ent); baixar(`atendezap-pacote-diagnostico-${stamp()}.zip`, new Blob(z.partes, { type: 'application/zip' }), 'application/zip');
+      toast(`Pacote salvo (${Math.round(z.tamanho / 1024)} KB, ${ent.length} arquivos). Envie o .zip ao Claude: não tem mensagens, contatos, convite nem chave.`, 8000);
+    } catch (e) { toast('Não foi possível montar o pacote: ' + String(e.message || e).slice(0, 120)); }
+  }
+  // v1.52.1: o MESMO pacote, compactado, para a planilha do administrador (aba Pacotes) — de hora em hora e no botão.
+  // Se não sair (sem internet, planilha fora), fica guardado e vai na próxima tentativa; um pacote novo substitui o guardado (ele já traz tudo).
+  const pac = { busy: false };
+  async function pacoteParaPlanilha(manual) {
+    const ef = acessoEf();
+    if (!acessoConectado() || !ef.valido || ef.desativado || !ef.global.coletarSaude || ef.global.coletarPacote === false || S.acessoCfg?.saude !== true) {
+      if (manual) toast('Para enviar: o administrador precisa pedir (aba Global: coletarSaude e coletarPacote = sim) e você aceitar o resumo técnico em Configurações › Acesso da equipe.', 9000); return;
+    }
+    if (pac.busy) return; pac.busy = true;
+    try {
+      let partes = null;
+      try { const ent = await montarPacoteEnt(AUTO.ultimo && Date.now() - new Date(AUTO.ultimo.data.data).getTime() < 70 * 60000 ? AUTO.ultimo : null);
+        partes = await AZDIAG.compactarPartes(JSON.stringify({ formato: 'atendezap-pacote-1', versao: acessoVersao(), quando: new Date().toISOString(), arquivos: Object.fromEntries(ent.map((x) => [x.nome, x.dados])) }));
+        await chrome.storage.local.set({ pacotePendente: { t: Date.now(), partes } });
+      } catch (e) { logErr('pacote', e.message); partes = (await chrome.storage.local.get('pacotePendente')).pacotePendente?.partes || null; }
+      if (!partes) { if (manual) toast('Não consegui montar o pacote agora.'); return; }
+      const r = await acessoPost({ acao: 'pacote', codigo: S.acessoCfg.codigo, inst: acessoInst(), versao: acessoVersao(), partes });
+      if (r?.ok && !r.ignorado) { await chrome.storage.local.remove('pacotePendente'); if (manual) toast(`✔ Pacote enviado à planilha (${r.partes} parte(s)).`, 6000); }
+      else if (manual) toast(r?.ignorado ? 'O administrador desligou o envio do pacote (aba Global › coletarPacote).' : 'Não consegui enviar agora; ficou guardado e vai na próxima tentativa: ' + (r?.erro || 'sem resposta'), 9000);
+    } finally { pac.busy = false; }
+  }
+  async function montarPacoteEnt(pronto) {
+    {
       const { data } = pronto || (await runChecks('pacote')), m = chrome.runtime.getManifest(), mapaTxt = await gerarMapa(pronto, true), estr = await estruturaTela().catch((e) => JSON.stringify({ erro: e.message })), mp = JSON.parse(mapaTxt), agora = new Date(), J = (o) => JSON.stringify(o, null, 1);
       const arquivos = [['relatorio.html', 'saúde de cada função e o resumo técnico (abra no navegador)'], ['mapa.json', 'chaves e módulos do WhatsApp, o que mudou desde a última leitura e as sondas'], ['estrutura.json', 'foto da estrutura da tela (sem mensagens nem contatos)'], ['ambiente.json', 'navegador, tela, permissões e o que ocupa o armazenamento'], ['erros.json', 'últimos erros do painel'], ['ponte.json', 'quais chamadas ao WhatsApp mais demoram ou falham'], ['ia.json', 'quantos envios à IA, tempo e erros (sem o texto enviado)']];
       const ent = [{ nome: 'LEIAME.txt', dados: AZDIAG.textoPacote({ versao: m.version, whatsapp: mp.mapa?.whatsapp || '?', quando: agora.toLocaleString('pt-BR'), arquivos }) }, { nome: 'relatorio.html', dados: reportHtml(data) }, { nome: 'mapa.json', dados: mapaTxt }, { nome: 'estrutura.json', dados: estr },
         { nome: 'ambiente.json', dados: J(mp.ambiente) }, { nome: 'erros.json', dados: J(mp.erros) }, { nome: 'ponte.json', dados: J(mp.ponte) }, { nome: 'ia.json', dados: J(mp.ia) }].map((x) => ({ ...x, data: agora }));
-      const z = AZZIP.montar(ent); baixar(`atendezap-pacote-diagnostico-${stamp()}.zip`, new Blob(z.partes, { type: 'application/zip' }), 'application/zip');
-      toast(`Pacote salvo (${Math.round(z.tamanho / 1024)} KB, ${ent.length} arquivos). Envie o .zip ao Claude: não tem mensagens, contatos, convite nem chave.`, 8000);
-    } catch (e) { toast('Não foi possível montar o pacote: ' + String(e.message || e).slice(0, 120)); }
+      return ent;
+    }
   }
   // Resumo curto (≈10 linhas) para colar na conversa com o Claude em vez de anexar arquivos
   async function copiarResumo(pronto) {
@@ -5258,6 +5294,7 @@ ${hist ? `<h2>Histórico de autotestes</h2><table><tr><td><b>Quando</b></td><td>
           h('summary', null, 'Avançado: arquivos para suporte (enviar ao Claude)'),
           h('div', { class: 'center' },
             h('button', { class: 'gbtn sm', title: 'UM arquivo .zip com relatório, mapa do WhatsApp (e o que mudou), estrutura da tela, ambiente, erros, chamadas e envios à IA. Sem mensagens, contatos, convite nem chave: é o que enviar ao Claude', onclick: () => pacoteDiagnostico(res) }, 'Gerar pacote de diagnóstico (.zip)'),
+            h('button', { class: 'gbtn out sm', title: 'Manda AGORA o pacote completo para a planilha do administrador (aba Pacotes). Também vai sozinho de hora em hora.', onclick: (e) => comEspera(e.currentTarget, 'Enviando…', () => pacoteParaPlanilha(true)) }, 'Enviar pacote para a planilha'),
             h('button', { class: 'gbtn out sm', onclick: () => baixarRelatorio(res) }, 'Baixar relatório'),
             h('button', { class: 'gbtn out sm', title: 'Relatório completo em JSON (copia para a área de transferência)', onclick: () => copiarRelatorio(res) }, 'Copiar tudo'),
             h('button', { class: 'gbtn out sm', title: 'Foto da ESTRUTURA da tela (sem mensagens nem contatos) para resolver problemas visuais: envie junto com um print', onclick: baixarEstrutura }, 'Capturar estrutura da tela'),
