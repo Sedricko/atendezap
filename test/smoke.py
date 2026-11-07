@@ -1231,7 +1231,7 @@ async def main():
         await sw.evaluate("chrome.storage.local.get('acessoCfg').then((d) => chrome.storage.local.set({ acessoCfg: { ...d.acessoCfg, saude: true } }))"); await page.wait_for_timeout(800)   # já aceito: nenhuma pergunta abre
         await admin({'recursos': TODOS, 'limites': {'roboModoMax': 'automatico', 'chavesMax': '6'}, 'global': {**G1, 'coletarSaude': 'sim'}}); await atualizar()
         await ir(page, 'Diagnóstico'); await page.wait_for_timeout(3500)
-        await page.locator('#az-panel details.maisdiag summary').click(); await page.wait_for_timeout(400)
+        await page.evaluate("document.querySelector('#az-panel details.maisdiag').open = true"); await page.wait_for_timeout(400)   # pode já estar aberto de antes
         await page.locator('#az-panel .gbtn', has_text='Enviar pacote para a planilha').click(); await page.wait_for_timeout(15000)
         partes = await sw.evaluate("self.__pacote || null")
         try:
