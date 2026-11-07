@@ -1283,7 +1283,8 @@
         catch (e) { out[k] = { ok: false, d: e?.message || String(e) }; }
       };
       const myStatus = async () => WPP.whatsapp.StatusV3Store?.getMyStatus?.() || (await WPP.status.getMyStatus());
-      await t('listaConversas', async () => (await WPP.chat.list()).length + ' conversas');
+      let lista = null; const conversas = async () => (lista ||= await WPP.chat.list());   // v1.52.1: lê a lista UMA vez por autoteste (eram duas, com ~960 conversas)
+      await t('listaConversas', async () => (await conversas()).length + ' conversas');
       await t('conversaAtiva', async () => {
         const c = WPP.chat.getActiveChat();
         if (!c) return 'nenhuma aberta';
@@ -1292,7 +1293,7 @@
         return f.id._serialized;
       });
       await t('fixarLocal', async () => {
-        const c = WPP.chat.getActiveChat() || (await WPP.chat.list())[0];
+        const c = WPP.chat.getActiveChat() || (await conversas())[0];
         if (!c) return 'sem conversas para testar';
         if (!('pin' in c) && !('__x_pin' in c)) throw new Error('o modelo de conversa não tem mais o campo pin');
         return 'campo pin presente';

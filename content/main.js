@@ -107,31 +107,39 @@
       if (d.error) { logErr(p.method, d.error); p.rej(new Error(d.error)); } else p.res(d.result);
     } else if (d.kind === 'evt') {
       if (d.type === 'ready') setReady();
-      if (d.type === 'new_message') atendNovaMsg(d);
+      if (d.type === 'new_message') { ABERTURA.msgUlt = Date.now(); if (d.t && Date.now() / 1000 - d.t < 120) ABERTURA.atrasos = [...ABERTURA.atrasos.slice(-49), Math.max(0, Date.now() - d.t * 1000)]; atendNovaMsg(d); }
       if (d.type === 'msg_apagada') recuperarRecebeu(d);
       if (d.type === 'ligacao') ligacaoRecebeu(d);
       if (d.type === 'msg_apagada_midia') recuperarRecebeuMidia(d);
       if (d.type === 'active_chat') {
         S.active = d.chat; renderHead();
         if (d.chat?.id && eqAtivo()) eqAoAbrir(d.chat.id);   // v1.52: de quem é este cliente
-        if (d.chat && !AUTO.primeiraConversa) { AUTO.primeiraConversa = true; setTimeout(() => autoDiag('primeira conversa aberta'), 3000); }
+        if (d.chat && !AUTO.primeiraConversa) { AUTO.primeiraConversa = true; quandoSossegar(() => { if (!AUTO.ultimo || Date.now() - new Date(AUTO.ultimo.data.data).getTime() > 300000) autoDiag('primeira conversa aberta'); }); }   // v1.52.1: não repete o autoteste que acabou de rodar
       }
     }
   });
+  // v1.52.1: o Johon notou que o WhatsApp abre mais devagar com a extensão. Na abertura ele está baixando as mensagens; o autoteste (2 vezes),
+  // o backup automático e a escuta disputavam o computador com isso. Agora o que é pesado espera o WhatsApp "sossegar":
+  // pelo menos 20 s depois de pronto E 10 s sem chegar mensagem (ou 3 min, no máximo).
+  const ABERTURA = { prontoMs: null, msgUlt: 0, atrasos: [] };
+  function quandoSossegar(fn) {
+    const t0 = Date.now(), tick = () => { const ag = Date.now(); if ((ag - t0 >= 20000 && ag - ABERTURA.msgUlt >= 10000) || ag - t0 >= 180000) fn(); else setTimeout(tick, 3000); };
+    setTimeout(tick, 3000);
+  }
   async function setReady() {
     if (S.ready) return;
-    S.ready = true;
+    S.ready = true; ABERTURA.prontoMs = Math.round(performance.now());   // quanto a página levou até o WhatsApp ficar pronto (com o AtendeZap)
     S.active = await call('activeChat').catch(() => null);
     S.labels = await call('labels').catch(() => []);
-    atendSincronizar(); recuperarSincronizar(); setInterval(() => { recSync.ult = ''; ligSync.ult = null; recuperarSincronizar(); }, 60000); setTimeout(() => conhecEscutar(false), 90000); setInterval(() => conhecEscutar(false), 10 * 60000); setTimeout(avAuto, 150000); setInterval(avAuto, 15 * 60000); setTimeout(() => { recuperarPurgar(); recuperarCarregar(true); }, 4000); setInterval(recuperarPurgar, 30 * 60000);
+    atendSincronizar(); recuperarSincronizar(); setInterval(() => { recSync.ult = ''; ligSync.ult = null; recuperarSincronizar(); }, 60000); quandoSossegar(() => setTimeout(() => conhecEscutar(false), 60000)); setInterval(() => conhecEscutar(false), 10 * 60000); setTimeout(avAuto, 150000); setInterval(avAuto, 15 * 60000); setTimeout(() => { recuperarPurgar(); recuperarCarregar(true); }, 4000); setInterval(recuperarPurgar, 30 * 60000);
     applyPins();
     renderPanel(); renderHead();
     if (acessoEf().login) openPanel('config'); // equipe: o painel já abre na tela de acesso para entrar primeiro
     garantirOcultas(); // antes só rodava 20 s depois: a faixa "Arquivadas" ficava aparecendo nesse tempo
-    checkBackup();
+    quandoSossegar(checkBackup);
     atendMigrar(); atendBatida(); setInterval(atendBatida, 60000);
     acessoCiclo(); setInterval(acessoCiclo, 30000);
-    setTimeout(() => autoDiag('WhatsApp aberto'), 8000);
+    quandoSossegar(() => autoDiag('WhatsApp aberto'));
     setInterval(() => autoDiag('periódico (30 min)'), 30 * 60000);
   }
   let lastPins = [];
@@ -5197,7 +5205,8 @@ ${hist ? `<h2>Histórico de autotestes</h2><table><tr><td><b>Quando</b></td><td>
       hist.length ? hist.slice(0, 4).map(entrada) : h('p', { class: 'hint' }, inv?.base ? `Nada mudou desde ${dd(inv.base)}.` : 'Primeira leitura guardada agora; as novidades aparecem a partir da próxima.'));
   }
   // v1.48: Desempenho ao vivo. Tudo medido neste computador; um resumo por dia (7 dias) para comparar o antes e o depois de cada mudança.
-  const desempAgora = () => ({ ponte: AZDIAG.resumirPonte(PONTE, 99), pct: U.perfLinhas(PERF, performance.now() - PERF_T0)?.pct ?? null, memMB: performance.memory ? Math.round(performance.memory.usedJSHeapSize / 1048576) : null });
+  const mediana = (l) => { if (!l.length) return null; const s = [...l].sort((a, b) => a - b); return s[Math.floor(s.length / 2)]; };
+  const desempAgora = () => ({ ponte: AZDIAG.resumirPonte(PONTE, 99), pct: U.perfLinhas(PERF, performance.now() - PERF_T0)?.pct ?? null, memMB: performance.memory ? Math.round(performance.memory.usedJSHeapSize / 1048576) : null, prontoS: ABERTURA.prontoMs == null ? null : Math.round(ABERTURA.prontoMs / 100) / 10, atrasoS: mediana(ABERTURA.atrasos) == null ? null : Math.round(mediana(ABERTURA.atrasos) / 100) / 10 });
   const hojeISO = () => new Date().toLocaleDateString('sv-SE');
   async function desempGravar() { const dh = (await chrome.storage.local.get('desempHist')).desempHist || []; await chrome.storage.local.set({ desempHist: AZDIAG.registrarDia(dh, AZDIAG.fotoDesempenho(desempAgora()), hojeISO()) }); }
   function desempenhoCard(hist) {
@@ -5209,6 +5218,8 @@ ${hist ? `<h2>Histórico de autotestes</h2><table><tr><td><b>Quando</b></td><td>
       h('div', { class: 'col' },
         kv('Peso do AtendeZap na página', d.pct == null ? '—' : String(d.pct).replace('.', ',') + '%', d.avisos.pct),
         kv('Memória da aba do WhatsApp', d.memMB == null ? '—' : d.memMB.toLocaleString('pt-BR') + ' MB', d.avisos.mem),
+        kv('WhatsApp pronto depois de abrir a página', d.prontoS == null ? '—' : `${String(d.prontoS).replace('.', ',')} s${d.ontemPronto != null ? ` · antes ${String(d.ontemPronto).replace('.', ',')} s` : ''}`, false),
+        kv('Atraso das mensagens que chegam (mediana)', d.atrasoS == null ? 'ainda sem mensagens' : `${String(d.atrasoS).replace('.', ',')} s`, d.atrasoS != null && d.atrasoS > 10),
         d.avisos.mem ? h('small', { class: 'dan' }, `Passou de ${L.memMB} MB: feche e abra a aba do WhatsApp para liberar memória.`) : null,
         h('p', { class: 'hint grp' }, 'Chamadas ao WhatsApp mais lentas' + (d.ontem ? ` (antes = ${d.ontem.split('-').reverse().join('/')})` : '')),
         d.lentas.length ? d.lentas.map((x) => kv(`${NOME[x.metodo] || METHOD_FEAT[x.metodo] || x.metodo} · ${x.n.toLocaleString('pt-BR')}×`, `média ${tempo(x.mediaMs)} · pior ${tempo(x.maxMs)}${x.antes != null ? ' · antes ' + tempo(x.antes) : ''}`, x.aviso))

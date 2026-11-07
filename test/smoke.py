@@ -1844,7 +1844,7 @@ async def main():
         p2.on('pageerror', lambda e: errors.append('p2 pageerror: ' + str(e)))
         await p2.goto('https://web.whatsapp.com/'); await p2.wait_for_timeout(1200)
         await p2.evaluate(STUB + "; WPP.chat.setInputText = undefined;")
-        await p2.wait_for_timeout(14000)
+        await p2.wait_for_timeout(28000)   # v1.52.1: o 1º autoteste espera o WhatsApp sossegar (≥ 20 s depois de pronto)
         res['inicia_recolhido'] = await p2.evaluate("[!document.querySelector('#az-panel').shadowRoot.querySelector('.panel'), !!document.querySelector('#az-panel').shadowRoot.querySelector('.handle')]")
         res['alerta'] = await p2.locator('#az-panel .alerta').all_inner_texts()
         res['diag_dot'] = await p2.locator('#az-panel .tb.alert, #az-panel .handle .st.bad').count()
